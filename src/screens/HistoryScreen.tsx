@@ -16,6 +16,7 @@ import { database } from '../config/firebase';
 import { ref, onValue, off, remove } from 'firebase/database';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 import { useTheme } from '../contexts/ThemeContext';
+import { useI18n } from '../contexts/I18nContext';
 
 interface HistoryItem {
   id: string;
@@ -29,6 +30,7 @@ export default function HistoryScreen() {
   const { user } = useAuth();
   const navigation = useNavigation();
   const { theme } = useTheme();
+  const { t, isRTL } = useI18n();
 
   useEffect(() => {
     if (!user) return;
@@ -57,12 +59,12 @@ export default function HistoryScreen() {
 
   const handleClearHistory = () => {
     Alert.alert(
-      'Clear History',
-      'Are you sure you want to clear all search history?',
+      t('clearHistory'),
+      t('clearHistoryConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('close'), style: 'cancel' },
         {
-          text: 'Clear',
+          text: t('clearHistory'),
           style: 'destructive',
           onPress: async () => {
             if (user) {
@@ -70,7 +72,7 @@ export default function HistoryScreen() {
                 const historyRef = ref(database, `users/${user.uid}/history`);
                 await remove(historyRef);
                 setHistory([]);
-              } catch (error) {
+              } catch {
                 Alert.alert('Error', 'Failed to clear history');
               }
             }
@@ -81,27 +83,40 @@ export default function HistoryScreen() {
   };
 
   const renderHistoryItem = ({ item, index }: { item: HistoryItem; index: number }) => (
-    <Animated.View 
-      entering={FadeInUp.delay(index * 100).duration(400).springify()}
+    <Animated.View
+      entering={FadeInUp.delay(index * 80).duration(400).springify()}
       exiting={FadeOutDown.duration(200)}
     >
       <TouchableOpacity
-        style={[styles.historyCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
+        style={[
+          styles.historyCard,
+          { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+          isRTL && styles.rowReverse,
+        ]}
         onPress={() => handleHistoryItemPress(item)}
+        activeOpacity={0.75}
       >
         <View style={[styles.iconContainer, { backgroundColor: `${theme.colors.primary}15` }]}>
           <Ionicons name="time-outline" size={22} color={theme.colors.primary} />
         </View>
-        <View style={styles.historyInfo}>
-          <View style={styles.titleRow}>
-            <Text style={[styles.busLineName, { color: theme.colors.textPrimary }]}>Bus {item.busLine}</Text>
+        <View style={[styles.historyInfo, isRTL && { alignItems: 'flex-end' }]}>
+          <View style={[styles.titleRow, isRTL && styles.rowReverse]}>
+            <Text style={[styles.busLineName, { color: theme.colors.textPrimary }, isRTL && styles.textRight]}>
+              {item.busLine}
+            </Text>
             <Text style={[styles.timestamp, { color: theme.colors.textSecondary }]}>
-              {new Date(item.timestamp).toLocaleDateString()}
+              {new Date(item.timestamp).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US')}
             </Text>
           </View>
-          <Text style={[styles.companyName, { color: theme.colors.textSecondary }]}>{item.companyName}</Text>
+          <Text style={[styles.companyName, { color: theme.colors.textSecondary }, isRTL && styles.textRight]}>
+            {item.companyName}
+          </Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+        <Ionicons
+          name={isRTL ? 'chevron-back' : 'chevron-forward'}
+          size={20}
+          color={theme.colors.textSecondary}
+        />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -109,30 +124,56 @@ export default function HistoryScreen() {
   const renderEmptyState = () => (
     <Animated.View entering={FadeInUp.duration(500)} style={styles.emptyState}>
       <View style={[styles.emptyIconContainer, { backgroundColor: `${theme.colors.border}50` }]}>
-        <Ionicons name="search-outline" size={48} color={theme.colors.textSecondary} />
+        <Ionicons name="time-outline" size={52} color={theme.colors.textSecondary} />
       </View>
-      <Text style={[styles.emptyStateTitle, { color: theme.colors.textPrimary }]}>No History Yet</Text>
-      <Text style={[styles.emptyStateText, { color: theme.colors.textSecondary }]}>
-        Your recent bus searches will appear here. Start searching for buses on the Home tab!
+      <Text style={[styles.emptyStateTitle, { color: theme.colors.textPrimary }]}>
+        {t('noHistory')}
+      </Text>
+      <Text style={[styles.emptyStateText, { color: theme.colors.textSecondary }, isRTL && styles.textRight]}>
+        {isRTL
+          ? 'ستظهر هنا خطوط الحافلات التي بحثت عنها مؤخراً.'
+          : 'Your recent bus searches will appear here. Start searching for buses on the Home tab!'}
       </Text>
     </Animated.View>
   );
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.textPrimary} />
+      {/* Header */}
+      <View style={[styles.header, { borderBottomColor: theme.colors.border }, isRTL && styles.rowReverse]}>
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: theme.colors.searchBg }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons
+            name={isRTL ? 'arrow-forward' : 'arrow-back'}
+            size={22}
+            color={theme.colors.textPrimary}
+          />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Search History</Text>
+
+        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
+          {t('historyTitle')}
+        </Text>
+
         {history.length > 0 ? (
           <TouchableOpacity style={styles.clearButton} onPress={handleClearHistory}>
-            <Text style={styles.clearButtonText}>Clear</Text>
+            <Text style={styles.clearButtonText}>{t('clearHistory')}</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.placeholder} />
         )}
       </View>
+
+      {/* Count banner */}
+      {history.length > 0 && (
+        <View style={[styles.countBanner, { backgroundColor: theme.colors.searchBg, borderBottomColor: theme.colors.border }]}>
+          <Ionicons name="albums-outline" size={16} color={theme.colors.primary} />
+          <Text style={[styles.countText, { color: theme.colors.textSecondary }, isRTL && { marginLeft: 0, marginRight: 8 }]}>
+            {history.length} {isRTL ? 'رحلة محفوظة' : `saved ${history.length === 1 ? 'route' : 'routes'}`}
+          </Text>
+        </View>
+      )}
 
       {history.length === 0 ? (
         renderEmptyState()
@@ -158,25 +199,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    paddingTop: Platform.OS === 'android' ? 40 : 16,
+    paddingTop: Platform.OS === 'android' ? 44 : 14,
   },
+  rowReverse: { flexDirection: 'row-reverse' },
+  textRight: { textAlign: 'right' },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#F2F2F7',
-  },
-  placeholder: {
     width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  placeholder: { width: 40 },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
   },
   clearButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     backgroundColor: '#FF3B3015',
     borderRadius: 16,
   },
@@ -185,8 +228,20 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
     fontWeight: '700',
   },
+  countBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  countText: {
+    fontSize: 13,
+    marginLeft: 8,
+    fontWeight: '500',
+  },
   listContent: {
-    padding: 20,
+    padding: 16,
     paddingBottom: 40,
   },
   historyCard: {
@@ -194,11 +249,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 10,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
   },
@@ -208,7 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
   historyInfo: {
     flex: 1,
@@ -221,8 +276,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   busLineName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
+    flex: 1,
   },
   companyName: {
     fontSize: 14,
@@ -230,6 +286,7 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 12,
+    marginLeft: 8,
   },
   emptyState: {
     flex: 1,
@@ -238,9 +295,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
