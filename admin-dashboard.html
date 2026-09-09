@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Safar Admin</title>
+  <style>
+    :root{--blue:#2563eb;--blue-dark:#1d4ed8;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--bg:#f8fafc;--green:#059669;--card-bg:#ffffff}
+    *{box-sizing:border-box}
+    body{margin:0;font:14px Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
+    button,input{font:inherit}
+    button{cursor:pointer;border:0}
+    .login{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#eff6ff 0%,#f8fafc 48%,#ecfdf5 100%)}
+    .login-card{width:min(440px,100%);padding:36px 28px;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 50px rgba(15,23,42,0.08)}
+    .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;color:var(--ink)}
+    .logo b{display:grid;place-items:center;width:36px;height:36px;background:var(--blue);border-radius:10px;color:white;font-style:normal}
+    .login h1{font-size:26px;margin:28px 0 8px}
+    .muted{color:var(--muted);line-height:1.55}
+    .field{margin-top:18px}
+    .field label{display:block;margin-bottom:6px;font-weight:700;font-size:11px;color:#475569;letter-spacing:0.5px}
+    .field input{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px;outline:0;background:#f8fafc;font-size:14px}
+    .field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #dbeafe;background:#fff}
+    .primary{margin-top:22px;width:100%;padding:13px;background:var(--blue);color:white;font-weight:700;border-radius:10px;font-size:14px;transition:background 0.2s}
+    .primary:hover{background:var(--blue-dark)}
+    .hint{font-size:12px;margin-top:18px;color:#64748b}
+    .error{color:#dc2626;margin-top:12px;min-height:18px;font-weight:600;font-size:13px}
+    .app{min-height:100vh;display:grid;grid-template-columns:250px 1fr}
+    .side{background:#fff;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column}
+    .side .logo{padding:0 8px;margin-bottom:36px}
+    .nav{display:grid;gap:6px}
+    .nav button{background:transparent;text-align:left;padding:12px 14px;border-radius:9px;color:#64748b;font-weight:600;font-size:14px;display:flex;align-items:center;gap:10px;transition:all 0.15s}
+    .nav button:hover{background:#f1f5f9;color:var(--ink)}
+    .nav button.active{background:#eff6ff;color:var(--blue);font-weight:700}
+    .signout{margin-top:auto;background:transparent;text-align:left;color:#64748b;padding:12px 14px;font-weight:600;display:flex;align-items:center;gap:10px}
+    .signout:hover{color:#dc2626}
+    .main{min-width:0}
+    .header{min-height:84px;background:#fff;border-bottom:1px solid var(--line);padding:18px 32px;display:flex;align-items:center;justify-content:space-between}
+    .header h1{font-size:22px;margin:0;font-weight:800}
+    .header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .avatar{height:36px;width:36px;border-radius:50%;display:grid;place-items:center;color:#1d4ed8;background:#eff6ff;border:1.5px solid #bfdbfe;font-size:13px;font-weight:800}
+    .content{max-width:1000px;margin:auto;padding:32px 24px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+    .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.03)}
+    .stat i{display:grid;place-items:center;width:36px;height:36px;border-radius:8px;font-style:normal;font-size:18px;margin-bottom:12px}
+    .stat:nth-child(1) i{background:#ecfdf5;color:#059669}
+    .stat:nth-child(2) i{background:#eff6ff;color:#2563eb}
+    .stat:nth-child(3) i{background:#fffbeb;color:#d97706}
+    .stat strong{display:block;font-size:26px;font-weight:800;color:#0f172a;margin-bottom:4px}
+    .stat span{color:var(--muted);font-size:12px;font-weight:600}
+    .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .section-head h2{font-size:17px;margin:0 0 2px;font-weight:800}
+    .live{color:#065f46;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:20px;font-size:11px;font-weight:800;padding:5px 10px;display:inline-flex;align-items:center;gap:5px}
+    .live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981}
+    .row{background:#fff;border-top:1px solid var(--line);padding:14px 16px;display:flex;gap:12px;align-items:center}
+    .row:first-of-type{border-radius:12px 12px 0 0}
+    .row:last-child{border-radius:0 0 12px 12px;border-bottom:1px solid var(--line)}
+    .busicon{width:36px;height:36px;border-radius:10px;background:#ecfdf5;color:#059669;display:grid;place-items:center;font-size:16px}
+    .row b{display:block;font-size:14px}
+    .row small{color:var(--muted);display:block;margin-top:2px;font-size:12px}
+    .spacer{flex:1}
+    .speed{background:#f1f5f9;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:#475569}
+    .action{color:#1d4ed8;font-weight:700;background:#eff6ff;border-radius:8px;padding:8px 12px;font-size:12px}
+    .empty{padding:48px 20px;text-align:center;background:#fff;border-radius:14px;color:var(--muted);border:1px dashed #cbd5e1}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .toolbar h2{margin:0;font-size:17px;font-weight:800}
+    .add{background:var(--blue);color:#fff;padding:9px 15px;border-radius:8px;font-weight:700;font-size:13px}
+    .modal{position:fixed;inset:0;background:rgba(15,23,42,0.55);display:grid;place-items:center;padding:16px;z-index:99}
+    .modal-box{width:min(450px,100%);background:#fff;border-radius:18px;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.15)}
+    .modal-box h2{margin:0 0 4px;font-size:18px;font-weight:800}
+    .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+    .cancel{padding:10px 14px;background:transparent;color:#64748b;font-weight:600}
+    .save{padding:10px 18px;background:var(--blue);color:#fff;border-radius:8px;font-weight:700}
+    @media(max-width:768px){
+      .app{grid-template-columns:1fr}
+      .side{padding:12px 16px;flex-direction:row;align-items:center;border-bottom:1px solid var(--line);border-right:none}
+      .side .logo{margin:0;font-size:16px}
+      .side .logo b{width:30px;height:30px;font-size:14px}
+      .nav{margin-left:auto;display:flex;gap:4px}
+      .nav button{padding:6px 10px;font-size:12px}
+      .signout{display:none}
+      .header{min-height:auto;padding:14px 16px;flex-direction:row}
+      .header h1{font-size:17px}
+      .header p{display:none}
+      .content{padding:16px}
+      .stats{grid-template-columns:repeat(3,1fr);gap:8px}
+      .stat{padding:12px;border-radius:10px}
+      .stat i{width:28px;height:28px;font-size:14px;margin-bottom:6px}
+      .stat strong{font-size:20px}
+      .stat span{font-size:10px}
+      .row{padding:12px 14px}
+      .action{font-size:11px;padding:6px 10px}
+    }
+  </style>
+</head>
+<body>
+  <section id="login" class="login"><div class="login-card"><div class="logo"><b>🚌</b> Safar Admin</div><h1>Welcome back</h1><p class="muted">Sign in to manage routes, fleet operations, and live driver safety.</p><form id="loginForm"><div class="field"><label>EMAIL ADDRESS</label><input id="email" type="email" value="kareemdiyaaa2007@gmail.com" required /></div><div class="field"><label>PASSWORD</label><input id="password" type="password" value="lolmanflix" required /></div><button class="primary">Sign in to dashboard</button><div class="error" id="error"></div></form><p class="hint">Test credentials are prefilled for this dashboard.</p></div></section>
+  <section id="app" class="app" hidden><aside class="side"><div class="logo"><b>🚌</b> Safar Admin</div><nav class="nav"><button data-view="overview" class="active">▦ &nbsp; Overview</button><button data-view="fleet">🚌 &nbsp; Fleet</button><button data-view="routes">⌁ &nbsp; Routes</button></nav><button class="signout" id="signout">↪ &nbsp; Sign out</button></aside><main class="main"><header class="header"><div><h1 id="title">Operations overview</h1><p>Real-time data from the Safar passenger and driver app</p></div><div class="avatar" id="adminAvatar">KD</div></header><div class="content" id="content"></div></main></section>
+  <div id="modal"></div>
+  <script type="module">
+    // The dashboard remains usable if this browser blocks third-party modules.
+    // Firebase is attached opportunistically after the local UI has booted.
+    let auth=null,db=null,fb={};
+    void (async()=>{ try { const appMod=await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'), authMod=await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'), dbMod=await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js'); const app=appMod.initializeApp({apiKey:'AIzaSyChUygjS8ysqYzCk6VjoGMa1YdR5C4L77s',authDomain:'tracking-72393.firebaseapp.com',databaseURL:'https://tracking-72393-default-rtdb.firebaseio.com',projectId:'tracking-72393',appId:'1:701536417094:web:743f96fac5e92dd46da147'}); auth=authMod.getAuth(app); db=dbMod.getDatabase(app); fb={...authMod,...dbMod}; } catch(e) { console.info('Dashboard preview is running without Firebase sync.',e); } })();
+    let buses=[{id:'m554',lineName:'M554',companyName:'Mwasalat Misr'},{id:'n777',lineName:'N777',companyName:'CTA'}],routes=['M554 · New Cairo — Tahrir','N777 · Nasr City — Downtown','304 · Maadi — Ramses'],live=[{line:'M554',driverId:'demo-driver-1',driverName:'Ahmed Hassan',lat:30.0444,lng:31.2357,speed:28,updated:'Updated just now'},{line:'N777',driverId:'demo-driver-2',driverName:'Mohamed Adel',lat:30.0610,lng:31.2017,speed:34,updated:'Updated 1m ago'}],view='overview';const $=s=>document.querySelector(s),content=$('#content');
+    function render(){const titles={overview:'Operations overview',fleet:'Fleet management',routes:'Route management'};$('#title').textContent=titles[view];document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));if(view==='overview')content.innerHTML=`<div class="stats"><div class="stat"><i>◉</i><strong>${live.length}</strong><span>Live buses</span></div><div class="stat"><i>🚌</i><strong>${buses.length}</strong><span>Fleet records</span></div><div class="stat"><i>⌁</i><strong>${routes.length}</strong><span>Published routes</span></div></div><div class="section-head"><div><h2>Live driver locations</h2><p class="muted">Select a bus to inspect the location and safety controls.</p></div><span class="live">● LIVE</span></div>${live.length?live.map(x=>`<div class="row"><div class="busicon">🚌</div><div><b>${x.line} <span class="muted">· ${x.driverName}</span></b><small>${x.updated}</small></div><span class="spacer"></span><span class="speed">${x.speed} km/h</span><button class="action" data-live="${x.driverId}">Safety check</button></div>`).join(''):'<div class="empty">No buses are sharing a location yet.<br><small>Drivers appear here automatically when they start sharing from the app.</small></div>'}`;else {const isFleet=view==='fleet',items=isFleet?buses:routes;content.innerHTML=`<div class="toolbar"><h2>${isFleet?'Fleet records':'Published routes'}</h2><button class="add" id="add">+ Add ${isFleet?'bus':'route'}</button></div>${items.length?items.map(x=>`<div class="row"><div class="busicon">${isFleet?'🚌':'⌁'}</div><div><b>${isFleet?x.lineName:x}</b><small>${isFleet?x.companyName:'Available for drivers in the Safar app'}</small></div></div>`).join(''):`<div class="empty">No ${isFleet?'fleet records':'routes'} yet.<br><small>Add one to sync it with the app.</small></div>`} bind();}
+    function bind(){const add=$('#add');if(add)add.onclick=showAdd;document.querySelectorAll('[data-live]').forEach(b=>b.onclick=()=>safety(b.dataset.live));}
+    function showAdd(){const fleet=view==='fleet';$('#modal').innerHTML=`<div class="modal"><form class="modal-box" id="addForm"><h2>Add ${fleet?'fleet record':'route'}</h2><p class="muted">${fleet?'This becomes searchable in the passenger app.':'This becomes selectable in the driver app.'}</p><div class="field"><label>${fleet?'ROUTE / BUS CODE':'ROUTE NAME OR CODE'}</label><input id="name" required placeholder="${fleet?'M554':'Downtown Express'}"></div>${fleet?'<div class="field"><label>OPERATOR / COMPANY</label><input id="company" required placeholder="Safar Transport"></div>':''}<div class="modal-actions"><button type="button" class="cancel" id="close">Cancel</button><button class="save">Save</button></div></form></div>`;$('#close').onclick=()=>$('#modal').innerHTML='';$('#addForm').onsubmit=async e=>{e.preventDefault();const name=$('#name').value,company=$('#company')?.value;if(fleet)buses.push({id:Date.now(),lineName:name,companyName:company});else routes.push(name);if(db)try{if(fleet)await fb.set(fb.push(fb.ref(db,'buses')),{lineName:name,companyName:company,activeBusCount:0});else await fb.set(fb.ref(db,'companies/admin-managed'),{name:'Admin managed routes',busLines:[...routes]})}catch(e){alert('Saved to this dashboard preview, but Firebase rejected the sync.')}$('#modal').innerHTML='';render()}}
+    async function safety(id){const bus=live.find(x=>x.driverId===id);$('#modal').innerHTML=`<div class="modal"><div class="modal-box"><h2>${bus.line} · ${bus.driverName}</h2><p class="muted">${bus.lat.toFixed(5)}, ${bus.lng.toFixed(5)} · ${bus.updated}</p><p class="muted">A driver must approve every audio or video safety check. Their microphone and camera never activate remotely.</p><div class="modal-actions"><button class="cancel" id="close">Close</button><button class="save" id="audio">Request audio</button><button class="save" id="video">Request video</button></div></div></div>`;$('#close').onclick=()=>$('#modal').innerHTML='';['audio','video'].forEach(k=>$('#'+k).onclick=async()=>{try{await set(ref(db,`driverControls/${id}/mediaRequest`),{kind:k,requestedAt:new Date().toISOString(),requestedBy:'admin',status:'pending'});alert('Request sent to the driver.');$('#modal').innerHTML=''}catch(e){alert('Could not send request. Check Firebase rules.')}})}
+    const ADMINS = {
+      'kareemdiyaaa2007@gmail.com': { password: 'lolmanflix', name: 'Kareem Diyaa', initials: 'KD' },
+      'essamhamza@gmail.com': { password: 'essam1234', name: 'Essam Hamza', initials: 'EH' }
+    };
+    $('#loginForm').onsubmit=async e=>{e.preventDefault();const email=$('#email').value.trim().toLowerCase(),password=$('#password').value;const admin=ADMINS[email];if(!admin||password!==admin.password)return $('#error').textContent='Use configured administrator credentials.';const avatar=$('#adminAvatar')||document.querySelector('.avatar');if(avatar)avatar.textContent=admin.initials;if(auth)try{await fb.signInWithEmailAndPassword(auth,email,password)}catch(err){if(err.code==='auth/user-not-found'||err.code==='auth/invalid-credential'||err.code==='auth/invalid-login-credentials')try{const cred=await fb.createUserWithEmailAndPassword(auth,email,password);if(fb.updateProfile&&cred?.user)await fb.updateProfile(cred.user,{displayName:admin.name})}catch(e){console.info('Using dashboard preview data until Firebase is configured.',e)}}$('#login').hidden=true;$('#app').hidden=false;render()};
+    document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;render()});$('#signout').onclick=()=>{if(auth)fb.signOut(auth);location.reload()};
+    if(db){fb.onValue(fb.ref(db,'buses'),s=>{buses=Object.entries(s.val()||{}).map(([id,x])=>({id,...x}));render()});fb.onValue(fb.ref(db,'companies'),s=>{routes=[...new Set(Object.values(s.val()||{}).flatMap(x=>x.busLines||[]))].sort();render()});fb.onValue(fb.ref(db,'busLocations'),s=>{live=[];Object.entries(s.val()||{}).forEach(([line,drivers])=>Object.entries(drivers||{}).forEach(([driverId,x])=>{if(typeof x.latitude==='number')live.push({line,driverId,driverName:x.driverName||'Driver',lat:x.latitude,lng:x.longitude,speed:Math.round(x.speedKmh||0),updated:x.lastUpdated?`Updated ${Math.max(0,Math.round((Date.now()-new Date(x.lastUpdated))/60000))}m ago`:'Waiting for location'})}));render()});}
+  </script>
+</body></html>

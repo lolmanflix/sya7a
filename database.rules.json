@@ -1,0 +1,23 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    "buses": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com')"
+    },
+    "companies": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com')"
+    },
+    "busLocations": {
+      ".read": "auth != null",
+      "$line": { "$driver": { ".write": "auth != null && auth.uid === $driver" } }
+    },
+    "driverControls": {
+      "$driver": {
+        ".read": "auth != null && (auth.uid === $driver || auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com')",
+        ".write": "auth != null && (auth.uid === $driver || auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com')"
+      }
+    }
+  }
+}
