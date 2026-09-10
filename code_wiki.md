@@ -133,8 +133,10 @@ bus tracker sya7a version/
 - [x] Implemented Master Admin 2FA Authentication with RFC 6238 TOTP (Google/Microsoft Authenticator) and "Stay logged in" persistence.
 - [x] Implemented Full Database CRUD Operations: Add/Edit/Delete bus routes, Add/Rename/Delete bus lines with cascading updates, and Add/Edit/Delete driver profiles.
 - [x] Integrated Offline OpenStreetMap mapping matching mobile app without API key dependencies and with Egyptian transit landmark gazetteer.
-- [x] Automated function catalog parsing with 145 functions indexed in `functions.md`.
+- [x] Automated function catalog parsing with 295 functions indexed in `functions.md`.
 - [x] Completed comprehensive market data & financial pro forma audit with modular separation of concerns (`docs/`).
+- [x] Transitioned SafeTrip inspection to hardware-accelerated 30 FPS WebRTC Peer-to-Peer streaming with zero database media bandwidth.
+- [x] Separated Bus Fleet (vehicle deployments, road readiness, assignments) from Transit Routes (corridors, coordinates, map editor, and line catalog) into specialized administrative portals.
 
 ### In-Progress
 - *(All core milestones completed and verified)*

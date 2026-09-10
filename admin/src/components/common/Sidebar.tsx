@@ -1,8 +1,8 @@
 import React from 'react';
-import { LayoutDashboard, Building2, Route, Users, UserCheck, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Building2, Bus, Route, Users, UserCheck, ShieldAlert } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
-export type NavTab = 'dashboard' | 'companies' | 'fleet' | 'drivers' | 'passengers' | 'users' | 'security';
+export type NavTab = 'dashboard' | 'companies' | 'fleet' | 'routes' | 'drivers' | 'passengers' | 'users' | 'security';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -11,6 +11,7 @@ interface SidebarProps {
     liveBuses: number;
     companies: number;
     buses: number;
+    routes: number;
     drivers: number;
     passengers: number;
   };
@@ -19,8 +20,9 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab, counts }) => {
   const navItems = [
     { id: 'dashboard' as NavTab, label: 'Live Telemetry', icon: LayoutDashboard, badge: counts.liveBuses > 0 ? `${counts.liveBuses} live` : undefined, badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-    { id: 'companies' as NavTab, label: 'Companies & Lines', icon: Building2, count: counts.companies },
-    { id: 'fleet' as NavTab, label: 'Bus Fleet & Routes', icon: Route, count: counts.buses },
+    { id: 'companies' as NavTab, label: 'Companies', icon: Building2, count: counts.companies },
+    { id: 'fleet' as NavTab, label: 'Bus Fleet', icon: Bus, count: counts.buses },
+    { id: 'routes' as NavTab, label: 'Transit Routes', icon: Route, count: counts.routes },
     { id: 'drivers' as NavTab, label: 'Drivers', icon: UserCheck, count: counts.drivers },
     { id: 'users' as NavTab, label: 'Users', icon: Users, count: counts.passengers },
     { id: 'security' as NavTab, label: 'Security & Hygiene', icon: ShieldAlert },

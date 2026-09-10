@@ -3,7 +3,7 @@
 > **Note:** This file is automatically compiled by `scripts/generate_functions_doc.py`.
 > Do not manually edit this file. Keep inline docstrings updated in the source code.
 
-**Total Documented Functions:** 291
+**Total Documented Functions:** 295
 
 ---
 
@@ -12,7 +12,7 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L21 | `App()` | *none* | No description provided. |
+| L22 | `App()` | *none* | No description provided. |
 
 ## [Modal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/common/Modal.tsx)
 `admin/src/components/common/Modal.tsx`
@@ -60,6 +60,13 @@
 | :--- | :--- | :--- | :--- |
 | L36 | `handlePointsSelected()` | `start: { lat: number; lng: number; address: string },     end: { lat: number; lng: number; address: string }` | No description provided. |
 | L48 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
+
+## [VehicleRegistrationModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/fleet/VehicleRegistrationModal.tsx)
+`admin/src/components/fleet/VehicleRegistrationModal.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L40 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
 
 ## [FleetMap.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/map/FleetMap.tsx)
 `admin/src/components/map/FleetMap.tsx`
@@ -139,10 +146,10 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L21 | `handleToggle()` | `companyId: string, busId: string, currentActive: boolean` | No description provided. |
-| L30 | `handleDelete()` | `companyId: string, busId: string` | No description provided. |
-| L41 | `handleOpenNew()` | *none* | No description provided. |
-| L46 | `handleOpenEdit()` | `bus: BusRouteDefinition` | No description provided. |
+| L24 | `handleToggle()` | `companyId: string, busId: string, currentActive: boolean` | No description provided. |
+| L33 | `handleDelete()` | `companyId: string, busId: string` | No description provided. |
+| L44 | `handleOpenNew()` | *none* | No description provided. |
+| L49 | `handleOpenEdit()` | `bus: BusRouteDefinition` | No description provided. |
 
 ## [LoginPage.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/pages/LoginPage.tsx)
 `admin/src/pages/LoginPage.tsx`
@@ -160,6 +167,15 @@
 | L34 | `handleCopyUid()` | `uid: string` | No description provided. |
 | L41 | `handleClearHistory()` | `uid: string` | No description provided. |
 | L55 | `handleDeleteUser()` | `uid: string, name: string` | No description provided. |
+
+## [RoutesPage.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/pages/RoutesPage.tsx)
+`admin/src/pages/RoutesPage.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L74 | `handleDeleteRoute()` | `companyId: string, busId: string` | No description provided. |
+| L85 | `handleSaveRenameLine()` | `companyId: string, oldLine: string` | No description provided. |
+| L100 | `handleDeleteLine()` | `companyId: string, line: string` | No description provided. |
 
 ## [SecurityPage.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/pages/SecurityPage.tsx)
 `admin/src/pages/SecurityPage.tsx`

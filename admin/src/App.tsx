@@ -5,6 +5,7 @@ import { Sidebar, NavTab } from './components/common/Sidebar';
 import { DashboardPage } from './pages/DashboardPage';
 import { CompaniesPage } from './pages/CompaniesPage';
 import { FleetPage } from './pages/FleetPage';
+import { RoutesPage } from './pages/RoutesPage';
 import { DriversPage } from './pages/DriversPage';
 import { PassengersPage } from './pages/PassengersPage';
 import { SecurityPage } from './pages/SecurityPage';
@@ -74,6 +75,7 @@ export default function App() {
             liveBuses: liveLocations.length,
             companies: companies.length,
             buses: buses.length,
+            routes: companies.reduce((sum, c) => sum + (c.busLines?.length || 0), 0) || buses.length,
             drivers: drivers.length,
             passengers: passengers.length,
           }}
@@ -103,6 +105,13 @@ export default function App() {
 
             {currentTab === 'fleet' && (
               <FleetPage
+                buses={buses}
+                companies={companies}
+              />
+            )}
+
+            {currentTab === 'routes' && (
+              <RoutesPage
                 buses={buses}
                 companies={companies}
               />
