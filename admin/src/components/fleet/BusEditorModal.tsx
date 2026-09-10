@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { RoutePickerMap } from '../map/RoutePickerMap';
 import { BusRouteDefinition, BusStop, CompanyRecord } from '../../types';
@@ -30,6 +30,49 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
   const [stops, setStops] = useState<BusStop[] | undefined>(busToEdit?.stops);
   const [isActive, setIsActive] = useState<boolean>(busToEdit?.isActive ?? false);
   const [saving, setSaving] = useState(false);
+
+  // Synchronize form and map state whenever modal opens or busToEdit changes
+  useEffect(() => {
+    if (isOpen) {
+      if (busToEdit) {
+        const validStartLat = typeof busToEdit.startLat === 'number' && !isNaN(busToEdit.startLat) && busToEdit.startLat >= -90 && busToEdit.startLat <= 90 ? busToEdit.startLat : 30.0444;
+        const validStartLng = typeof busToEdit.startLng === 'number' && !isNaN(busToEdit.startLng) && busToEdit.startLng >= -180 && busToEdit.startLng <= 180 ? busToEdit.startLng : 31.2357;
+        const validEndLat = typeof busToEdit.endLat === 'number' && !isNaN(busToEdit.endLat) && busToEdit.endLat >= -90 && busToEdit.endLat <= 90 ? busToEdit.endLat : 30.0561;
+        const validEndLng = typeof busToEdit.endLng === 'number' && !isNaN(busToEdit.endLng) && busToEdit.endLng >= -180 && busToEdit.endLng <= 180 ? busToEdit.endLng : 31.3300;
+
+        setCompanyId(busToEdit.companyId || companies[0]?.id || 'cta');
+        setLineId(busToEdit.lineId || '');
+        setStartPoint(busToEdit.startPoint || 'Start Station');
+        setStartLat(validStartLat);
+        setStartLng(validStartLng);
+        setEndPoint(busToEdit.endPoint || 'Destination Station');
+        setEndLat(validEndLat);
+        setEndLng(validEndLng);
+
+        // Always guarantee at least start and end terminals in stops
+        const initialStopsList: BusStop[] = Array.isArray(busToEdit.stops) && busToEdit.stops.length >= 2
+          ? busToEdit.stops
+          : [
+              { id: 'stop-start', name: busToEdit.startPoint || 'Start Station', lat: validStartLat, lng: validStartLng, order: 0 },
+              { id: 'stop-end', name: busToEdit.endPoint || 'Destination Station', lat: validEndLat, lng: validEndLng, order: 1 },
+            ];
+
+        setStops(initialStopsList);
+        setIsActive(busToEdit.isActive ?? false);
+      } else {
+        setCompanyId(companies[0]?.id || 'cta');
+        setLineId('');
+        setStartPoint('');
+        setStartLat(30.0444);
+        setStartLng(31.2357);
+        setEndPoint('');
+        setEndLat(30.0561);
+        setEndLng(31.3300);
+        setStops(undefined);
+        setIsActive(false);
+      }
+    }
+  }, [isOpen, busToEdit, companies]);
 
   const selectedCompany = companies.find((c) => c.id === companyId);
   const availableLines = selectedCompany?.busLines || [];
@@ -148,6 +191,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
         {/* Visual Map Point Picker */}
         <div className="border border-slate-800 rounded-2xl p-3 bg-slate-950/40">
           <RoutePickerMap
+            key={busToEdit ? `${busToEdit.busId}-${busToEdit.startLat}-${busToEdit.endLat}` : 'new-route'}
             initialStops={stops}
             startLat={startLat}
             startLng={startLng}

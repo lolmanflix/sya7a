@@ -1,8 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
-import { MapPin, Navigation, Landmark, Route, Clock, CheckCircle2, Plus, Trash2, Locate } from 'lucide-react';
+import { MapPin, Navigation, Route, Clock, CheckCircle2, Plus, Locate, Maximize2 } from 'lucide-react';
 import { fetchRoadRoute, RouteGeometryResult } from '../../services/routingService';
 import { BusStop } from '../../types';
+import { EgyptianLandmark } from '../../constants/landmarks';
+import { RouteStopsList } from './RouteStopsList';
+import { EgyptianLandmarksPicker } from './EgyptianLandmarksPicker';
 
 interface RoutePickerMapProps {
   initialStops?: BusStop[];
@@ -15,20 +18,6 @@ interface RoutePickerMapProps {
   onPointsSelected?: (start: { lat: number; lng: number; address: string }, end: { lat: number; lng: number; address: string }) => void;
   onStopsChange?: (stops: BusStop[], start: { lat: number; lng: number; address: string }, end: { lat: number; lng: number; address: string }) => void;
 }
-
-const OFFLINE_EGYPTIAN_LANDMARKS = [
-  { name: 'الجامعة المصرية الصينية (ECU Nasr City)', lat: 30.0345, lng: 31.3588 },
-  { name: 'ميدان التحرير (Tahrir Square)', lat: 30.0444, lng: 31.2357 },
-  { name: 'ميدان رمسيس / محطة مصر (Ramses)', lat: 30.0626, lng: 31.2469 },
-  { name: 'مدينة نصر - مكرم عبيد (Nasr City)', lat: 30.0561, lng: 31.3300 },
-  { name: 'ميدان لبنان - المهندسين (Lebanon Sq)', lat: 30.0610, lng: 31.2017 },
-  { name: 'التجمع الخامس (New Cairo / 5th Settl)', lat: 30.0073, lng: 31.4916 },
-  { name: 'مطار القاهرة الدولي (Cairo Airport)', lat: 30.1219, lng: 31.4055 },
-  { name: 'أهرامات الجيزة (Giza Pyramids)', lat: 29.9792, lng: 31.1342 },
-  { name: 'جامعة القاهرة (Cairo University)', lat: 30.0264, lng: 31.2086 },
-  { name: 'المعادي (Maadi)', lat: 29.9600, lng: 31.2700 },
-  { name: 'مدينة 6 أكتوبر (6th of October)', lat: 29.9637, lng: 30.9177 },
-];
 
 export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
   initialStops,
@@ -58,6 +47,33 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
 
   const [routeStats, setRouteStats] = useState<RouteGeometryResult | null>(null);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState<boolean>(false);
+
+  // Sync with incoming initialStops when editing changes
+  useEffect(() => {
+    if (initialStops && initialStops.length >= 2) {
+      setStops((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(initialStops)) return prev;
+        return initialStops;
+      });
+    }
+  }, [initialStops]);
+
+  // Fit map viewport to currently configured route stops and road geometry
+  const fitRoute = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.invalidateSize();
+    const coords = routeStats && routeStats.coordinates && routeStats.coordinates.length > 0
+      ? routeStats.coordinates
+      : stops.map((s) => [s.lat, s.lng] as [number, number]);
+
+    if (coords.length >= 2) {
+      const b = L.latLngBounds(coords);
+      if (b.isValid()) {
+        map.fitBounds(b, { padding: [35, 35], maxZoom: 15 });
+      }
+    }
+  }, [routeStats, stops]);
 
   // Initialize Leaflet Map
   useEffect(() => {
@@ -89,7 +105,22 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     markersLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
+    // Invalidate container size shortly after modal appearance and fit bounds
+    const timer = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+        const coords = stops.map((s) => [s.lat, s.lng] as [number, number]);
+        if (coords.length >= 2) {
+          const b = L.latLngBounds(coords);
+          if (b.isValid()) {
+            mapRef.current.fitBounds(b, { padding: [35, 35], maxZoom: 15 });
+          }
+        }
+      }
+    }, 200);
+
     return () => {
+      clearTimeout(timer);
       map.remove();
       mapRef.current = null;
     };
@@ -111,6 +142,7 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
   // Re-render stop markers and recalculate road polyline whenever stops change
   useEffect(() => {
     if (!mapRef.current || !markersLayerRef.current) return;
+    const map = mapRef.current;
     const markersLayer = markersLayerRef.current;
     markersLayer.clearLayers();
 
@@ -148,6 +180,17 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
             dashArray: res.isFallback ? '6, 6' : undefined,
             color: res.isFallback ? '#64748B' : '#2563EB',
           });
+        }
+
+        // Auto-center and fit bounds on the calculated route
+        if (mapRef.current) {
+          const coords = res.coordinates.length > 0 ? res.coordinates : stops.map((s) => [s.lat, s.lng] as [number, number]);
+          if (coords.length >= 2) {
+            const b = L.latLngBounds(coords);
+            if (b.isValid()) {
+              mapRef.current.fitBounds(b, { padding: [35, 35], maxZoom: 15 });
+            }
+          }
         }
       })
       .catch(() => {
@@ -210,7 +253,7 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     notifyChanges(next);
   };
 
-  const addPresetAsStop = (landmark: { name: string; lat: number; lng: number }) => {
+  const addPresetAsStop = (landmark: EgyptianLandmark) => {
     if (activeMode === 'setStart') {
       const next = [...stops];
       next[0] = { ...next[0], lat: landmark.lat, lng: landmark.lng, name: landmark.name };
@@ -294,6 +337,15 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
             <Navigation className="w-3.5 h-3.5" />
             Set End (B)
           </button>
+          <button
+            type="button"
+            onClick={fitRoute}
+            title="Auto-Fit Map View to Full Route"
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 transition-all"
+          >
+            <Maximize2 className="w-3.5 h-3.5 text-blue-400" />
+            Fit Route
+          </button>
         </div>
 
         {/* Real-time distance and stop count metrics */}
@@ -327,67 +379,14 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
       </div>
 
       {/* Interactive Ordered Stops Itinerary List */}
-      <div className="space-y-1.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
-        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1">
-          <span>Route Stops Sequence ({stops.length}):</span>
-          <span className="text-slate-500 font-normal">Click map to append intermediate stops</span>
-        </div>
-        <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-          {stops.map((stop, idx) => {
-            const isFirst = idx === 0;
-            const isLast = idx === stops.length - 1;
-            const badgeBg = isFirst ? 'bg-blue-600' : isLast ? 'bg-purple-600' : 'bg-emerald-600';
-            const label = isFirst ? 'A' : isLast ? 'B' : String(idx + 1);
-
-            return (
-              <div key={stop.id || idx} className="flex items-center gap-2 bg-slate-800/80 p-1.5 rounded-lg border border-slate-700/60">
-                <span className={`w-5 h-5 rounded-full ${badgeBg} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
-                  {label}
-                </span>
-                <input
-                  type="text"
-                  value={stop.name}
-                  onChange={(e) => updateStopName(idx, e.target.value)}
-                  className="bg-transparent text-xs text-slate-200 flex-1 focus:outline-none border-b border-transparent focus:border-slate-500 px-1"
-                />
-                <span className="text-[10px] font-mono text-slate-400">
-                  {stop.lat.toFixed(3)}, {stop.lng.toFixed(3)}
-                </span>
-                {!isFirst && !isLast && (
-                  <button
-                    type="button"
-                    onClick={() => removeStop(idx)}
-                    className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
-                    title="Remove stop"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <RouteStopsList
+        stops={stops}
+        onUpdateName={updateStopName}
+        onRemoveStop={removeStop}
+      />
 
       {/* Egyptian Transit Hub Presets */}
-      <div className="space-y-1">
-        <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
-          <Landmark className="w-3.5 h-3.5 text-brand-400" />
-          Click to Add Egyptian Transit Station Preset:
-        </span>
-        <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pr-1">
-          {OFFLINE_EGYPTIAN_LANDMARKS.map((lm) => (
-            <button
-              key={lm.name}
-              type="button"
-              onClick={() => addPresetAsStop(lm)}
-              className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[10px] transition-colors"
-            >
-              + {lm.name.split('(')[0].trim()}
-            </button>
-          ))}
-        </div>
-      </div>
+      <EgyptianLandmarksPicker onSelectLandmark={addPresetAsStop} />
     </div>
   );
 };

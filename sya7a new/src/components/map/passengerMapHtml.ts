@@ -58,36 +58,49 @@ export const getMapHTML = (isDark: boolean) => `
 
           const waypoints = [];
 
-          // Point A: Prioritize the active driver's current GPS location
-          let startLat = null;
-          let startLng = null;
-          let startName = 'Point A (Origin)';
-
-          if (activeBus && activeBus.latitude && activeBus.longitude) {
-            startLat = Number(activeBus.latitude);
-            startLng = Number(activeBus.longitude);
-            startName = activeBus.startPoint || "Driver's Current Location (Point A)";
-          } else if (routeDef.startLat && routeDef.startLng) {
-            startLat = Number(routeDef.startLat);
-            startLng = Number(routeDef.startLng);
-            startName = routeDef.startPoint || 'Origin (A)';
-          }
-
-          if (startLat !== null && startLng !== null) {
-            waypoints.push({ lat: startLat, lng: startLng, name: startName, type: 'start' });
-          }
-
-          if (Array.isArray(routeDef.stops)) {
+          if (Array.isArray(routeDef.stops) && routeDef.stops.length >= 2) {
             const sortedStops = [...routeDef.stops].sort((a, b) => (a.order || 0) - (b.order || 0));
             sortedStops.forEach((s, idx) => {
-              if (s.lat && s.lng) {
-                waypoints.push({ lat: Number(s.lat), lng: Number(s.lng), name: s.name || ('Stop ' + (idx + 1)), type: 'stop', idx: idx + 1 });
+              const isFirst = idx === 0;
+              const isLast = idx === sortedStops.length - 1;
+              if (isFirst) {
+                const sLat = (activeBus && activeBus.latitude) ? Number(activeBus.latitude) : Number(s.lat);
+                const sLng = (activeBus && activeBus.longitude) ? Number(activeBus.longitude) : Number(s.lng);
+                const sName = (activeBus && activeBus.latitude) ? "Driver's Current Location (Point A)" : (s.name || routeDef.startPoint || 'Origin (A)');
+                waypoints.push({ lat: sLat, lng: sLng, name: sName, type: 'start' });
+              } else if (isLast) {
+                waypoints.push({ lat: Number(s.lat), lng: Number(s.lng), name: s.name || routeDef.endPoint || 'Destination (B)', type: 'end' });
+              } else {
+                waypoints.push({ lat: Number(s.lat), lng: Number(s.lng), name: s.name || ('Stop ' + idx), type: 'stop', idx: idx });
               }
             });
-          }
+          } else {
+            let startLat = null;
+            let startLng = null;
+            let startName = 'Point A (Origin)';
 
-          if (routeDef.endLat && routeDef.endLng) {
-            waypoints.push({ lat: Number(routeDef.endLat), lng: Number(routeDef.endLng), name: routeDef.endPoint || 'Destination (B)', type: 'end' });
+            if (activeBus && activeBus.latitude && activeBus.longitude) {
+              startLat = Number(activeBus.latitude);
+              startLng = Number(activeBus.longitude);
+              startName = activeBus.startPoint || "Driver's Current Location (Point A)";
+            } else if (routeDef.startLat && routeDef.startLng) {
+              startLat = Number(routeDef.startLat);
+              startLng = Number(routeDef.startLng);
+              startName = routeDef.startPoint || 'Origin (A)';
+            }
+
+            if (startLat !== null && startLng !== null) {
+              waypoints.push({ lat: startLat, lng: startLng, name: startName, type: 'start' });
+            }
+
+            if (Array.isArray(routeDef.stops) && routeDef.stops.length === 1) {
+              const s = routeDef.stops[0];
+              waypoints.push({ lat: Number(s.lat), lng: Number(s.lng), name: s.name || 'Stop 1', type: 'stop', idx: 1 });
+            }
+
+            if (routeDef.endLat && routeDef.endLng) {
+              waypoints.push({ lat: Number(routeDef.endLat), lng: Number(routeDef.endLng), name: routeDef.endPoint || 'Destination (B)', type: 'end' });
+            }
           }
 
           if (waypoints.length < 2) return;

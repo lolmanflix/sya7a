@@ -58,8 +58,8 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L37 | `handleStopsChange()` | `updatedStops: BusStop[],     start: { lat: number; lng: number; address: string },     end: { lat: number; lng: number; address: string }` | No description provided. |
-| L51 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
+| L80 | `handleStopsChange()` | `updatedStops: BusStop[],     start: { lat: number; lng: number; address: string },     end: { lat: number; lng: number; address: string }` | No description provided. |
+| L94 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
 
 ## [VehicleRegistrationModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/fleet/VehicleRegistrationModal.tsx)
 `admin/src/components/fleet/VehicleRegistrationModal.tsx`
@@ -81,12 +81,12 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L99 | `notifyChanges()` | `updatedStops: BusStop[]` | No description provided. |
-| L167 | `handleClick()` | `e: L.LeafletMouseEvent` | No description provided. |
-| L201 | `removeStop()` | `index: number` | No description provided. |
-| L207 | `updateStopName()` | `index: number, name: string` | No description provided. |
-| L213 | `addPresetAsStop()` | `landmark: { name: string; lat: number; lng: number }` | No description provided. |
-| L237 | `useCurrentLocationForStart()` | *none* | No description provided. |
+| L130 | `notifyChanges()` | `updatedStops: BusStop[]` | No description provided. |
+| L210 | `handleClick()` | `e: L.LeafletMouseEvent` | No description provided. |
+| L244 | `removeStop()` | `index: number` | No description provided. |
+| L250 | `updateStopName()` | `index: number, name: string` | No description provided. |
+| L256 | `addPresetAsStop()` | `landmark: EgyptianLandmark` | No description provided. |
+| L280 | `useCurrentLocationForStart()` | *none* | No description provided. |
 
 ## [DriverSafetyMediaModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/modals/DriverSafetyMediaModal.tsx)
 `admin/src/components/modals/DriverSafetyMediaModal.tsx`
@@ -519,7 +519,7 @@
 | :--- | :--- | :--- | :--- |
 | L1 | `getMapHTML()` | `isDark: boolean` | Passenger Map HTML Template for Leaflet WebView Renders base map, active bus markers, and multi-point road itineraries with intermediate stops. |
 | L42 | `calcDistKm()` | `lat1, lng1, lat2, lng2` | No description provided. |
-| L149 | `updateBusMarkers()` | `busLocations` | No description provided. |
+| L162 | `updateBusMarkers()` | `busLocations` | No description provided. |
 
 ## [SettingsModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/components/SettingsModal.tsx)
 `sya7a new/src/components/SettingsModal.tsx`

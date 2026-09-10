@@ -143,6 +143,7 @@ bus tracker sya7a version/
 - [x] Upgraded Passenger Map (`MapScreen.tsx`) to render full multi-stop road polylines with numbered badges and stop popups, removing false Cairo mock buses.
 - [x] Completely eradicated hardcoded fallback mock companies (`defaultCompanies`) and static bus lines `['M554', 'N777'...]` across both applications; fully synchronized with Firebase RTDB.
 - [x] Dynamic Point A Integration: Point A dynamically anchors to driver's live GPS coordinates and reverse-geocoded place name across driver telemetry broadcast, passenger map road routing, and admin panel route design.
+- [x] Fixed Route Display on Edit Map & Multipoint Schema Integrity: resolved Leaflet modal container clipping with `invalidateSize()`, auto-fitted route bounds to road geometry, modularized `RouteStopsList` and `EgyptianLandmarksPicker` to keep all files strictly under 400 lines, and verified full RTDB schema support for multipoint route sequences.
 
 ### In-Progress
 - *(All core milestones completed and verified)*
