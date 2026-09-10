@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { database } from '../config/firebase';
-import { ref, onValue, off, remove } from 'firebase/database';
+import { ref, onValue, remove } from 'firebase/database';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 import { useTheme } from '../contexts/ThemeContext';
 import { useI18n } from '../contexts/I18nContext';
@@ -39,9 +39,9 @@ export default function HistoryScreen() {
     const unsubscribe = onValue(historyRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const historyList: HistoryItem[] = Object.keys(data).map(key => ({
+        const historyList: HistoryItem[] = Object.keys(data).map((key) => ({
           id: key,
-          ...data[key]
+          ...data[key],
         }));
         historyList.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         setHistory(historyList);
@@ -50,7 +50,7 @@ export default function HistoryScreen() {
       }
     });
 
-    return () => off(historyRef, 'value', unsubscribe);
+    return () => unsubscribe();
   }, [user]);
 
   const handleHistoryItemPress = (item: HistoryItem) => {
@@ -131,8 +131,8 @@ export default function HistoryScreen() {
       </Text>
       <Text style={[styles.emptyStateText, { color: theme.colors.textSecondary }, isRTL && styles.textRight]}>
         {isRTL
-          ? 'ستظهر هنا خطوط الحافلات التي بحثت عنها مؤخراً.'
-          : 'Your recent bus searches will appear here. Start searching for buses on the Home tab!'}
+          ? 'احفظ الخط من الخريطة أو من قائمة الخطوط، وهيظهر هنا.'
+          : 'Save a route from a bus line or the map and it will show up here.'}
       </Text>
     </Animated.View>
   );

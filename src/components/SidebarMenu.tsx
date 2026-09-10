@@ -102,14 +102,28 @@ export default function SidebarMenu({ visible, onClose }: SidebarMenuProps) {
     );
   };
 
+  const goToScreen = (name: string) => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate(name as never);
+    } else {
+      navigation.navigate(name as never);
+    }
+  };
+
   const handleHistoryPress = () => {
     closeWithAnimation();
-    setTimeout(() => navigation.navigate('History' as never), 250);
+    setTimeout(() => goToScreen('History'), 280);
   };
 
   const handleBusTrackerPress = () => {
     closeWithAnimation();
-    setTimeout(() => navigation.navigate('MainTabs' as never), 250);
+    setTimeout(() => goToScreen('MainTabs'), 280);
+  };
+
+  const handleSubscriptionPress = () => {
+    closeWithAnimation();
+    setTimeout(() => setSubscriptionVisible(true), 280);
   };
 
   const planColor = PLAN_COLORS[currentPlan] ?? '#34C759';
@@ -204,16 +218,16 @@ export default function SidebarMenu({ visible, onClose }: SidebarMenuProps) {
                 <Ionicons name={isRTL ? 'chevron-back' : 'chevron-forward'} size={16} color={theme.colors.muted} />
               </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.menuItem, isRTL && styles.rowReverse]} onPress={() => setSubscriptionVisible(true)} activeOpacity={0.7}>
-                <View style={[styles.menuIconWrap, { backgroundColor: '#FFD70018' }]}>
-                  <Ionicons name="diamond" size={20} color="#FFB800" />
+              <TouchableOpacity style={[styles.menuItem, isRTL && styles.rowReverse]} onPress={handleSubscriptionPress} activeOpacity={0.7}>
+                <View style={[styles.menuIconWrap, { backgroundColor: `${planColor}18` }]}>
+                  <Ionicons name="card-outline" size={20} color={planColor} />
                 </View>
                 <View style={[styles.menuItemCenter, isRTL && { alignItems: 'flex-end' }]}>
                   <Text style={[styles.menuItemText, { color: theme.colors.textPrimary, flex: 0 }, isRTL && styles.menuTextRTL]}>
                     {t('subscriptionMenu')}
                   </Text>
                   <Text style={[styles.menuItemSub, { color: theme.colors.muted }]}>
-                    {planBadgeLabel} {t('currentTier')}
+                    {t('freePlanName')}, {t('proPlanName')}, {t('familyPlanName')}
                   </Text>
                 </View>
                 <Ionicons name={isRTL ? 'chevron-back' : 'chevron-forward'} size={16} color={theme.colors.muted} />

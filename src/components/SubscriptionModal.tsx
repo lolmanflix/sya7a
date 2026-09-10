@@ -22,49 +22,45 @@ interface Props {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-interface PlanConfig {
+type Plan = {
   id: PlanTier;
-  nameKey: string;
-  priceKey: string;
-  oldPriceKey?: string;
-  periodKey: string;
-  discountKey?: string;
-  features: string[];
-  color: string;
   icon: keyof typeof Ionicons.glyphMap;
-  popular?: boolean;
-}
+  color: string;
+  nameKey: string;
+  price: string;
+  periodKey: string;
+  oldPrice?: string;
+  features: string[];
+};
 
-const PLANS: PlanConfig[] = [
+const PLANS: Plan[] = [
   {
     id: 'free',
+    icon: 'leaf-outline',
+    color: '#34C759',
     nameKey: 'freePlanName',
-    priceKey: 'freePrice',
+    price: '0',
     periodKey: 'egpMonth',
     features: ['freeFeature1', 'freeFeature2', 'freeFeature3'],
-    color: '#34C759',
-    icon: 'shield-checkmark-outline',
   },
   {
     id: 'pro',
+    icon: 'flash-outline',
+    color: '#007AFF',
     nameKey: 'proPlanName',
-    priceKey: 'proPrice',
+    price: '20',
     periodKey: 'egpMonthPerson',
     features: ['proFeature1', 'proFeature2', 'proFeature3'],
-    color: '#007AFF',
-    icon: 'star',
-    popular: true,
   },
   {
     id: 'family',
-    nameKey: 'familyPlanName',
-    priceKey: 'familyPrice',
-    oldPriceKey: 'familyPriceOld',
-    periodKey: 'egpMonthPerson',
-    discountKey: 'discountBadge',
-    features: ['familyFeature1', 'familyFeature2', 'familyFeature3'],
+    icon: 'people-outline',
     color: '#FF9500',
-    icon: 'people',
+    nameKey: 'familyPlanName',
+    price: '17',
+    periodKey: 'egpMonthPerson',
+    oldPrice: '20',
+    features: ['familyFeature1', 'familyFeature2', 'familyFeature3'],
   },
 ];
 
@@ -79,18 +75,18 @@ export default function SubscriptionModal({ visible, onClose }: Props) {
       Animated.spring(slideY, {
         toValue: 0,
         useNativeDriver: true,
-        damping: 20,
-        stiffness: 200,
+        damping: 22,
+        stiffness: 220,
       }).start();
     } else {
       slideY.setValue(SCREEN_HEIGHT);
     }
-  }, [visible]);
+  }, [visible, slideY]);
 
   const closeWithAnimation = () => {
     Animated.timing(slideY, {
       toValue: SCREEN_HEIGHT,
-      duration: 250,
+      duration: 220,
       useNativeDriver: true,
     }).start(() => onClose());
   };
@@ -98,20 +94,8 @@ export default function SubscriptionModal({ visible, onClose }: Props) {
   const handleSelectPlan = async (plan: PlanTier) => {
     if (plan === currentPlan) return;
     await setPlan(plan);
-    Alert.alert('✅', t('planSubscribedSuccess'));
+    Alert.alert(t('planSubscribedSuccess'));
     closeWithAnimation();
-  };
-
-  // Extra translation keys not yet in context — fall back gracefully
-  const tLocal = (key: string, fallback: string) => {
-    const result = t(key, fallback);
-    return result === key ? fallback : result;
-  };
-
-  const planNames: Record<PlanTier, string> = {
-    free: tLocal('freePlanName', 'Free Plan'),
-    pro: tLocal('proPlanName', 'Pro Plan'),
-    family: tLocal('familyPlanName', 'Family Plan'),
   };
 
   return (
@@ -122,7 +106,6 @@ export default function SubscriptionModal({ visible, onClose }: Props) {
       onRequestClose={closeWithAnimation}
     >
       <View style={styles.overlay}>
-        {/* Backdrop tap to close */}
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={closeWithAnimation} activeOpacity={1} />
 
         <Animated.View
@@ -131,26 +114,23 @@ export default function SubscriptionModal({ visible, onClose }: Props) {
             { backgroundColor: theme.colors.background, transform: [{ translateY: slideY }] },
           ]}
         >
-          {/* Handle */}
           <View style={[styles.handle, { backgroundColor: theme.colors.border }]} />
 
-          {/* Header */}
           <View style={[styles.header, isRTL && styles.rowReverse]}>
-            <View style={styles.headerLeft}>
-              <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }, isRTL && styles.textRight]}>
-                {t('plansAndPricing')}
-              </Text>
-              <Text style={[styles.headerSubtitle, { color: theme.colors.muted }, isRTL && styles.textRight]}>
-                {tLocal('chooseBestPlan', 'Choose the best plan for you')}
-              </Text>
-            </View>
+            <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
+              {t('plansAndPricing')}
+            </Text>
             <TouchableOpacity
               style={[styles.closeButton, { backgroundColor: theme.colors.searchBg }]}
               onPress={closeWithAnimation}
             >
-              <Ionicons name="close" size={20} color={theme.colors.muted} />
+              <Ionicons name="close" size={18} color={theme.colors.muted} />
             </TouchableOpacity>
           </View>
+
+          <Text style={[styles.headerHint, { color: theme.colors.muted }, isRTL && styles.textRight]}>
+            {t('chooseBestPlan')}
+          </Text>
 
           <ScrollView
             style={styles.scrollView}
@@ -161,111 +141,68 @@ export default function SubscriptionModal({ visible, onClose }: Props) {
               const isActive = currentPlan === plan.id;
 
               return (
-                <View
+                <TouchableOpacity
                   key={plan.id}
                   style={[
                     styles.planCard,
                     {
                       backgroundColor: theme.colors.card,
                       borderColor: isActive ? plan.color : theme.colors.border,
-                      borderWidth: isActive ? 2 : 1,
                     },
                   ]}
+                  onPress={() => handleSelectPlan(plan.id)}
+                  activeOpacity={0.85}
                 >
-                  {/* Popular badge */}
-                  {plan.popular && (
-                    <View style={[styles.popularBadge, { backgroundColor: plan.color }]}>
-                      <Text style={styles.popularBadgeText}>
-                        {tLocal('mostPopular', '⭐ Most Popular')}
-                      </Text>
+                  <View style={[styles.planTop, isRTL && styles.rowReverse]}>
+                    <View style={[styles.planIcon, { backgroundColor: `${plan.color}18` }]}>
+                      <Ionicons name={plan.icon} size={20} color={plan.color} />
                     </View>
-                  )}
-
-                  {/* Plan header */}
-                  <View style={[styles.planHeader, isRTL && styles.rowReverse]}>
-                    <View style={[styles.planIconContainer, { backgroundColor: `${plan.color}18` }]}>
-                      <Ionicons name={plan.icon} size={26} color={plan.color} />
-                    </View>
-                    <View style={styles.planTitleBlock}>
+                    <View style={styles.planMeta}>
                       <Text style={[styles.planName, { color: theme.colors.textPrimary }, isRTL && styles.textRight]}>
-                        {planNames[plan.id]}
+                        {t(plan.nameKey)}
                       </Text>
-
-                      {/* Price row */}
                       <View style={[styles.priceRow, isRTL && styles.rowReverse]}>
-                        <Text style={[styles.planPrice, { color: plan.color }]}>
-                          {t(plan.priceKey)}
+                        <Text style={[styles.price, { color: theme.colors.textPrimary }]}>
+                          {plan.price} {t(plan.periodKey)}
                         </Text>
-                        {plan.oldPriceKey && (
+                        {plan.oldPrice ? (
                           <Text style={[styles.oldPrice, { color: theme.colors.muted }]}>
-                            {t(plan.oldPriceKey)}
+                            {plan.oldPrice}
                           </Text>
-                        )}
+                        ) : null}
                       </View>
-                      <Text style={[styles.planPeriod, { color: theme.colors.muted }, isRTL && styles.textRight]}>
-                        {t(plan.periodKey)}
-                      </Text>
+                      {plan.id === 'family' ? (
+                        <Text style={[styles.discountNote, { color: plan.color }, isRTL && styles.textRight]}>
+                          {t('discountBadge')}
+                        </Text>
+                      ) : null}
                     </View>
-
-                    {/* Discount badge */}
-                    {plan.discountKey && (
-                      <View style={[styles.discountBadge, { backgroundColor: '#FF3B3015' }]}>
-                        <Text style={[styles.discountText, { color: '#FF3B30' }]}>
-                          {t(plan.discountKey)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Divider */}
-                  <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-
-                  {/* Features */}
-                  <View style={styles.featuresBlock}>
-                    {plan.features.map((featureKey, idx) => (
-                      <View key={idx} style={[styles.featureRow, isRTL && styles.rowReverse]}>
-                        <View style={[styles.featureCheck, { backgroundColor: `${plan.color}18` }]}>
-                          <Ionicons name="checkmark" size={14} color={plan.color} />
-                        </View>
-                        <Text style={[styles.featureText, { color: theme.colors.textSecondary }, isRTL && styles.featureTextRTL]}>
-                          {t(featureKey)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  {/* CTA button */}
-                  <TouchableOpacity
-                    style={[
-                      styles.selectButton,
-                      isActive
-                        ? { backgroundColor: `${plan.color}20`, borderColor: plan.color, borderWidth: 1.5 }
-                        : { backgroundColor: plan.color },
-                    ]}
-                    onPress={() => handleSelectPlan(plan.id)}
-                    activeOpacity={0.8}
-                  >
                     {isActive ? (
-                      <View style={[styles.selectButtonInner, isRTL && styles.rowReverse]}>
-                        <Ionicons name="checkmark-circle" size={18} color={plan.color} style={{ marginRight: isRTL ? 0 : 6, marginLeft: isRTL ? 6 : 0 }} />
-                        <Text style={[styles.selectButtonText, { color: plan.color }]}>
+                      <View style={[styles.currentChip, { backgroundColor: `${plan.color}18` }]}>
+                        <Text style={[styles.currentChipText, { color: plan.color }]}>
                           {t('currentPlanActive')}
                         </Text>
                       </View>
-                    ) : (
-                      <Text style={[styles.selectButtonText, { color: '#FFFFFF' }]}>
-                        {t('selectPlan')}
+                    ) : null}
+                  </View>
+
+                  {plan.features.map((featureKey) => (
+                    <View key={featureKey} style={[styles.featureRow, isRTL && styles.rowReverse]}>
+                      <Ionicons name="checkmark" size={16} color={plan.color} />
+                      <Text style={[styles.featureText, { color: theme.colors.textSecondary }, isRTL && styles.featureTextRTL]}>
+                        {t(featureKey)}
                       </Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
+                    </View>
+                  ))}
+
+                  {!isActive ? (
+                    <View style={[styles.selectBtn, { backgroundColor: plan.color }]}>
+                      <Text style={styles.selectBtnText}>{t('selectPlan')}</Text>
+                    </View>
+                  ) : null}
+                </TouchableOpacity>
               );
             })}
-
-            {/* Footer note */}
-            <Text style={[styles.footerNote, { color: theme.colors.muted }]}>
-              {tLocal('subscriptionNote', '* Prices are in Egyptian Pounds (EGP). All plans renew monthly and can be cancelled at any time.')}
-            </Text>
           </ScrollView>
         </Animated.View>
       </View>
@@ -276,171 +213,132 @@ export default function SubscriptionModal({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 12,
-    maxHeight: SCREEN_HEIGHT * 0.92,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 10,
+    maxHeight: SCREEN_HEIGHT * 0.9,
   },
   handle: {
-    width: 40,
+    width: 36,
     height: 4,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingTop: 6,
   },
-  headerLeft: { flex: 1 },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    marginBottom: 4,
+    fontSize: 20,
+    fontWeight: '700',
   },
-  headerSubtitle: {
-    fontSize: 14,
+  headerHint: {
+    fontSize: 13,
+    paddingHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 8,
   },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 12,
-    marginTop: 4,
-  },
-  scrollView: { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 48,
-    paddingTop: 8,
-  },
-  planCard: {
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  popularBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderBottomLeftRadius: 14,
-    borderTopRightRadius: 20,
-  },
-  popularBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  planHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  planIconContainer: {
-    width: 52,
-    height: 52,
+    width: 32,
+    height: 32,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
   },
-  planTitleBlock: { flex: 1 },
+  scrollView: { flexGrow: 0 },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 36,
+    paddingTop: 8,
+  },
+  planCard: {
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  planTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  planIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planMeta: {
+    flex: 1,
+    marginHorizontal: 12,
+  },
   planName: {
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
   },
   priceRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
+    alignItems: 'center',
+    gap: 8,
   },
-  planPrice: {
-    fontSize: 26,
-    fontWeight: '900',
+  price: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   oldPrice: {
-    fontSize: 16,
-    fontWeight: '500',
-    textDecorationLine: 'line-through',
-    marginLeft: 6,
-  },
-  planPeriod: {
     fontSize: 13,
-    marginTop: 2,
+    textDecorationLine: 'line-through',
   },
-  discountBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-  },
-  discountText: {
+  discountNote: {
     fontSize: 12,
-    fontWeight: '800',
+    marginTop: 4,
+    fontWeight: '600',
   },
-  divider: {
-    height: 1,
-    marginBottom: 16,
+  currentChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  featuresBlock: { marginBottom: 20 },
+  currentChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  featureCheck: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-    flexShrink: 0,
+    marginBottom: 8,
   },
   featureText: {
     fontSize: 14,
     lineHeight: 20,
     flex: 1,
+    marginLeft: 8,
   },
   featureTextRTL: {
     textAlign: 'right',
-    marginRight: 10,
     marginLeft: 0,
+    marginRight: 8,
   },
-  selectButton: {
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectButtonInner: {
-    flexDirection: 'row',
+  selectBtn: {
+    marginTop: 8,
+    borderRadius: 10,
+    paddingVertical: 11,
     alignItems: 'center',
   },
-  selectButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  footerNote: {
-    fontSize: 12,
-    textAlign: 'center',
-    lineHeight: 18,
-    paddingHorizontal: 12,
-    marginTop: 4,
+  selectBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
   rowReverse: { flexDirection: 'row-reverse' },
   textRight: { textAlign: 'right' },
