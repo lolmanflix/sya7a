@@ -91,6 +91,43 @@ export default function DriverHomeScreen() {
   const [tripSeconds, setTripSeconds] = useState<number>(0);
   const locationSubRef = useRef<Location.LocationSubscription | null>(null);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  // Driver current GPS location for Point A
+  const [driverLocation, setDriverLocation] = useState<{
+    lat: number;
+    lng: number;
+    name: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          if (!isMounted) return;
+          let placeName = '';
+          try {
+            const [geo] = await Location.reverseGeocodeAsync({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+            });
+            if (geo) {
+              placeName = [geo.name || geo.street, geo.district, geo.city].filter(Boolean).join(', ');
+            }
+          } catch {}
+          setDriverLocation({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            name: placeName || (isRTL ? 'موقعك الحالي (GPS)' : 'Current Driver GPS Location'),
+          });
+        }
+      } catch {}
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [isRTL]);
 
 
   // Driver initials & display name
@@ -303,11 +340,17 @@ export default function DriverHomeScreen() {
       const routeEndLat = activeRoute?.endLat ?? null;
       const routeEndLng = activeRoute?.endLng ?? null;
       const routeStops = activeRoute?.stops || null;
+      const startPointA = driverLocation?.name || (isRTL ? 'موقع السائق الحالي' : "Driver's Current Location");
+      const startLatA = loc.coords.latitude;
+      const startLngA = loc.coords.longitude;
 
       const payload = {
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
         lastUpdated: new Date().toISOString(),
+        startPoint: startPointA,
+        startLat: startLatA,
+        startLng: startLngA,
         endPoint: routeEnd,
         endLat: routeEndLat,
         endLng: routeEndLng,
@@ -368,13 +411,16 @@ export default function DriverHomeScreen() {
               latitude: position.coords.latitude,
               longitude: position.coords.longitude,
               lastUpdated: new Date().toISOString(),
-              speedKmh: Math.round(smoothVel),
+              startPoint: startPointA,
+              startLat: position.coords.latitude,
+              startLng: position.coords.longitude,
               endPoint: routeEnd,
               endLat: routeEndLat,
               endLng: routeEndLng,
               stops: routeStops,
               driverName,
               driverEmail: auth.currentUser?.email || user?.email || null,
+              speedKmh: Math.round(smoothVel),
               cameraMonitored: !!cameraPermission?.granted,
               micMonitored: !!micPermission?.granted,
               safetyStatus: 'monitored_secure',
@@ -1041,18 +1087,24 @@ export default function DriverHomeScreen() {
 
                 {activeRoute ? (
                   <View style={styles.itineraryBox}>
-                    {/* Origin Terminal */}
+                    {/* Origin Terminal (Point A: Current Driver Location) */}
                     <View style={[styles.itineraryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                       <View style={styles.terminalIndicator}>
                         <View style={[styles.terminalDot, { backgroundColor: '#10B981' }]} />
                         <View style={[styles.timelineTrack, { backgroundColor: isDark ? '#374151' : '#E2E8F0' }]} />
                       </View>
                       <View style={[styles.itineraryInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-                        <Text style={[styles.itineraryRole, { color: '#10B981' }]}>
-                          {isRTL ? 'بداية الخط (A)' : 'Origin Terminal (A)'}
-                        </Text>
+                        <View style={[{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }]}>
+                          <Text style={[styles.itineraryRole, { color: '#10B981' }]}>
+                            {isRTL ? 'نقطة الانطلاق (A) - موقعك الحالي' : 'Point A (Origin) - Your Location'}
+                          </Text>
+                          <View style={styles.gpsPulsePill}>
+                            <View style={styles.gpsPulseDot} />
+                            <Text style={styles.gpsPulseText}>{isRTL ? 'مباشر' : 'Live'}</Text>
+                          </View>
+                        </View>
                         <Text style={[styles.itineraryName, { color: isDark ? '#F3F4F6' : '#1E293B' }]}>
-                          {activeRoute.startPoint || (isRTL ? 'المحطة الرئيسية' : 'Main Terminal')}
+                          {driverLocation?.name || activeRoute.startPoint || (isRTL ? 'موقعك الحالي (GPS)' : 'Current Driver Location')}
                         </Text>
                       </View>
                     </View>
@@ -1845,4 +1897,24 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   stopBtnText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.2 },
+  gpsPulsePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  gpsPulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16A34A',
+  },
+  gpsPulseText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#16A34A',
+  },
 });

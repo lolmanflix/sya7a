@@ -14,6 +14,9 @@ export interface BusLocation {
   distance?: number;
   direction?: string;
   timeToArrival?: string;
+  startPoint?: string;
+  startLat?: number | null;
+  startLng?: number | null;
   endPoint?: string;
   endLat?: number | null;
   endLng?: number | null;
@@ -106,6 +109,16 @@ export default function BusDetailsSheet({
               )}
             </View>
           )}
+
+          <View style={[styles.endpointRow, isRTL && styles.rowReverse, { marginBottom: 6 }]}>
+            <Ionicons name="radio-outline" size={18} color="#10B981" />
+            <Text style={[styles.endpointText, { color: theme.colors.textPrimary }]} numberOfLines={1}>
+              {isRTL ? 'نقطة الانطلاق (A): ' : 'Point A (Origin): '}
+              <Text style={{ fontWeight: '700', color: '#10B981' }}>
+                {selectedBus.startPoint || (isRTL ? 'موقع السائق المباشر' : "Driver's Current Location")}
+              </Text>
+            </Text>
+          </View>
 
           {selectedBus.endPoint && (
             <View style={[styles.endpointRow, isRTL && styles.rowReverse]}>

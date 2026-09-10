@@ -50,13 +50,31 @@ export const getMapHTML = (isDark: boolean) => `
         }
 
         // --- Multi-point Road Route & Stops Renderer ---
-        window.drawFullRouteWithStops = function(routeDef) {
+        window.drawFullRouteWithStops = function(routeDef, activeBus) {
           if (!routeDef) return;
+          window.lastRouteDef = routeDef;
+          if (activeBus) window.lastActiveBus = activeBus;
           stopsLayer.clearLayers();
 
           const waypoints = [];
-          if (routeDef.startLat && routeDef.startLng) {
-            waypoints.push({ lat: Number(routeDef.startLat), lng: Number(routeDef.startLng), name: routeDef.startPoint || 'Origin', type: 'start' });
+
+          // Point A: Prioritize the active driver's current GPS location
+          let startLat = null;
+          let startLng = null;
+          let startName = 'Point A (Origin)';
+
+          if (activeBus && activeBus.latitude && activeBus.longitude) {
+            startLat = Number(activeBus.latitude);
+            startLng = Number(activeBus.longitude);
+            startName = activeBus.startPoint || "Driver's Current Location (Point A)";
+          } else if (routeDef.startLat && routeDef.startLng) {
+            startLat = Number(routeDef.startLat);
+            startLng = Number(routeDef.startLng);
+            startName = routeDef.startPoint || 'Origin (A)';
+          }
+
+          if (startLat !== null && startLng !== null) {
+            waypoints.push({ lat: startLat, lng: startLng, name: startName, type: 'start' });
           }
 
           if (Array.isArray(routeDef.stops)) {
@@ -69,7 +87,7 @@ export const getMapHTML = (isDark: boolean) => `
           }
 
           if (routeDef.endLat && routeDef.endLng) {
-            waypoints.push({ lat: Number(routeDef.endLat), lng: Number(routeDef.endLng), name: routeDef.endPoint || 'Destination', type: 'end' });
+            waypoints.push({ lat: Number(routeDef.endLat), lng: Number(routeDef.endLng), name: routeDef.endPoint || 'Destination (B)', type: 'end' });
           }
 
           if (waypoints.length < 2) return;
@@ -176,6 +194,18 @@ export const getMapHTML = (isDark: boolean) => `
               delete busMarkers[id];
             }
           });
+
+          // Dynamic Point A re-anchor when active driver moves
+          if (window.lastRouteDef && busLocations.length > 0) {
+            const activeBus = (window.lastActiveBus && busLocations.find(b => b.id === window.lastActiveBus.id)) || busLocations[0];
+            if (activeBus) {
+              const prev = window.lastActiveBus;
+              if (!prev || calcDistKm(prev.latitude, prev.longitude, activeBus.latitude, activeBus.longitude) > 0.03) {
+                window.lastActiveBus = activeBus;
+                window.drawFullRouteWithStops(window.lastRouteDef, activeBus);
+              }
+            }
+          }
 
           if (busLocations.length > 0 && !window.hasFittedBounds) {
             const group = new L.featureGroup(Object.values(busMarkers));

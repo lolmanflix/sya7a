@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { MapPin, Navigation, Landmark, Route, Clock, CheckCircle2, Plus, Trash2 } from 'lucide-react';
+import { MapPin, Navigation, Landmark, Route, Clock, CheckCircle2, Plus, Trash2, Locate } from 'lucide-react';
 import { fetchRoadRoute, RouteGeometryResult } from '../../services/routingService';
 import { BusStop } from '../../types';
 
@@ -234,6 +234,16 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     }
   };
 
+  const useCurrentLocationForStart = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const next = [...stops];
+      next[0] = { ...next[0], lat: pos.coords.latitude, lng: pos.coords.longitude, name: 'Current Location (Point A)' };
+      notifyChanges(next);
+      mapRef.current?.setView([pos.coords.latitude, pos.coords.longitude], 14);
+    });
+  };
+
   return (
     <div className="space-y-3">
       {/* Mode Buttons & Route Summary Badges */}
@@ -249,7 +259,7 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
             }`}
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Stop (Click Map)
+            Add Stop
           </button>
           <button
             type="button"
@@ -262,6 +272,15 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
           >
             <MapPin className="w-3.5 h-3.5" />
             Set Start (A)
+          </button>
+          <button
+            type="button"
+            onClick={useCurrentLocationForStart}
+            title="Set Point A to Current GPS Location"
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 bg-cyan-900/50 text-cyan-200 border border-cyan-700/50 hover:bg-cyan-800/80 transition-all"
+          >
+            <Locate className="w-3.5 h-3.5 text-cyan-400" />
+            GPS (A)
           </button>
           <button
             type="button"

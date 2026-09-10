@@ -121,13 +121,14 @@ export default function MapScreen() {
     }
   };
 
-  // Push full route and mandatory intermediate stops
-  const pushFullRoute = (routeDef: any) => {
+  // Push full route and mandatory intermediate stops (Point A = Driver Location)
+  const pushFullRoute = (routeDef: any, activeBus?: any) => {
     if (!routeDef) return;
+    const busParam = activeBus ? JSON.stringify(activeBus) : 'null';
     webViewRef.current?.injectJavaScript(`
       (function() {
         if (typeof drawFullRouteWithStops === 'function') {
-          drawFullRouteWithStops(${JSON.stringify(routeDef)});
+          drawFullRouteWithStops(${JSON.stringify(routeDef)}, ${busParam});
         }
       })();
       true;
@@ -152,11 +153,11 @@ export default function MapScreen() {
       });
       if (found) {
         setRouteDefinition(found);
-        pushFullRoute(found);
+        pushFullRoute(found, selectedBus || busLocations[0]);
       }
     });
     return () => off(compRef, 'value', unsub);
-  }, [busLine]);
+  }, [busLine, selectedBus, busLocations]);
 
   // 2. Listen for active live buses broadcasting on this line
   useEffect(() => {

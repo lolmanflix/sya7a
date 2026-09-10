@@ -3,7 +3,7 @@
 > **Note:** This file is automatically compiled by `scripts/generate_functions_doc.py`.
 > Do not manually edit this file. Keep inline docstrings updated in the source code.
 
-**Total Documented Functions:** 303
+**Total Documented Functions:** 304
 
 ---
 
@@ -86,6 +86,7 @@
 | L201 | `removeStop()` | `index: number` | No description provided. |
 | L207 | `updateStopName()` | `index: number, name: string` | No description provided. |
 | L213 | `addPresetAsStop()` | `landmark: { name: string; lat: number; lng: number }` | No description provided. |
+| L237 | `useCurrentLocationForStart()` | *none* | No description provided. |
 
 ## [DriverSafetyMediaModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/modals/DriverSafetyMediaModal.tsx)
 `admin/src/components/modals/DriverSafetyMediaModal.tsx`
@@ -509,7 +510,7 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L37 | `BusDetailsSheet()` | `{   selectedBus,   onCloseBus,   routeDefinition,   busLine,   user,   isDark,   theme,   t,   isRTL,   savingRoute,   onSaveRoute, }: BusDetailsSheetProps` | No description provided. |
+| L40 | `BusDetailsSheet()` | `{   selectedBus,   onCloseBus,   routeDefinition,   busLine,   user,   isDark,   theme,   t,   isRTL,   savingRoute,   onSaveRoute, }: BusDetailsSheetProps` | No description provided. |
 
 ## [passengerMapHtml.ts](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/components/map/passengerMapHtml.ts)
 `sya7a new/src/components/map/passengerMapHtml.ts`
@@ -518,7 +519,7 @@
 | :--- | :--- | :--- | :--- |
 | L1 | `getMapHTML()` | `isDark: boolean` | Passenger Map HTML Template for Leaflet WebView Renders base map, active bus markers, and multi-point road itineraries with intermediate stops. |
 | L42 | `calcDistKm()` | `lat1, lng1, lat2, lng2` | No description provided. |
-| L131 | `updateBusMarkers()` | `busLocations` | No description provided. |
+| L149 | `updateBusMarkers()` | `busLocations` | No description provided. |
 
 ## [SettingsModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/components/SettingsModal.tsx)
 `sya7a new/src/components/SettingsModal.tsx`
@@ -663,12 +664,12 @@
 | L43 | `haversineMeters()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
 | L56 | `formatTimer()` | `totalSeconds: number` | No description provided. |
 | L66 | `DriverHomeScreen()` | *none* | No description provided. |
-| L131 | `fetchDriverAndCompanyData()` | *none* | No description provided. |
-| L216 | `ensureSafetyPermissions()` | *none* | No description provided. |
-| L248 | `startSharing()` | *none* | No description provided. |
-| L402 | `stopSharing()` | *none* | No description provided. |
-| L427 | `handleSendSOS()` | *none* | No description provided. |
-| L460 | `handleLogout()` | *none* | No description provided. |
+| L168 | `fetchDriverAndCompanyData()` | *none* | No description provided. |
+| L253 | `ensureSafetyPermissions()` | *none* | No description provided. |
+| L285 | `startSharing()` | *none* | No description provided. |
+| L448 | `stopSharing()` | *none* | No description provided. |
+| L473 | `handleSendSOS()` | *none* | No description provided. |
+| L506 | `handleLogout()` | *none* | No description provided. |
 
 ## [HistoryScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/HistoryScreen.tsx)
 `sya7a new/src/screens/HistoryScreen.tsx`
@@ -720,8 +721,8 @@
 | L82 | `pushBusUpdate()` | `locations: BusLocation[]` | No description provided. |
 | L94 | `pushUserLocation()` | *none* | No description provided. |
 | L108 | `pushUserToBusRoute()` | `bus: BusLocation` | No description provided. |
-| L125 | `pushFullRoute()` | `routeDef: any` | No description provided. |
-| L267 | `handleSaveRoute()` | `line: string, destination: string` | No description provided. |
+| L125 | `pushFullRoute()` | `routeDef: any, activeBus?: any` | No description provided. |
+| L268 | `handleSaveRoute()` | `line: string, destination: string` | No description provided. |
 
 ## [RoleSelectionScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/RoleSelectionScreen.tsx)
 `sya7a new/src/screens/RoleSelectionScreen.tsx`
