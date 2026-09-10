@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
-import { ref, onValue, off, set, remove } from 'firebase/database';
+import { ref, onValue, off, set, remove, update } from 'firebase/database';
 import { WebView } from 'react-native-webview';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
@@ -23,6 +23,7 @@ import { useI18n } from '../contexts/I18nContext';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getDriverCompanyId,
+  setDriverCompanyId,
   setDriverBusLine,
   getDriverBusLine,
   clearDriverSession,
@@ -76,6 +77,8 @@ export default function DriverHomeScreen() {
   const cameraRef = useRef<any>(null);
 
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyPickerVisible, setCompanyPickerVisible] = useState(false);
+  const [availableCompanies, setAvailableCompanies] = useState<{ id: string; name: string }[]>([]);
   const [busLines, setBusLines] = useState<string[]>([]);
   const [selectedBusLine, setSelectedBusLine] = useState<string | null>(null);
   const [routeDefinitions, setRouteDefinitions] = useState<Record<string, any>>({});
@@ -174,12 +177,15 @@ export default function DriverHomeScreen() {
 
       // 1. Fetch live assigned lines & company from drivers/${uid}
       const driverRef = ref(database, `drivers/${activeUid}`);
-      const unsubDriver = onValue(driverRef, (driverSnap) => {
+      const unsubDriver = onValue(driverRef, async (driverSnap) => {
         if (!isSubscribed) return;
         const driverData = driverSnap.val();
-        const assignedCompany = driverData?.companyId;
+        let assignedCompany = driverData?.companyId;
         const assignedLines: string[] = Array.isArray(driverData?.lines) ? driverData.lines : [];
 
+        if (!assignedCompany) {
+          assignedCompany = (await getDriverCompanyId()) || null;
+        }
         if (assignedCompany) {
           setCompanyId(assignedCompany);
         }
@@ -191,6 +197,13 @@ export default function DriverHomeScreen() {
           const allComp = compSnap.val() || {};
           const routesMap: Record<string, any> = {};
           const companyLinesSet = new Set<string>();
+
+          // Collect available company list
+          const compList: { id: string; name: string }[] = [];
+          Object.keys(allComp).forEach((cid) => {
+            compList.push({ id: cid, name: allComp[cid]?.name || cid.toUpperCase() });
+          });
+          setAvailableCompanies(compList);
 
           // Map all routes and collect lines
           Object.keys(allComp).forEach((cid) => {
@@ -217,10 +230,11 @@ export default function DriverHomeScreen() {
 
           setRouteDefinitions(routesMap);
 
-          // If driver has assigned lines in RTDB, prioritize them; else use company's lines
-          const availableLines = assignedLines.length > 0
-            ? assignedLines
-            : (companyLinesSet.size > 0 ? Array.from(companyLinesSet) : []);
+          // If driver has assigned lines matching this company, use them; else use all company lines
+          const matchedAssigned = assignedLines.filter((l) => companyLinesSet.has(l));
+          const availableLines = matchedAssigned.length > 0
+            ? matchedAssigned
+            : (companyLinesSet.size > 0 ? Array.from(companyLinesSet) : assignedLines);
 
           setBusLines(availableLines);
 
@@ -572,7 +586,9 @@ export default function DriverHomeScreen() {
                   {driverName}
                 </Text>
                 <View style={[styles.driverSubRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                  <View
+                  <TouchableOpacity
+                    onPress={() => setCompanyPickerVisible(true)}
+                    activeOpacity={0.7}
                     style={[
                       styles.companyBadge,
                       {
@@ -584,9 +600,10 @@ export default function DriverHomeScreen() {
                   >
                     <Ionicons name="business" size={10} color={isDark ? '#60A5FA' : '#2563EB'} />
                     <Text style={[styles.companyBadgeText, { color: isDark ? '#60A5FA' : '#1D4ED8' }]}>
-                      {companyId ? companyId.toUpperCase() : 'CTA'}
+                      {companyId ? companyId.toUpperCase() : 'SELECT COMPANY'}
                     </Text>
-                  </View>
+                    <Ionicons name="chevron-down" size={10} color={isDark ? '#60A5FA' : '#2563EB'} style={{ marginHorizontal: 2 }} />
+                  </TouchableOpacity>
                   <View
                     style={[
                       styles.statusChip,
@@ -1219,6 +1236,75 @@ export default function DriverHomeScreen() {
       </KeyboardAvoidingView>
 
 
+
+      {/* ── COMPANY SWITCHER MODAL ── */}
+      <Modal
+        visible={companyPickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCompanyPickerVisible(false)}
+      >
+        <View style={styles.companyModalOverlay}>
+          <View style={[styles.companyModalContent, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}>
+            <View style={styles.companyModalHeader}>
+              <View style={styles.companyModalTitleRow}>
+                <Ionicons name="business" size={20} color="#2563EB" />
+                <Text style={[styles.companyModalTitle, { color: isDark ? '#F3F4F6' : '#111827' }]}>
+                  {isRTL ? 'تغيير شركة النقل' : 'Switch Transport Company'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setCompanyPickerVisible(false)}
+                style={styles.companyModalCloseBtn}
+              >
+                <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 320 }}>
+              {availableCompanies.map((c) => {
+                const isSelected = companyId?.toLowerCase() === c.id.toLowerCase();
+                return (
+                  <TouchableOpacity
+                    key={c.id}
+                    onPress={async () => {
+                      setCompanyPickerVisible(false);
+                      setCompanyId(c.id);
+                      await setDriverCompanyId(c.id);
+                      const activeUid = user?.uid || auth.currentUser?.uid;
+                      if (activeUid) {
+                        await update(ref(database, `drivers/${activeUid}`), {
+                          companyId: c.id,
+                        }).catch(() => {});
+                      }
+                    }}
+                    style={[
+                      styles.companyOptionRow,
+                      {
+                        backgroundColor: isSelected
+                          ? (isDark ? '#1E3A8A' : '#EFF6FF')
+                          : (isDark ? '#374151' : '#F9FAFB'),
+                        borderColor: isSelected ? '#3B82F6' : (isDark ? '#4B5563' : '#E5E7EB'),
+                        flexDirection: isRTL ? 'row-reverse' : 'row',
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.companyOptionText,
+                        { color: isSelected ? '#2563EB' : (isDark ? '#F3F4F6' : '#1F2937') },
+                      ]}
+                    >
+                      {c.name} ({c.id.toUpperCase()})
+                    </Text>
+                    {isSelected && <Ionicons name="checkmark-circle" size={18} color="#2563EB" />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <SettingsModal
         visible={settingsVisible}
@@ -1916,5 +2002,59 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#16A34A',
+  },
+  companyModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  companyModalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    maxHeight: '75%',
+    elevation: 20,
+  },
+  companyModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 8,
+  },
+  companyModalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  companyModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  companyModalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  companyOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    marginVertical: 4,
+    borderWidth: 1,
+  },
+  companyOptionText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

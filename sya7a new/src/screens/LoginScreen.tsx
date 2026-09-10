@@ -16,7 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Picker } from '@react-native-picker/picker';
 import { useRoute } from '@react-navigation/native';
 import { useUserType } from '../contexts/UserTypeContext';
-import { ref, onValue, off, get } from 'firebase/database';
+import { ref, onValue, off, get, set, update } from 'firebase/database';
 import { database, auth } from '../config/firebase';
 import { setDriverCompanyId } from '../utils/driverStorage';
 import { Input } from '../components/ui/Input';
@@ -115,19 +115,25 @@ export default function LoginScreen() {
       }
 
       if (isDriverLogin) {
-        let finalCompany = activeCompany;
+        const chosenCompany = activeCompany || selectedCompany;
         const currentUid = auth.currentUser?.uid;
-        if (currentUid) {
+        if (currentUid && chosenCompany) {
           try {
-            const drSnap = await get(ref(database, `drivers/${currentUid}`));
-            const drVal = drSnap.val();
-            if (drVal?.companyId) {
-              finalCompany = drVal.companyId;
+            const drRef = ref(database, `drivers/${currentUid}`);
+            const drSnap = await get(drRef);
+            if (drSnap.exists()) {
+              await update(drRef, { companyId: chosenCompany });
+            } else {
+              await set(drRef, {
+                displayName: auth.currentUser?.displayName || username || email.split('@')[0] || 'Driver',
+                email: normalizedEmail,
+                companyId: chosenCompany,
+              });
             }
-          } catch {}
-        }
-        if (finalCompany) {
-          await setDriverCompanyId(finalCompany);
+          } catch (drErr) {
+            console.warn('[DriverAuth] Could not update driver company in RTDB:', drErr);
+          }
+          await setDriverCompanyId(chosenCompany);
         }
       }
     } catch (error: any) {

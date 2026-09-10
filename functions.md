@@ -661,15 +661,15 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L43 | `haversineMeters()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
-| L56 | `formatTimer()` | `totalSeconds: number` | No description provided. |
-| L66 | `DriverHomeScreen()` | *none* | No description provided. |
-| L168 | `fetchDriverAndCompanyData()` | *none* | No description provided. |
-| L253 | `ensureSafetyPermissions()` | *none* | No description provided. |
-| L285 | `startSharing()` | *none* | No description provided. |
-| L448 | `stopSharing()` | *none* | No description provided. |
-| L473 | `handleSendSOS()` | *none* | No description provided. |
-| L506 | `handleLogout()` | *none* | No description provided. |
+| L44 | `haversineMeters()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
+| L57 | `formatTimer()` | `totalSeconds: number` | No description provided. |
+| L67 | `DriverHomeScreen()` | *none* | No description provided. |
+| L171 | `fetchDriverAndCompanyData()` | *none* | No description provided. |
+| L267 | `ensureSafetyPermissions()` | *none* | No description provided. |
+| L299 | `startSharing()` | *none* | No description provided. |
+| L462 | `stopSharing()` | *none* | No description provided. |
+| L487 | `handleSendSOS()` | *none* | No description provided. |
+| L520 | `handleLogout()` | *none* | No description provided. |
 
 ## [HistoryScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/HistoryScreen.tsx)
 `sya7a new/src/screens/HistoryScreen.tsx`
@@ -704,8 +704,8 @@
 | :--- | :--- | :--- | :--- |
 | L28 | `LoginScreen()` | *none* | No description provided. |
 | L54 | `handleAuth()` | *none* | No description provided. |
-| L151 | `handleAppleSignIn()` | *none* | No description provided. |
-| L182 | `handlePasswordReset()` | *none* | No description provided. |
+| L157 | `handleAppleSignIn()` | *none* | No description provided. |
+| L188 | `handlePasswordReset()` | *none* | No description provided. |
 
 ## [MapScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/MapScreen.tsx)
 `sya7a new/src/screens/MapScreen.tsx`
