@@ -17,7 +17,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useRoute } from '@react-navigation/native';
 import { useUserType } from '../contexts/UserTypeContext';
 import { ref, onValue, off, get } from 'firebase/database';
-import { database } from '../config/firebase';
+import { database, auth } from '../config/firebase';
 import { setDriverCompanyId } from '../utils/driverStorage';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -66,8 +66,8 @@ export default function LoginScreen() {
     }
 
     let activeCompany = selectedCompany;
-    if (isDriverLogin && !activeCompany) {
-      activeCompany = companies.length > 0 ? companies[0].id : 'mwaslat-misr';
+    if (isDriverLogin && !activeCompany && companies.length > 0) {
+      activeCompany = companies[0].id;
       setSelectedCompany(activeCompany);
     }
 
@@ -115,7 +115,20 @@ export default function LoginScreen() {
       }
 
       if (isDriverLogin) {
-        await setDriverCompanyId(activeCompany || 'mwaslat-misr');
+        let finalCompany = activeCompany;
+        const currentUid = auth.currentUser?.uid;
+        if (currentUid) {
+          try {
+            const drSnap = await get(ref(database, `drivers/${currentUid}`));
+            const drVal = drSnap.val();
+            if (drVal?.companyId) {
+              finalCompany = drVal.companyId;
+            }
+          } catch {}
+        }
+        if (finalCompany) {
+          await setDriverCompanyId(finalCompany);
+        }
       }
     } catch (error: any) {
       if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -156,15 +169,6 @@ export default function LoginScreen() {
           Object.keys(data).forEach((key) => {
             list.push({ id: key, name: data[key].name || key });
           });
-        }
-        if (list.length === 0) {
-          list.push(
-            { id: 'cta', name: 'CTA' },
-            { id: 'mwaslat-misr', name: 'Mwaslat Misr' },
-            { id: 'go-bus', name: 'Go Bus' },
-            { id: 'super-jet', name: 'Super Jet' },
-            { id: 'white-bus', name: 'White Bus' },
-          );
         }
         setCompanies(list);
         if (!selectedCompany && list.length > 0) {

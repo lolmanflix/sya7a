@@ -1,3 +1,11 @@
+export interface BusStop {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  order: number;
+}
+
 export interface BusRouteDefinition {
   busId: string;
   lineId: string;
@@ -8,6 +16,7 @@ export interface BusRouteDefinition {
   endPoint: string;
   endLat: number;
   endLng: number;
+  stops?: BusStop[];
   isActive: boolean;
   createdAt: string;
 }

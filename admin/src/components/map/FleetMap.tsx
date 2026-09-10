@@ -120,11 +120,31 @@ export const FleetMap: React.FC<FleetMapProps> = ({
         });
 
         // Dynamically update coordinates to follow actual roads via OSRM routing engine
-        fetchRoadRoute(bus.startLat, bus.startLng, bus.endLat, bus.endLng).then((res) => {
+        const waypoints = bus.stops && bus.stops.length >= 2 ? bus.stops : [
+          { lat: bus.startLat, lng: bus.startLng },
+          { lat: bus.endLat, lng: bus.endLng },
+        ];
+
+        fetchRoadRoute(waypoints).then((res) => {
           if (!mapInstanceRef.current) return;
           polyline.setLatLngs(res.coordinates);
           if (glowLine) glowLine.setLatLngs(res.coordinates);
         });
+
+        // Render intermediate stop pins if configured
+        if (bus.stops && bus.stops.length > 2) {
+          bus.stops.slice(1, -1).forEach((stop, sIdx) => {
+            const stopIcon = L.divIcon({
+              className: 'intermediate-stop-pin',
+              html: `<div class="w-3.5 h-3.5 rounded-full bg-emerald-500 border border-white shadow-sm flex items-center justify-center text-[7px] font-bold text-white">${sIdx + 2}</div>`,
+              iconSize: [14, 14],
+              iconAnchor: [7, 7],
+            });
+            const mStop = L.marker([stop.lat, stop.lng], { icon: stopIcon });
+            mStop.bindPopup(`<div class="text-xs text-slate-900"><strong>Stop ${sIdx + 2} (${bus.lineId}):</strong><br>${stop.name}</div>`);
+            markersLayer.addLayer(mStop);
+          });
+        }
 
         polyline.bindPopup(`
           <div class="p-1 min-w-[200px] text-slate-900 text-xs">
@@ -136,6 +156,7 @@ export const FleetMap: React.FC<FleetMapProps> = ({
             </div>
             <p class="text-slate-600 font-medium">Operator: <strong class="text-slate-900 uppercase">${bus.companyId}</strong></p>
             <p class="text-slate-700 mt-1"><strong>A:</strong> ${bus.startPoint}</p>
+            ${bus.stops && bus.stops.length > 2 ? `<p class="text-emerald-700 text-[10px] font-semibold">Includes ${bus.stops.length - 2} intermediate stops</p>` : ''}
             <p class="text-slate-700"><strong>B:</strong> ${bus.endPoint}</p>
           </div>
         `);

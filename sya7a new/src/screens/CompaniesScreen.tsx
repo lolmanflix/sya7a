@@ -25,38 +25,9 @@ interface Company {
   busLines: string[];
 }
 
-const defaultCompanies: Company[] = [
-  {
-    id: 'cta',
-    name: 'CTA',
-    nameAr: 'شركة أتوبيس القاهرة الكبرى',
-    busLines: ['M554', 'N777', '304', 'M534']
-  },
-  {
-    id: 'mwaslat-misr',
-    name: 'Mwaslat Misr',
-    nameAr: 'مواصلات مصر',
-    busLines: ['M554', 'M534', 'M555']
-  },
-  {
-    id: 'go-bus',
-    name: 'Go Bus',
-    busLines: ['G101', 'G102', 'G103']
-  },
-  {
-    id: 'super-jet',
-    name: 'Super Jet',
-    busLines: ['S201', 'S202']
-  },
-  {
-    id: 'white-bus',
-    name: 'White Bus',
-    busLines: ['W301', 'W302', 'W303']
-  }
-];
-
 export default function CompaniesScreen() {
-  const [companies, setCompanies] = useState<Company[]>(defaultCompanies);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const navigation = useNavigation();
   const { theme } = useTheme();
@@ -67,13 +38,39 @@ export default function CompaniesScreen() {
     const companiesRef = ref(database, 'companies');
     const unsubscribe = onValue(companiesRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        const companiesList: Company[] = Object.keys(data).map(key => ({
-          id: key,
-          ...data[key]
-        }));
+      if (data && typeof data === 'object') {
+        const companiesList: Company[] = Object.keys(data).map((key) => {
+          const comp = data[key] || {};
+          const linesSet = new Set<string>();
+
+          // Collect from busLines array
+          if (Array.isArray(comp.busLines)) {
+            comp.busLines.forEach((l: string) => {
+              if (l && typeof l === 'string') linesSet.add(l);
+            });
+          }
+
+          // Collect from buses object
+          if (comp.buses && typeof comp.buses === 'object') {
+            Object.values(comp.buses).forEach((b: any) => {
+              if (b?.lineId && typeof b.lineId === 'string') {
+                linesSet.add(b.lineId);
+              }
+            });
+          }
+
+          return {
+            id: key,
+            name: comp.name || key,
+            nameAr: comp.nameAr,
+            busLines: Array.from(linesSet),
+          };
+        });
         setCompanies(companiesList);
+      } else {
+        setCompanies([]);
       }
+      setLoading(false);
     });
 
     return () => off(companiesRef, 'value', unsubscribe);
@@ -149,6 +146,14 @@ export default function CompaniesScreen() {
           keyExtractor={(item) => item}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="bus-outline" size={48} color={theme.colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                {lang === 'ar' ? 'لا توجد خطوط حافلات مسجلة لهذه الشركة حالياً' : 'No bus lines registered for this company yet'}
+              </Text>
+            </View>
+          }
         />
         <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
       </SafeAreaView>
@@ -171,6 +176,16 @@ export default function CompaniesScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="business-outline" size={48} color={theme.colors.textSecondary} />
+            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+              {loading
+                ? (lang === 'ar' ? 'جاري تحميل الشركات...' : 'Loading transit companies...')
+                : (lang === 'ar' ? 'لا توجد شركات نقل مسجلة حالياً' : 'No transit companies found')}
+            </Text>
+          </View>
+        }
       />
       <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
     </SafeAreaView>
@@ -251,5 +266,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

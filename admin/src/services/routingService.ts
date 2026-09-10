@@ -1,8 +1,14 @@
 /**
  * Routing Service for Wasalt Admin Panel
  * Uses the Project-OSRM public routing engine to calculate road-following driving geometries
- * with in-memory caching and fallback straight-line polylines.
+ * with in-memory caching and fallback straight-line polylines across multiple stops.
  */
+
+export interface WaypointCoord {
+  lat: number;
+  lng: number;
+  name?: string;
+}
 
 export interface RouteGeometryResult {
   coordinates: [number, number][];
@@ -15,14 +21,7 @@ export interface RouteGeometryResult {
 const routeCache = new Map<string, RouteGeometryResult>();
 
 /**
- * Builds a deterministic cache key from lat/lng endpoints.
- */
-function buildKey(startLat: number, startLng: number, endLat: number, endLng: number): string {
-  return `${startLat.toFixed(5)},${startLng.toFixed(5)}->${endLat.toFixed(5)},${endLng.toFixed(5)}`;
-}
-
-/**
- * Calculates haversine distance in km as fallback.
+ * Calculates haversine distance in km between two lat/lng coordinates.
  */
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -38,42 +37,82 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 /**
- * Fetches road-following route coordinates between two points using OSRM driving engine.
- * Falls back to straight line if offline or endpoint is unresponsive.
+ * Builds a deterministic cache key from a list of waypoints.
+ */
+function buildWaypointKey(waypoints: WaypointCoord[]): string {
+  return waypoints.map((w) => `${w.lat.toFixed(5)},${w.lng.toFixed(5)}`).join('->');
+}
+
+/**
+ * Fetches road-following route coordinates between two or more stops using OSRM driving engine.
+ * Supports passing either an array of WaypointCoord or traditional (startLat, startLng, endLat, endLng).
  */
 export async function fetchRoadRoute(
-  startLat: number,
-  startLng: number,
-  endLat: number,
-  endLng: number
+  startLatOrWaypoints: number | WaypointCoord[],
+  startLng?: number,
+  endLat?: number,
+  endLng?: number
 ): Promise<RouteGeometryResult> {
-  const key = buildKey(startLat, startLng, endLat, endLng);
+  let waypoints: WaypointCoord[] = [];
+
+  if (Array.isArray(startLatOrWaypoints)) {
+    waypoints = startLatOrWaypoints.filter(
+      (w) => typeof w.lat === 'number' && typeof w.lng === 'number' && !isNaN(w.lat) && !isNaN(w.lng)
+    );
+  } else if (
+    typeof startLatOrWaypoints === 'number' &&
+    typeof startLng === 'number' &&
+    typeof endLat === 'number' &&
+    typeof endLng === 'number'
+  ) {
+    waypoints = [
+      { lat: startLatOrWaypoints, lng: startLng },
+      { lat: endLat, lng: endLng },
+    ];
+  }
+
+  // If fewer than 2 valid waypoints, return empty/minimal fallback
+  if (waypoints.length < 2) {
+    const singleCoord: [number, number] = waypoints.length === 1 ? [waypoints[0].lat, waypoints[0].lng] : [30.0444, 31.2357];
+    return {
+      coordinates: [singleCoord, singleCoord],
+      distanceKm: 0,
+      durationMin: 0,
+      isFallback: true,
+    };
+  }
+
+  const key = buildWaypointKey(waypoints);
   if (routeCache.has(key)) {
     return routeCache.get(key)!;
   }
 
-  // Fallback straight-line result
-  const straightDist = haversineDistance(startLat, startLng, endLat, endLng);
+  // Calculate cumulative straight-line distance across all sequential legs
+  let totalStraightDist = 0;
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    totalStraightDist += haversineDistance(
+      waypoints[i].lat,
+      waypoints[i].lng,
+      waypoints[i + 1].lat,
+      waypoints[i + 1].lng
+    );
+  }
+
   const fallbackResult: RouteGeometryResult = {
-    coordinates: [
-      [startLat, startLng],
-      [endLat, endLng],
-    ],
-    distanceKm: Math.round(straightDist * 10) / 10,
-    durationMin: Math.round((straightDist / 30) * 60), // estimated 30km/h average bus speed
+    coordinates: waypoints.map((w) => [w.lat, w.lng]),
+    distanceKm: Math.round(totalStraightDist * 10) / 10,
+    durationMin: Math.round((totalStraightDist / 30) * 60), // estimated 30km/h average bus speed
     isFallback: true,
   };
 
-  if (!startLat || !startLng || !endLat || !endLng) {
-    return fallbackResult;
-  }
-
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 7000);
 
-    // OSRM expects {startLng},{startLat};{endLng},{endLat}
-    const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+    // OSRM expects {lng},{lat};{lng},{lat};...
+    const coordsParam = waypoints.map((w) => `${w.lng},${w.lat}`).join(';');
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordsParam}?overview=full&geometries=geojson`;
+
     const response = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
 
@@ -101,7 +140,7 @@ export async function fetchRoadRoute(
       return result;
     }
   } catch (err) {
-    console.warn('OSRM routing fetch failed, using straight-line fallback:', err);
+    console.warn('OSRM multi-stop routing fetch failed, using fallback straight-line sequence:', err);
   }
 
   routeCache.set(key, fallbackResult);

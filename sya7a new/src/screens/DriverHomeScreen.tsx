@@ -78,12 +78,12 @@ export default function DriverHomeScreen() {
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [busLines, setBusLines] = useState<string[]>([]);
   const [selectedBusLine, setSelectedBusLine] = useState<string | null>(null);
-  const [endPoint, setEndPoint] = useState<string>('');
-  const [endLat, setEndLat] = useState<string>('');
-  const [endLng, setEndLng] = useState<string>('');
-  const [pickerVisible, setPickerVisible] = useState(false);
-  const [tempPick, setTempPick] = useState<{ lat: number; lng: number } | null>(null);
-  const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [routeDefinitions, setRouteDefinitions] = useState<Record<string, any>>({});
+
+  const activeRoute = useMemo(() => {
+    if (!selectedBusLine) return null;
+    return routeDefinitions[selectedBusLine.toLowerCase()] || null;
+  }, [selectedBusLine, routeDefinitions]);
 
   // Live trip state
   const [sharing, setSharing] = useState(false);
@@ -92,11 +92,6 @@ export default function DriverHomeScreen() {
   const locationSubRef = useRef<Location.LocationSubscription | null>(null);
   const [settingsVisible, setSettingsVisible] = useState(false);
 
-  // Search in map modal
-  const pickerWebRef = useRef<WebView | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Array<{ display_name: string; lat: string; lon: string }>>([]);
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Driver initials & display name
   const driverInitials = useMemo(() => {
@@ -129,42 +124,93 @@ export default function DriverHomeScreen() {
     };
   }, [sharing]);
 
-  // Initial setup & load stored company / bus line
+  // Initial setup & live dynamic load of driver profile & company routes
   useEffect(() => {
-    (async () => {
-      const storedCompany = await getDriverCompanyId();
-      setCompanyId(storedCompany);
-      const storedLine = await getDriverBusLine();
-      if (storedLine) setSelectedBusLine(storedLine);
+    let isSubscribed = true;
 
-      if (storedCompany) {
-        const compRef = ref(database, `companies/${storedCompany}`);
-        const unsub = onValue(compRef, (snap) => {
-          const data: CompanyData | null = snap.val();
-          if (data && Array.isArray(data.busLines) && data.busLines.length > 0) {
-            setBusLines(data.busLines);
-            if (!storedLine && data.busLines.length > 0) {
-              setSelectedBusLine(data.busLines[0]);
+    const fetchDriverAndCompanyData = async () => {
+      const activeUid = user?.uid || auth.currentUser?.uid;
+      if (!activeUid) return;
+
+      const storedLine = await getDriverBusLine();
+      if (storedLine && isSubscribed) setSelectedBusLine(storedLine);
+
+      // 1. Fetch live assigned lines & company from drivers/${uid}
+      const driverRef = ref(database, `drivers/${activeUid}`);
+      const unsubDriver = onValue(driverRef, (driverSnap) => {
+        if (!isSubscribed) return;
+        const driverData = driverSnap.val();
+        const assignedCompany = driverData?.companyId;
+        const assignedLines: string[] = Array.isArray(driverData?.lines) ? driverData.lines : [];
+
+        if (assignedCompany) {
+          setCompanyId(assignedCompany);
+        }
+
+        // 2. Fetch companies to resolve available bus lines and route definitions
+        const compRef = ref(database, 'companies');
+        const unsubCompanies = onValue(compRef, (compSnap) => {
+          if (!isSubscribed) return;
+          const allComp = compSnap.val() || {};
+          const routesMap: Record<string, any> = {};
+          const companyLinesSet = new Set<string>();
+
+          // Map all routes and collect lines
+          Object.keys(allComp).forEach((cid) => {
+            const c = allComp[cid];
+            const isMatchComp = !assignedCompany || cid.toLowerCase() === assignedCompany.toLowerCase();
+
+            // Collect busLines array
+            if (Array.isArray(c.busLines)) {
+              c.busLines.forEach((l: string) => {
+                if (isMatchComp) companyLinesSet.add(l);
+              });
             }
-          } else {
-            setBusLines(['M554', 'N777', '304', 'M534']);
-            if (!storedLine) setSelectedBusLine('M554');
-          }
+
+            // Collect buses & mandatory stops
+            if (c.buses && typeof c.buses === 'object') {
+              Object.values(c.buses).forEach((b: any) => {
+                if (b?.lineId) {
+                  routesMap[b.lineId.toLowerCase()] = b;
+                  if (isMatchComp) companyLinesSet.add(b.lineId);
+                }
+              });
+            }
+          });
+
+          setRouteDefinitions(routesMap);
+
+          // If driver has assigned lines in RTDB, prioritize them; else use company's lines
+          const availableLines = assignedLines.length > 0
+            ? assignedLines
+            : (companyLinesSet.size > 0 ? Array.from(companyLinesSet) : []);
+
+          setBusLines(availableLines);
+
+          // Set default selection if none currently selected
+          setSelectedBusLine((prev) => {
+            if (prev && availableLines.includes(prev)) return prev;
+            if (storedLine && availableLines.includes(storedLine)) return storedLine;
+            return availableLines.length > 0 ? availableLines[0] : null;
+          });
         });
-        return () => off(compRef, 'value', unsub);
-      } else {
-        setBusLines(['M554', 'N777', '304', 'M534']);
-        if (!storedLine) setSelectedBusLine('M554');
-      }
-    })();
+
+        return () => off(compRef, 'value', unsubCompanies);
+      });
+
+      return () => off(driverRef, 'value', unsubDriver);
+    };
+
+    fetchDriverAndCompanyData();
 
     return () => {
+      isSubscribed = false;
       if (locationSubRef.current) {
         locationSubRef.current.remove();
         locationSubRef.current = null;
       }
     };
-  }, []);
+  }, [user?.uid]);
 
   // Check and prompt for Camera and Mic permissions
   const ensureSafetyPermissions = async () => {
@@ -199,35 +245,12 @@ export default function DriverHomeScreen() {
     onSessionStart: () => setCameraPreviewOpen(true),
   });
 
-  // Quick Curated Popular Destination Chips
-  const quickDestinations = [
-    { name: isRTL ? 'ميدان التحرير' : 'Tahrir Square', lat: 30.0444, lon: 31.2357 },
-    { name: isRTL ? 'مطار القاهرة' : 'Cairo Airport', lat: 30.1219, lon: 31.4055 },
-    { name: isRTL ? 'محطة رمسيس' : 'Ramses Square', lat: 30.0626, lon: 31.2469 },
-    { name: isRTL ? 'التجمع الخامس' : 'New Cairo', lat: 30.0073, lon: 31.4916 },
-    { name: isRTL ? 'ميدان لبنان' : 'Lebanon Square', lat: 30.061, lon: 31.2017 },
-  ];
-
-  const handleSelectQuickDest = (item: { name: string; lat: number; lon: number }) => {
-    setEndPoint(item.name);
-    setEndLat(String(item.lat));
-    setEndLng(String(item.lon));
-    setTempPick({ lat: item.lat, lng: item.lon });
-  };
-
   const startSharing = async () => {
     if (!user) return;
     if (!selectedBusLine) {
       Alert.alert(
         isRTL ? 'اختر خط الحافلة' : 'Select Bus Line',
         isRTL ? 'يرجى اختيار خط الحافلة لبدء الرحلة.' : 'Please choose a bus line to start your trip.'
-      );
-      return;
-    }
-    if (!endPoint.trim()) {
-      Alert.alert(
-        isRTL ? 'الوجهة مطلوبة' : 'Destination Required',
-        isRTL ? 'يرجى إدخال وجهة الرحلة.' : 'Please enter or select a destination endpoint.'
       );
       return;
     }
@@ -276,13 +299,19 @@ export default function DriverHomeScreen() {
       });
 
       const driverUid = activeUser.uid;
+      const routeEnd = activeRoute?.endPoint || selectedBusLine;
+      const routeEndLat = activeRoute?.endLat ?? null;
+      const routeEndLng = activeRoute?.endLng ?? null;
+      const routeStops = activeRoute?.stops || null;
+
       const payload = {
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
         lastUpdated: new Date().toISOString(),
-        endPoint: endPoint.trim(),
-        endLat: endLat.trim() ? Number(endLat.trim()) : tempPick ? tempPick.lat : null,
-        endLng: endLng.trim() ? Number(endLng.trim()) : tempPick ? tempPick.lng : null,
+        endPoint: routeEnd,
+        endLat: routeEndLat,
+        endLng: routeEndLng,
+        stops: routeStops,
         driverName,
         driverEmail: activeUser.email || null,
         speedKmh: 0,
@@ -340,9 +369,10 @@ export default function DriverHomeScreen() {
               longitude: position.coords.longitude,
               lastUpdated: new Date().toISOString(),
               speedKmh: Math.round(smoothVel),
-              endPoint: endPoint.trim(),
-              endLat: endLat.trim() ? Number(endLat.trim()) : tempPick ? tempPick.lat : null,
-              endLng: endLng.trim() ? Number(endLng.trim()) : tempPick ? tempPick.lng : null,
+              endPoint: routeEnd,
+              endLat: routeEndLat,
+              endLng: routeEndLng,
+              stops: routeStops,
               driverName,
               driverEmail: auth.currentUser?.email || user?.email || null,
               cameraMonitored: !!cameraPermission?.granted,
@@ -411,7 +441,7 @@ export default function DriverHomeScreen() {
                 driverName,
                 driverEmail: user.email,
                 busLine: selectedBusLine,
-                endPoint,
+                endPoint: activeRoute?.endPoint || selectedBusLine || 'N/A',
                 status: 'critical_sos',
               });
               Alert.alert(
@@ -595,7 +625,7 @@ export default function DriverHomeScreen() {
                     ]}
                     numberOfLines={2}
                   >
-                    {endPoint}
+                    {activeRoute?.endPoint || selectedBusLine || t('activeRoute')}
                   </Text>
                 </View>
               </View>
@@ -964,7 +994,7 @@ export default function DriverHomeScreen() {
                 )}
               </Animated.View>
 
-              {/* Destination */}
+              {/* Route Itinerary & Mandatory Stops Overview */}
               <Animated.View
                 entering={FadeInDown.delay(140).duration(400)}
                 style={[
@@ -986,117 +1016,115 @@ export default function DriverHomeScreen() {
                         },
                       ]}
                     >
-                      <Ionicons name="navigate" size={14} color={isDark ? '#60A5FA' : '#2563EB'} />
+                      <Ionicons name="git-network-outline" size={14} color={isDark ? '#60A5FA' : '#2563EB'} />
                     </View>
                     <Text style={[styles.configTitle, { color: isDark ? '#F9FAFB' : '#0F172A' }]}>
-                      {t('destination')}
+                      {isRTL ? 'خط السير ومحطات التوقف' : 'Route Itinerary & Stops'}
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    style={[
-                      styles.mapPickBtn,
-                      {
-                        backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
-                        borderColor: isDark ? '#334155' : '#BFDBFE',
-                        flexDirection: isRTL ? 'row-reverse' : 'row',
-                      },
-                    ]}
-                    onPress={async () => {
-                      try {
-                        const hasServices = await Location.hasServicesEnabledAsync();
-                        if (hasServices) {
-                          const { status } = await Location.requestForegroundPermissionsAsync();
-                          if (status === 'granted') {
-                            const cur = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-                            setCurrentPos({ lat: cur.coords.latitude, lng: cur.coords.longitude });
-                          }
-                        }
-                      } catch {}
-                      setPickerVisible(true);
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="map-outline" size={14} color={isDark ? '#60A5FA' : '#2563EB'} />
-                    <Text style={[styles.mapPickText, { color: isDark ? '#60A5FA' : '#2563EB' }]}>
-                      {t('pickOnMap')}
-                    </Text>
-                    {tempPick && (
-                      <View
-                        style={[
-                          styles.mapPickedBadge,
-                          {
-                            backgroundColor: isDark ? 'rgba(16,185,129,0.2)' : '#ECFDF5',
-                            flexDirection: isRTL ? 'row-reverse' : 'row',
-                          },
-                        ]}
-                      >
-                        <Ionicons name="checkmark-circle" size={11} color="#10B981" />
-                        <Text style={[styles.mapPickedText, { color: '#10B981' }]}>
-                          {t('selectedBadge')}
+                  {activeRoute?.stops && activeRoute.stops.length > 0 && (
+                    <View
+                      style={[
+                        styles.stopsCountBadge,
+                        {
+                          backgroundColor: isDark ? 'rgba(59,130,246,0.15)' : '#EFF6FF',
+                          borderColor: isDark ? '#1D4ED8' : '#BFDBFE',
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.stopsCountText, { color: isDark ? '#93C5FD' : '#1D4ED8' }]}>
+                        {`${activeRoute.stops.length} ${isRTL ? 'محطات' : 'Stops'}`}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {activeRoute ? (
+                  <View style={styles.itineraryBox}>
+                    {/* Origin Terminal */}
+                    <View style={[styles.itineraryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                      <View style={styles.terminalIndicator}>
+                        <View style={[styles.terminalDot, { backgroundColor: '#10B981' }]} />
+                        <View style={[styles.timelineTrack, { backgroundColor: isDark ? '#374151' : '#E2E8F0' }]} />
+                      </View>
+                      <View style={[styles.itineraryInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                        <Text style={[styles.itineraryRole, { color: '#10B981' }]}>
+                          {isRTL ? 'بداية الخط (A)' : 'Origin Terminal (A)'}
+                        </Text>
+                        <Text style={[styles.itineraryName, { color: isDark ? '#F3F4F6' : '#1E293B' }]}>
+                          {activeRoute.startPoint || (isRTL ? 'المحطة الرئيسية' : 'Main Terminal')}
                         </Text>
                       </View>
-                    )}
-                  </TouchableOpacity>
-                </View>
+                    </View>
 
-                <Input
-                  placeholder={isRTL ? 'مثال: التحرير، رمسيس، مطار القاهرة' : 'e.g. Tahrir Square, Ramses, Airport'}
-                  iconName="location-outline"
-                  value={endPoint}
-                  onChangeText={setEndPoint}
-                  containerStyle={{ marginBottom: 14 }}
-                />
-
-                <Text
-                  style={[
-                    styles.quickLabel,
-                    {
-                      color: isDark ? '#9CA3AF' : '#94A3B8',
-                      textAlign: isRTL ? 'right' : 'left',
-                    },
-                  ]}
-                >
-                  {t('quickDestinations')}
-                </Text>
-                <View style={[styles.quickWrap, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                  {quickDestinations.map((q) => {
-                    const isActive = endPoint === q.name;
-                    return (
-                      <TouchableOpacity
-                        key={q.name}
-                        style={[
-                          styles.quickChip,
-                          {
-                            backgroundColor: isActive
-                              ? (isDark ? '#1E3A8A' : '#EFF6FF')
-                              : (isDark ? '#1F2937' : '#F1F5F9'),
-                            borderColor: isActive
-                              ? '#3B82F6'
-                              : (isDark ? '#374151' : '#E2E8F0'),
-                            flexDirection: isRTL ? 'row-reverse' : 'row',
-                          },
-                        ]}
-                        onPress={() => handleSelectQuickDest(q)}
-                        activeOpacity={0.75}
-                      >
-                        <Ionicons
-                          name="location"
-                          size={11}
-                          color={isActive ? '#38BDF8' : (isDark ? '#9CA3AF' : '#94A3B8')}
-                        />
-                        <Text
-                          style={[
-                            styles.quickChipText,
-                            { color: isActive ? (isDark ? '#93C5FD' : '#1D4ED8') : (isDark ? '#D1D5DB' : '#475569') },
-                            isActive && { fontWeight: '700' },
-                          ]}
+                    {/* Intermediate Mandatory Stops */}
+                    {activeRoute.stops && activeRoute.stops.length > 0 ? (
+                      activeRoute.stops.map((stop: any, idx: number) => (
+                        <View
+                          key={stop.id || `stop-${idx}`}
+                          style={[styles.itineraryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
                         >
-                          {q.name}
+                          <View style={styles.terminalIndicator}>
+                            <View
+                              style={[
+                                styles.stopNumberCircle,
+                                {
+                                  backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+                                  borderColor: isDark ? '#3B82F6' : '#93C5FD',
+                                },
+                              ]}
+                            >
+                              <Text style={[styles.stopNumberText, { color: isDark ? '#93C5FD' : '#2563EB' }]}>
+                                {idx + 1}
+                              </Text>
+                            </View>
+                            <View style={[styles.timelineTrack, { backgroundColor: isDark ? '#374151' : '#E2E8F0' }]} />
+                          </View>
+                          <View style={[styles.itineraryInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                            <Text style={[styles.itineraryRole, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                              {isRTL ? `محطة توقف إجبارية #${idx + 1}` : `Mandatory Stop #${idx + 1}`}
+                            </Text>
+                            <Text style={[styles.itineraryName, { color: isDark ? '#E5E7EB' : '#334155' }]}>
+                              {stop.name}
+                            </Text>
+                          </View>
+                        </View>
+                      ))
+                    ) : null}
+
+                    {/* Destination Terminal */}
+                    <View style={[styles.itineraryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                      <View style={styles.terminalIndicator}>
+                        <View style={[styles.terminalDot, { backgroundColor: '#EF4444' }]} />
+                      </View>
+                      <View style={[styles.itineraryInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                        <Text style={[styles.itineraryRole, { color: '#EF4444' }]}>
+                          {isRTL ? 'نهاية الخط (B)' : 'Final Destination (B)'}
                         </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                        <Text style={[styles.itineraryName, { color: isDark ? '#F3F4F6' : '#1E293B' }]}>
+                          {activeRoute.endPoint || (isRTL ? 'محطة الوصول' : 'Arrival Terminal')}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ) : (
+                  <View
+                    style={[
+                      styles.emptyRouteBox,
+                      {
+                        backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+                        borderColor: isDark ? '#334155' : '#E2E8F0',
+                      },
+                    ]}
+                  >
+                    <Ionicons name="information-circle-outline" size={18} color={isDark ? '#94A3B8' : '#64748B'} />
+                    <Text style={[styles.emptyRouteText, { color: isDark ? '#94A3B8' : '#64748B' }]}>
+                      {isRTL
+                        ? 'اختر خط الحافلة لعرض محطات التوقف ومسار السير المعتمد.'
+                        : 'Select a bus line to load configured mandatory stops and itinerary.'}
+                    </Text>
+                  </View>
+                )}
               </Animated.View>
 
               {/* ── START TRIP BUTTON ── */}
@@ -1138,199 +1166,7 @@ export default function DriverHomeScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* ── MAP PICKER MODAL ── */}
-      <Modal visible={pickerVisible} animationType="slide" onRequestClose={() => setPickerVisible(false)}>
-        <SafeAreaView
-          style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#FFFFFF' }}
-          edges={['top', 'bottom']}
-        >
-          <View
-            style={[
-              styles.mapModalHeader,
-              {
-                borderColor: isDark ? '#1F2937' : '#E2E8F0',
-                flexDirection: isRTL ? 'row-reverse' : 'row',
-              },
-            ]}
-          >
-            <View style={{ flex: 1, marginHorizontal: 8 }}>
-              <Input
-                placeholder={t('searchDestination')}
-                iconName="search"
-                value={searchQuery}
-                onChangeText={(q) => {
-                  setSearchQuery(q);
-                  if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-                  searchTimerRef.current = setTimeout(async () => {
-                    if (!q || q.trim().length < 2) return setSearchResults([]);
-                    try {
-                      const res = await fetch(
-                        `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&lat=30.0444&lon=31.2357`
-                      );
-                      const data = await res.json();
-                      const results = (data.features || []).map((f: any) => ({
-                        display_name: [f.properties.name, f.properties.city].filter(Boolean).join(', '),
-                        lat: String(f.geometry.coordinates[1]),
-                        lon: String(f.geometry.coordinates[0]),
-                      }));
-                      setSearchResults(results);
-                    } catch {
-                      setSearchResults([]);
-                    }
-                  }, 250);
-                }}
-                containerStyle={{ marginBottom: 0 }}
-              />
-            </View>
-            <TouchableOpacity onPress={() => setPickerVisible(false)} style={styles.modalDoneBtn}>
-              <Text style={styles.modalDoneBtnText}>{isRTL ? 'تم' : 'Done'}</Text>
-            </TouchableOpacity>
-          </View>
 
-          {currentPos && (
-            <TouchableOpacity
-              style={[
-                styles.useCurrentLocRow,
-                {
-                  backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
-                  borderBottomColor: isDark ? '#334155' : '#DBEAFE',
-                  flexDirection: isRTL ? 'row-reverse' : 'row',
-                },
-              ]}
-              onPress={() => {
-                const latNum = currentPos.lat;
-                const lngNum = currentPos.lng;
-                setTempPick({ lat: latNum, lng: lngNum });
-                setEndLat(String(latNum));
-                setEndLng(String(lngNum));
-                setEndPoint(isRTL ? 'الموقع الحالي' : 'Current Location');
-                pickerWebRef.current?.injectJavaScript(
-                  `(function(){ if (typeof setPin==='function'){ setPin(${latNum}, ${lngNum}); } if (typeof map!=='undefined'){ map.setView([${latNum}, ${lngNum}], 15); } })();`
-                );
-              }}
-            >
-              <Ionicons
-                name="locate"
-                size={18}
-                color={isDark ? '#60A5FA' : '#2563EB'}
-                style={isRTL ? { marginLeft: 10 } : { marginRight: 10 }}
-              />
-              <Text style={[styles.useCurrentLocText, { color: isDark ? '#93C5FD' : '#2563EB' }]}>
-                {t('useCurrentLocation')}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {searchResults.length > 0 && (
-            <ScrollView
-              style={[
-                styles.searchResultsContainer,
-                {
-                  backgroundColor: isDark ? '#111827' : '#FFFFFF',
-                  borderBottomColor: isDark ? '#1F2937' : '#E2E8F0',
-                },
-              ]}
-              keyboardShouldPersistTaps="handled"
-            >
-              {searchResults.map((r, idx) => (
-                <TouchableOpacity
-                  key={`${r.lat},${r.lon}-${idx}`}
-                  style={[
-                    styles.searchItem,
-                    {
-                      borderBottomColor: isDark ? '#1F2937' : '#F1F5F9',
-                      flexDirection: isRTL ? 'row-reverse' : 'row',
-                    },
-                  ]}
-                  onPress={() => {
-                    const latNum = Number(r.lat);
-                    const lngNum = Number(r.lon);
-                    setTempPick({ lat: latNum, lng: lngNum });
-                    setEndLat(String(latNum));
-                    setEndLng(String(lngNum));
-                    setEndPoint(r.display_name);
-                    setSearchResults([]);
-                    pickerWebRef.current?.injectJavaScript(
-                      `(function(){ if (typeof setPin==='function'){ setPin(${latNum}, ${lngNum}); } if (typeof map!=='undefined'){ map.setView([${latNum}, ${lngNum}], 15); } })();`
-                    );
-                  }}
-                >
-                  <Ionicons
-                    name="location-outline"
-                    size={18}
-                    color={isDark ? '#9CA3AF' : '#64748B'}
-                    style={isRTL ? { marginLeft: 10 } : { marginRight: 10 }}
-                  />
-                  <Text
-                    style={[
-                      styles.searchItemText,
-                      {
-                        color: isDark ? '#F3F4F6' : '#1E293B',
-                        textAlign: isRTL ? 'right' : 'left',
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {r.display_name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-
-          <WebView
-            style={{ flex: 1 }}
-            javaScriptEnabled
-            ref={pickerWebRef}
-            source={{
-              html: `<!DOCTYPE html>
-              <html><head>
-                <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-                <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
-                <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
-                <style>html,body,#map{height:100%;margin:0} .pin{background:#2563EB;border:3px solid #fff;border-radius:50%;width:24px;height:24px;box-shadow: 0 2px 6px rgba(0,0,0,0.35);}</style>
-              </head><body>
-                <div id='map'></div>
-                <script>
-                  const map = L.map('map').setView([30.0444,31.2357], 13);
-                  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                  let marker = null;
-                  function setPin(lat, lng){
-                    if (marker) map.removeLayer(marker);
-                    marker = L.marker([lat,lng], { icon: L.divIcon({ className: 'pin' }) }).addTo(map);
-                  }
-                  map.on('click', function(e){
-                    setPin(e.latlng.lat, e.latlng.lng);
-                    window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ lat: e.latlng.lat, lng: e.latlng.lng }));
-                  });
-                  window.setPin = setPin;
-                </script>
-              </body></html>`,
-            }}
-            onMessage={(event) => {
-              try {
-                const data = JSON.parse(event.nativeEvent.data);
-                if (data && typeof data.lat === 'number' && typeof data.lng === 'number') {
-                  setTempPick({ lat: data.lat, lng: data.lng });
-                  setEndLat(String(data.lat));
-                  setEndLng(String(data.lng));
-                }
-              } catch {}
-            }}
-          />
-          <View
-            style={[
-              styles.mapModalFooter,
-              {
-                backgroundColor: isDark ? '#111827' : '#FFFFFF',
-                borderColor: isDark ? '#1F2937' : '#E2E8F0',
-              },
-            ]}
-          >
-            <Button title={t('confirmLocation')} onPress={() => setPickerVisible(false)} size="large" />
-          </View>
-        </SafeAreaView>
-      </Modal>
 
       <SettingsModal
         visible={settingsVisible}
@@ -1890,54 +1726,83 @@ const styles = StyleSheet.create({
   },
   selLineBannerText: { fontSize: 12, fontWeight: '700', color: '#1D4ED8' },
 
-  // Map pick button
-  mapPickBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#EFF6FF',
+  // ── ITINERARY & STOPS TIMELINE ────────────────────────────
+  stopsCountBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
   },
-  mapPickText: { fontSize: 12, fontWeight: '700', color: '#2563EB' },
-  mapPickedBadge: {
+  stopsCountText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  itineraryBox: {
+    paddingTop: 8,
+    paddingHorizontal: 4,
+  },
+  itineraryRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginLeft: 2,
+    alignItems: 'flex-start',
+    gap: 12,
   },
-  mapPickedText: { fontSize: 9, fontWeight: '800', color: '#059669' },
-
-  // Quick destinations
-  quickLabel: {
+  terminalIndicator: {
+    alignItems: 'center',
+    width: 24,
+  },
+  terminalDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginTop: 3,
+  },
+  timelineTrack: {
+    width: 2,
+    minHeight: 28,
+    flex: 1,
+    marginVertical: 3,
+  },
+  stopNumberCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  stopNumberText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 0.8,
-    marginBottom: 9,
   },
-  quickWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  quickChip: {
+  itineraryInfo: {
+    flex: 1,
+    paddingBottom: 14,
+  },
+  itineraryRole: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  itineraryName: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  emptyRouteBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    gap: 8,
+    padding: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    marginTop: 4,
   },
-  quickChipActive: { backgroundColor: '#EFF6FF', borderColor: '#93C5FD' },
-  quickChipText: { fontSize: 12, fontWeight: '600', color: '#475569' },
-  quickChipTextActive: { color: '#1D4ED8', fontWeight: '700' },
+  emptyRouteText: {
+    fontSize: 13,
+    flex: 1,
+  },
 
   // ── ACTION BUTTONS ────────────────────────────────────────
   startBtn: {
@@ -1980,66 +1845,4 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   stopBtnText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.2 },
-
-  // ── MAP MODAL ─────────────────────────────────────────────
-  mapModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  modalDoneBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  modalDoneBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#2563EB',
-  },
-  useCurrentLocRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#EFF6FF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#DBEAFE',
-  },
-  useCurrentLocText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2563EB',
-  },
-  searchResultsContainer: {
-    maxHeight: 200,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
-  },
-  searchItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  searchItemText: {
-    fontSize: 14,
-    color: '#1E293B',
-    flex: 1,
-  },
-  searchResults: { maxHeight: 200, borderBottomWidth: 1 },
-  searchResultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  modalFooter: { padding: 16, borderTopWidth: 1 },
-  mapModalFooter: { padding: 16, borderTopWidth: 1, borderColor: '#E2E8F0' },
 });

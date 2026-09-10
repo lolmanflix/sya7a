@@ -55,6 +55,7 @@
 │               ├── endPoint: string
 │               ├── endLat: number
 │               ├── endLng: number
+│               ├── stops?: [ { id: string, name: string, lat: number, lng: number, order: number } ]
 │               ├── isActive: boolean
 │               └── createdAt: string (ISO)
 │
@@ -137,6 +138,10 @@ bus tracker sya7a version/
 - [x] Completed comprehensive market data & financial pro forma audit with modular separation of concerns (`docs/`).
 - [x] Transitioned SafeTrip inspection to hardware-accelerated 30 FPS WebRTC Peer-to-Peer streaming with zero database media bandwidth.
 - [x] Separated Bus Fleet (vehicle deployments, road readiness, assignments) from Transit Routes (corridors, coordinates, map editor, and line catalog) into specialized administrative portals.
+- [x] Implemented Multipoint Route Designer in Admin Panel with intermediate mandatory stops, sequential drag/numbered reordering, and multi-waypoint OSRM road geometry.
+- [x] Streamlined Driver app: replaced manual destination input & picker modal with dynamic line selection and auto-loaded route itinerary timeline with mandatory stops.
+- [x] Upgraded Passenger Map (`MapScreen.tsx`) to render full multi-stop road polylines with numbered badges and stop popups, removing false Cairo mock buses.
+- [x] Completely eradicated hardcoded fallback mock companies (`defaultCompanies`) and static bus lines `['M554', 'N777'...]` across both applications; fully synchronized with Firebase RTDB.
 
 ### In-Progress
 - *(All core milestones completed and verified)*

@@ -3,7 +3,7 @@
 > **Note:** This file is automatically compiled by `scripts/generate_functions_doc.py`.
 > Do not manually edit this file. Keep inline docstrings updated in the source code.
 
-**Total Documented Functions:** 298
+**Total Documented Functions:** 303
 
 ---
 
@@ -58,8 +58,8 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L36 | `handlePointsSelected()` | `start: { lat: number; lng: number; address: string },     end: { lat: number; lng: number; address: string }` | No description provided. |
-| L48 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
+| L37 | `handleStopsChange()` | `updatedStops: BusStop[],     start: { lat: number; lng: number; address: string },     end: { lat: number; lng: number; address: string }` | No description provided. |
+| L51 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
 
 ## [VehicleRegistrationModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/fleet/VehicleRegistrationModal.tsx)
 `admin/src/components/fleet/VehicleRegistrationModal.tsx`
@@ -73,16 +73,19 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L274 | `handleResetView()` | *none* | No description provided. |
-| L280 | `handleFitAll()` | *none* | No description provided. |
+| L295 | `handleResetView()` | *none* | No description provided. |
+| L301 | `handleFitAll()` | *none* | No description provided. |
 
 ## [RoutePickerMap.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/map/RoutePickerMap.tsx)
 `admin/src/components/map/RoutePickerMap.tsx`
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L145 | `handleClick()` | `e: L.LeafletMouseEvent` | No description provided. |
-| L170 | `applyPreset()` | `landmark: { name: string; lat: number; lng: number }` | No description provided. |
+| L99 | `notifyChanges()` | `updatedStops: BusStop[]` | No description provided. |
+| L167 | `handleClick()` | `e: L.LeafletMouseEvent` | No description provided. |
+| L201 | `removeStop()` | `index: number` | No description provided. |
+| L207 | `updateStopName()` | `index: number, name: string` | No description provided. |
+| L213 | `addPresetAsStop()` | `landmark: { name: string; lat: number; lng: number }` | No description provided. |
 
 ## [DriverSafetyMediaModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/modals/DriverSafetyMediaModal.tsx)
 `admin/src/components/modals/DriverSafetyMediaModal.tsx`
@@ -101,6 +104,13 @@
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
 | L51 | `toggleLocalWebcam()` | *none* | No description provided. |
+
+## [LineCatalogTable.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/routes/LineCatalogTable.tsx)
+`admin/src/components/routes/LineCatalogTable.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L30 | `handleSaveRename()` | `companyId: string, oldLine: string` | No description provided. |
 
 ## [AuthContext.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/contexts/AuthContext.tsx)
 `admin/src/contexts/AuthContext.tsx`
@@ -173,9 +183,9 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L74 | `handleDeleteRoute()` | `companyId: string, busId: string` | No description provided. |
-| L85 | `handleSaveRenameLine()` | `companyId: string, oldLine: string` | No description provided. |
-| L100 | `handleDeleteLine()` | `companyId: string, line: string` | No description provided. |
+| L71 | `handleDeleteRoute()` | `companyId: string, busId: string` | No description provided. |
+| L82 | `handleRenameLine()` | `companyId: string, oldLine: string, newLine: string` | No description provided. |
+| L91 | `handleDeleteLine()` | `companyId: string, line: string` | No description provided. |
 
 ## [SecurityPage.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/pages/SecurityPage.tsx)
 `admin/src/pages/SecurityPage.tsx`
@@ -190,9 +200,9 @@
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
 | L5 | `subscribeAllBuses()` | `callback: (buses: BusRouteDefinition[]` | Subscribes to buses for all companies in the Realtime Database. |
-| L51 | `saveBus()` | `companyId: string, bus: BusRouteDefinition` | Saves or updates a bus in /companies/<companyId>/buses/<busId>. Automatically ensures the assigned lineId is synchronized with the company's busLines list. |
-| L84 | `toggleBusActive()` | `companyId: string, busId: string, isActive: boolean` | Toggles a bus operational active/idle flag. |
-| L92 | `deleteBus()` | `companyId: string, busId: string` | Deletes a bus from /companies/<companyId>/buses/<busId>. |
+| L52 | `saveBus()` | `companyId: string, bus: BusRouteDefinition` | Saves or updates a bus in /companies/<companyId>/buses/<busId>. Automatically ensures the assigned lineId is synchronized with the company's busLines list. |
+| L86 | `toggleBusActive()` | `companyId: string, busId: string, isActive: boolean` | Toggles a bus operational active/idle flag. |
+| L94 | `deleteBus()` | `companyId: string, busId: string` | Deletes a bus from /companies/<companyId>/buses/<busId>. |
 
 ## [companiesService.ts](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/services/companiesService.ts)
 `admin/src/services/companiesService.ts`
@@ -234,9 +244,9 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L1 | `buildKey()` | `startLat: number, startLng: number, endLat: number, endLng: number` | Routing Service for Wasalt Admin Panel Uses the Project-OSRM public routing engine to calculate road-following driving geometries with in-memory caching and fallback straight-line polylines. / export interface RouteGeometryResult { coordinates: [number, number][]; distanceKm: number; durationMin: number; isFallback: boolean; } // In-memory cache for computed road paths to avoid redundant network calls const routeCache = new Map<string, RouteGeometryResult>(); /** Builds a deterministic cache key from lat/lng endpoints. |
-| L24 | `haversineDistance()` | `lat1: number, lon1: number, lat2: number, lon2: number` | Calculates haversine distance in km as fallback. |
-| L40 | `fetchRoadRoute()` | `startLat: number,   startLng: number,   endLat: number,   endLng: number` | Fetches road-following route coordinates between two points using OSRM driving engine. Falls back to straight line if offline or endpoint is unresponsive. |
+| L1 | `haversineDistance()` | `lat1: number, lon1: number, lat2: number, lon2: number` | Routing Service for Wasalt Admin Panel Uses the Project-OSRM public routing engine to calculate road-following driving geometries with in-memory caching and fallback straight-line polylines across multiple stops. / export interface WaypointCoord { lat: number; lng: number; name?: string; } export interface RouteGeometryResult { coordinates: [number, number][]; distanceKm: number; durationMin: number; isFallback: boolean; } // In-memory cache for computed road paths to avoid redundant network calls const routeCache = new Map<string, RouteGeometryResult>(); /** Calculates haversine distance in km between two lat/lng coordinates. |
+| L39 | `buildWaypointKey()` | `waypoints: WaypointCoord[]` | Builds a deterministic cache key from a list of waypoints. |
+| L46 | `fetchRoadRoute()` | `startLatOrWaypoints: number | WaypointCoord[],   startLng?: number,   endLat?: number,   endLng?: number` | Fetches road-following route coordinates between two or more stops using OSRM driving engine. Supports passing either an array of WaypointCoord or traditional (startLat, startLng, endLat, endLng). |
 
 ## [telemetryService.ts](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/services/telemetryService.ts)
 `admin/src/services/telemetryService.ts`
@@ -494,6 +504,22 @@
 | L108 | `AppNavigator()` | *none* | No description provided. |
 | L143 | `App()` | *none* | No description provided. |
 
+## [BusDetailsSheet.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/components/map/BusDetailsSheet.tsx)
+`sya7a new/src/components/map/BusDetailsSheet.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L37 | `BusDetailsSheet()` | `{   selectedBus,   onCloseBus,   routeDefinition,   busLine,   user,   isDark,   theme,   t,   isRTL,   savingRoute,   onSaveRoute, }: BusDetailsSheetProps` | No description provided. |
+
+## [passengerMapHtml.ts](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/components/map/passengerMapHtml.ts)
+`sya7a new/src/components/map/passengerMapHtml.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L1 | `getMapHTML()` | `isDark: boolean` | Passenger Map HTML Template for Leaflet WebView Renders base map, active bus markers, and multi-point road itineraries with intermediate stops. |
+| L42 | `calcDistKm()` | `lat1, lng1, lat2, lng2` | No description provided. |
+| L131 | `updateBusMarkers()` | `busLocations` | No description provided. |
+
 ## [SettingsModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/components/SettingsModal.tsx)
 `sya7a new/src/components/SettingsModal.tsx`
 
@@ -623,11 +649,11 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L58 | `CompaniesScreen()` | *none* | No description provided. |
-| L82 | `handleCompanyPress()` | `company: Company` | No description provided. |
-| L86 | `handleBusLinePress()` | `busLine: string` | No description provided. |
-| L92 | `renderCompanyItem()` | `{ item, index }: { item: Company; index: number }` | No description provided. |
-| L116 | `renderBusLineItem()` | `{ item, index }: { item: string; index: number }` | No description provided. |
+| L28 | `CompaniesScreen()` | *none* | No description provided. |
+| L79 | `handleCompanyPress()` | `company: Company` | No description provided. |
+| L83 | `handleBusLinePress()` | `busLine: string` | No description provided. |
+| L89 | `renderCompanyItem()` | `{ item, index }: { item: Company; index: number }` | No description provided. |
+| L113 | `renderBusLineItem()` | `{ item, index }: { item: string; index: number }` | No description provided. |
 
 ## [DriverHomeScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/DriverHomeScreen.tsx)
 `sya7a new/src/screens/DriverHomeScreen.tsx`
@@ -637,13 +663,12 @@
 | L43 | `haversineMeters()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
 | L56 | `formatTimer()` | `totalSeconds: number` | No description provided. |
 | L66 | `DriverHomeScreen()` | *none* | No description provided. |
-| L170 | `ensureSafetyPermissions()` | *none* | No description provided. |
-| L211 | `handleSelectQuickDest()` | `item: { name: string; lat: number; lon: number }` | No description provided. |
-| L218 | `startSharing()` | *none* | No description provided. |
-| L372 | `stopSharing()` | *none* | No description provided. |
-| L397 | `handleSendSOS()` | *none* | No description provided. |
-| L430 | `handleLogout()` | *none* | No description provided. |
-| L1298 | `setPin()` | `lat, lng` | No description provided. |
+| L131 | `fetchDriverAndCompanyData()` | *none* | No description provided. |
+| L216 | `ensureSafetyPermissions()` | *none* | No description provided. |
+| L248 | `startSharing()` | *none* | No description provided. |
+| L402 | `stopSharing()` | *none* | No description provided. |
+| L427 | `handleSendSOS()` | *none* | No description provided. |
+| L460 | `handleLogout()` | *none* | No description provided. |
 
 ## [HistoryScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/HistoryScreen.tsx)
 `sya7a new/src/screens/HistoryScreen.tsx`
@@ -678,27 +703,25 @@
 | :--- | :--- | :--- | :--- |
 | L28 | `LoginScreen()` | *none* | No description provided. |
 | L54 | `handleAuth()` | *none* | No description provided. |
-| L138 | `handleAppleSignIn()` | *none* | No description provided. |
-| L178 | `handlePasswordReset()` | *none* | No description provided. |
+| L151 | `handleAppleSignIn()` | *none* | No description provided. |
+| L182 | `handlePasswordReset()` | *none* | No description provided. |
 
 ## [MapScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/MapScreen.tsx)
 `sya7a new/src/screens/MapScreen.tsx`
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L41 | `haversineKm()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
-| L52 | `getMapHTML()` | `isDark: boolean` | No description provided. |
-| L89 | `calcDistKm()` | `lat1, lng1, lat2, lng2` | No description provided. |
-| L100 | `drawRouteOSRM()` | `startLat, startLng, endLat, endLng, currentLat, currentLng, isInitialDraw` | No description provided. |
-| L135 | `updateBusMarkers()` | `busLocations` | No description provided. |
-| L267 | `MapScreen()` | *none* | No description provided. |
-| L282 | `calculateDistance()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
-| L285 | `calculateBearing()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
-| L294 | `getDirectionName()` | `bearing: number` | No description provided. |
-| L299 | `calculateTimeToArrival()` | `distanceKm: number` | No description provided. |
-| L309 | `pushBusUpdate()` | `locations: BusLocation[]` | No description provided. |
-| L321 | `pushUserLocation()` | *none* | No description provided. |
-| L335 | `pushUserToBusRoute()` | `bus: BusLocation` | No description provided. |
+| L26 | `haversineKm()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
+| L39 | `MapScreen()` | *none* | No description provided. |
+| L55 | `calculateDistance()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
+| L58 | `calculateBearing()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
+| L67 | `getDirectionName()` | `bearing: number` | No description provided. |
+| L72 | `calculateTimeToArrival()` | `distanceKm: number` | No description provided. |
+| L82 | `pushBusUpdate()` | `locations: BusLocation[]` | No description provided. |
+| L94 | `pushUserLocation()` | *none* | No description provided. |
+| L108 | `pushUserToBusRoute()` | `bus: BusLocation` | No description provided. |
+| L125 | `pushFullRoute()` | `routeDef: any` | No description provided. |
+| L267 | `handleSaveRoute()` | `line: string, destination: string` | No description provided. |
 
 ## [RoleSelectionScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/RoleSelectionScreen.tsx)
 `sya7a new/src/screens/RoleSelectionScreen.tsx`

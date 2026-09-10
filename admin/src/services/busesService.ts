@@ -31,6 +31,7 @@ export function subscribeAllBuses(callback: (buses: BusRouteDefinition[]) => voi
               endPoint: b.endPoint || 'Destination Terminal',
               endLat: Number(b.endLat) || 30.0444,
               endLng: Number(b.endLng) || 31.2357,
+              stops: Array.isArray(b.stops) ? b.stops : undefined,
               isActive: Boolean(b.isActive),
               createdAt: b.createdAt || new Date().toISOString(),
             });
@@ -65,6 +66,7 @@ export async function saveBus(companyId: string, bus: BusRouteDefinition): Promi
     endPoint: bus.endPoint,
     endLat: Number(bus.endLat),
     endLng: Number(bus.endLng),
+    stops: bus.stops && bus.stops.length > 0 ? bus.stops : null,
     isActive: Boolean(bus.isActive),
     createdAt: bus.createdAt || new Date().toISOString(),
   });

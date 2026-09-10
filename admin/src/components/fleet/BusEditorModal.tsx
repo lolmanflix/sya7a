@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { RoutePickerMap } from '../map/RoutePickerMap';
-import { BusRouteDefinition, CompanyRecord } from '../../types';
+import { BusRouteDefinition, BusStop, CompanyRecord } from '../../types';
 import { toast } from 'sonner';
 
 interface BusEditorModalProps {
@@ -27,16 +27,19 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
   const [endPoint, setEndPoint] = useState<string>(busToEdit?.endPoint || '');
   const [endLat, setEndLat] = useState<number>(busToEdit?.endLat || 30.0561);
   const [endLng, setEndLng] = useState<number>(busToEdit?.endLng || 31.3300);
+  const [stops, setStops] = useState<BusStop[] | undefined>(busToEdit?.stops);
   const [isActive, setIsActive] = useState<boolean>(busToEdit?.isActive ?? false);
   const [saving, setSaving] = useState(false);
 
   const selectedCompany = companies.find((c) => c.id === companyId);
   const availableLines = selectedCompany?.busLines || [];
 
-  const handlePointsSelected = (
+  const handleStopsChange = (
+    updatedStops: BusStop[],
     start: { lat: number; lng: number; address: string },
     end: { lat: number; lng: number; address: string }
   ) => {
+    setStops(updatedStops);
     setStartLat(start.lat);
     setStartLng(start.lng);
     setStartPoint(start.address);
@@ -65,6 +68,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
         endPoint: endPoint || 'Destination Station',
         endLat,
         endLng,
+        stops: stops && stops.length > 0 ? stops : undefined,
         isActive,
         createdAt: busToEdit?.createdAt || new Date().toISOString(),
       };
@@ -84,7 +88,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={busToEdit ? `Edit Bus Route - ${busToEdit.lineId}` : 'Register New Bus Route'}
-      subtitle="Click on the map to place start and end terminals or adjust coordinates."
+      subtitle="Configure mandatory stops along the route; the bus path follows actual road network."
       maxWidth="2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -144,11 +148,14 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
         {/* Visual Map Point Picker */}
         <div className="border border-slate-800 rounded-2xl p-3 bg-slate-950/40">
           <RoutePickerMap
+            initialStops={stops}
             startLat={startLat}
             startLng={startLng}
             endLat={endLat}
             endLng={endLng}
-            onPointsSelected={handlePointsSelected}
+            startAddress={startPoint}
+            endAddress={endPoint}
+            onStopsChange={handleStopsChange}
           />
         </div>
 
