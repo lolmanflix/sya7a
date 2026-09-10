@@ -3,7 +3,7 @@
 > **Note:** This file is automatically compiled by `scripts/generate_functions_doc.py`.
 > Do not manually edit this file. Keep inline docstrings updated in the source code.
 
-**Total Documented Functions:** 304
+**Total Documented Functions:** 308
 
 ---
 
@@ -81,12 +81,13 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L130 | `notifyChanges()` | `updatedStops: BusStop[]` | No description provided. |
-| L210 | `handleClick()` | `e: L.LeafletMouseEvent` | No description provided. |
-| L244 | `removeStop()` | `index: number` | No description provided. |
-| L250 | `updateStopName()` | `index: number, name: string` | No description provided. |
-| L256 | `addPresetAsStop()` | `landmark: EgyptianLandmark` | No description provided. |
-| L280 | `useCurrentLocationForStart()` | *none* | No description provided. |
+| L132 | `notifyChanges()` | `updatedStops: BusStop[]` | No description provided. |
+| L208 | `updateStopWithLandmark()` | `targetId: string, lat: number, lng: number` | No description provided. |
+| L226 | `handleClick()` | `e: L.LeafletMouseEvent` | No description provided. |
+| L265 | `removeStop()` | `index: number` | No description provided. |
+| L271 | `updateStopName()` | `index: number, name: string` | No description provided. |
+| L277 | `addPresetAsStop()` | `landmark: EgyptianLandmark` | No description provided. |
+| L301 | `useCurrentLocationForStart()` | *none* | No description provided. |
 
 ## [DriverSafetyMediaModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/modals/DriverSafetyMediaModal.tsx)
 `admin/src/components/modals/DriverSafetyMediaModal.tsx`
@@ -239,6 +240,15 @@
 | L44 | `updateDriverCompany()` | `driverUid: string, companyId: string` | Updates assigned company for a driver. |
 | L52 | `saveDriverProfile()` | `driver: DriverProfile` | Saves or provisions a driver profile in RTDB. |
 | L65 | `removeDriverProfile()` | `driverUid: string` | Removes a driver record from RTDB. |
+
+## [landmarkService.ts](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/services/landmarkService.ts)
+`admin/src/services/landmarkService.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L1 | `haversineDistanceMeters()` | `lat1: number, lon1: number, lat2: number, lon2: number` | Landmark & POI Resolution Service for Wasalt Admin Panel Resolves map coordinates to the nearest named real-world landmark (shop, restaurant, building, amenity, station, or landmark) using Overpass API, Nominatim, and offline presets. / import { OFFLINE_EGYPTIAN_LANDMARKS } from '../constants/landmarks'; export interface NearestLandmarkResult { name: string; category?: string; distanceMeters: number; isFallback?: boolean; } // In-memory cache for resolved coordinates (keyed by rounded lat,lng) const landmarkCache = new Map<string, NearestLandmarkResult>(); /** Calculates Haversine distance in meters between two lat/lng coordinates. |
+| L35 | `getCacheKey()` | `lat: number, lng: number` | No description provided. |
+| L39 | `resolveNearestLandmark()` | `lat: number,   lng: number` | Resolves the nearest named landmark, shop, restaurant, or building for a coordinate. Priority: 1. Offline Egyptian prominent transit hubs (if <= 250m) 2. Overpass API search for named POIs within 300m 3. OpenStreetMap Nominatim reverse geocoding 4. Fallback coordinate label |
 
 ## [routingService.ts](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/services/routingService.ts)
 `admin/src/services/routingService.ts`

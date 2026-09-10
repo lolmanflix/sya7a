@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
-import { MapPin, Navigation, Route, Clock, CheckCircle2, Plus, Locate, Maximize2 } from 'lucide-react';
+import { Route, CheckCircle2 } from 'lucide-react';
 import { fetchRoadRoute, RouteGeometryResult } from '../../services/routingService';
+import { resolveNearestLandmark } from '../../services/landmarkService';
 import { BusStop } from '../../types';
 import { EgyptianLandmark } from '../../constants/landmarks';
 import { RouteStopsList } from './RouteStopsList';
 import { EgyptianLandmarksPicker } from './EgyptianLandmarksPicker';
+import { RouteMapToolbar } from './RouteMapToolbar';
 
 interface RoutePickerMapProps {
   initialStops?: BusStop[];
@@ -202,6 +204,20 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     };
   }, [stops]);
 
+  // Asynchronously resolve the nearest named landmark and update stop name
+  const updateStopWithLandmark = (targetId: string, lat: number, lng: number) => {
+    resolveNearestLandmark(lat, lng).then((res) => {
+      setStops((current) => {
+        const idx = current.findIndex((s) => s.id === targetId);
+        if (idx === -1) return current;
+        const next = [...current];
+        next[idx] = { ...next[idx], name: res.name };
+        notifyChanges(next);
+        return next;
+      });
+    });
+  };
+
   // Click on Map to add/set stops
   useEffect(() => {
     const map = mapRef.current;
@@ -209,29 +225,34 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
 
     const handleClick = (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
-      const fallbackName = `Stop @ ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 
       if (activeMode === 'setStart') {
         const next = [...stops];
-        next[0] = { ...next[0], lat, lng, name: fallbackName };
+        const targetId = next[0].id;
+        next[0] = { ...next[0], lat, lng, name: 'Finding landmark...' };
         notifyChanges(next);
         setActiveMode('addStop');
+        updateStopWithLandmark(targetId, lat, lng);
       } else if (activeMode === 'setEnd') {
         const next = [...stops];
-        next[next.length - 1] = { ...next[next.length - 1], lat, lng, name: fallbackName };
+        const targetId = next[next.length - 1].id;
+        next[next.length - 1] = { ...next[next.length - 1], lat, lng, name: 'Finding landmark...' };
         notifyChanges(next);
         setActiveMode('addStop');
+        updateStopWithLandmark(targetId, lat, lng);
       } else {
         // Insert new intermediate stop before final destination
+        const stopId = `stop-${Date.now()}`;
         const newStop: BusStop = {
-          id: `stop-${Date.now()}`,
-          name: fallbackName,
+          id: stopId,
+          name: 'Finding landmark...',
           lat,
           lng,
           order: stops.length - 1,
         };
         const next = [...stops.slice(0, -1), newStop, stops[stops.length - 1]];
         notifyChanges(next);
+        updateStopWithLandmark(stopId, lat, lng);
       }
     };
 
@@ -280,88 +301,29 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
   const useCurrentLocationForStart = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
       const next = [...stops];
-      next[0] = { ...next[0], lat: pos.coords.latitude, lng: pos.coords.longitude, name: 'Current Location (Point A)' };
+      const targetId = next[0].id;
+      next[0] = { ...next[0], lat, lng, name: 'Current Location (Point A)' };
       notifyChanges(next);
-      mapRef.current?.setView([pos.coords.latitude, pos.coords.longitude], 14);
+      mapRef.current?.setView([lat, lng], 14);
+      updateStopWithLandmark(targetId, lat, lng);
     });
   };
 
   return (
     <div className="space-y-3">
       {/* Mode Buttons & Route Summary Badges */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setActiveMode('addStop')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-all ${
-              activeMode === 'addStop'
-                ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/40'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Stop
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveMode('setStart')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-all ${
-              activeMode === 'setStart'
-                ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400/40'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            Set Start (A)
-          </button>
-          <button
-            type="button"
-            onClick={useCurrentLocationForStart}
-            title="Set Point A to Current GPS Location"
-            className="px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 bg-cyan-900/50 text-cyan-200 border border-cyan-700/50 hover:bg-cyan-800/80 transition-all"
-          >
-            <Locate className="w-3.5 h-3.5 text-cyan-400" />
-            GPS (A)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveMode('setEnd')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-all ${
-              activeMode === 'setEnd'
-                ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-400/40'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            <Navigation className="w-3.5 h-3.5" />
-            Set End (B)
-          </button>
-          <button
-            type="button"
-            onClick={fitRoute}
-            title="Auto-Fit Map View to Full Route"
-            className="px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 transition-all"
-          >
-            <Maximize2 className="w-3.5 h-3.5 text-blue-400" />
-            Fit Route
-          </button>
-        </div>
-
-        {/* Real-time distance and stop count metrics */}
-        {routeStats && !isCalculatingRoute && (
-          <div className="flex items-center gap-2 text-xs text-slate-300 bg-slate-900/90 border border-slate-700/80 px-2.5 py-1 rounded-lg">
-            <span className="text-emerald-400 font-semibold">{stops.length} Mandatory Stops</span>
-            <span className="text-slate-500">•</span>
-            <span className="font-semibold text-white">{routeStats.distanceKm} km</span>
-            <span className="text-slate-500">•</span>
-            <span className="flex items-center gap-1 text-slate-400">
-              <Clock className="w-3 h-3 text-slate-400" />
-              ~{routeStats.durationMin} min
-            </span>
-          </div>
-        )}
-      </div>
+      <RouteMapToolbar
+        activeMode={activeMode}
+        onSetActiveMode={setActiveMode}
+        onUseCurrentLocation={useCurrentLocationForStart}
+        onFitRoute={fitRoute}
+        routeStats={routeStats}
+        isCalculatingRoute={isCalculatingRoute}
+        stopsCount={stops.length}
+      />
 
       {/* Interactive Map Box */}
       <div className="h-60 rounded-xl overflow-hidden border border-slate-700/80 shadow-inner relative">
