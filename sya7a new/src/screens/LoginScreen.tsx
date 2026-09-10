@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,6 +37,12 @@ export default function LoginScreen() {
   const { userType, setUserType } = useUserType();
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<string>('');
+  const [companyModalVisible, setCompanyModalVisible] = useState(false);
+
+  const selectedCompanyName = useMemo(() => {
+    const found = companies.find(c => c.id === selectedCompany);
+    return found ? found.name : (companies[0]?.name || 'Select Company');
+  }, [companies, selectedCompany]);
 
   useEffect(() => {
     if (userType === 'driver' && !email) {
@@ -209,17 +216,19 @@ export default function LoginScreen() {
           {userType === 'driver' && (
             <View style={styles.dropdownContainer}>
               <Text style={styles.dropdownLabel}>Select Company</Text>
-              <View style={styles.dropdownWrapper}>
-                <Picker
-                  selectedValue={selectedCompany}
-                  onValueChange={(itemValue) => setSelectedCompany(String(itemValue))}
-                  style={styles.picker}
-                >
-                  {companies.map(c => (
-                    <Picker.Item key={c.id} label={c.name} value={c.id} color="#1C1C1E" />
-                  ))}
-                </Picker>
-              </View>
+              <TouchableOpacity
+                style={styles.companySelectBtn}
+                onPress={() => setCompanyModalVisible(true)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.companySelectLeft}>
+                  <View style={styles.companySelectIcon}>
+                    <Ionicons name="business" size={18} color="#007AFF" />
+                  </View>
+                  <Text style={styles.companySelectText}>{selectedCompanyName}</Text>
+                </View>
+                <Ionicons name="chevron-down" size={18} color="#8E8E93" />
+              </TouchableOpacity>
             </View>
           )}
 
@@ -345,6 +354,66 @@ export default function LoginScreen() {
             </Animated.View>
           </View>
         )}
+
+        {/* Company Picker Modal */}
+        <Modal
+          visible={companyModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setCompanyModalVisible(false)}
+        >
+          <View style={styles.companyModalOverlay}>
+            <View style={styles.companyModalContent}>
+              <View style={styles.companyModalHeader}>
+                <View style={styles.companyModalTitleRow}>
+                  <View style={styles.companyModalHeaderIcon}>
+                    <Ionicons name="business" size={20} color="#007AFF" />
+                  </View>
+                  <Text style={styles.companyModalTitle}>Select Transport Company</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setCompanyModalVisible(false)}
+                  style={styles.companyModalCloseBtn}
+                >
+                  <Ionicons name="close" size={20} color="#8E8E93" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.companyListScroll} showsVerticalScrollIndicator={false}>
+                {companies.map((c) => {
+                  const isSelected = selectedCompany === c.id;
+                  return (
+                    <TouchableOpacity
+                      key={c.id}
+                      style={[styles.companyOptionRow, isSelected && styles.companyOptionRowSelected]}
+                      onPress={() => {
+                        setSelectedCompany(c.id);
+                        setCompanyModalVisible(false);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.companyOptionLeft}>
+                        <View style={[styles.companyOptionBullet, isSelected && styles.companyOptionBulletSelected]}>
+                          <Ionicons
+                            name="bus"
+                            size={16}
+                            color={isSelected ? '#FFFFFF' : '#007AFF'}
+                          />
+                        </View>
+                        <Text style={[styles.companyOptionText, isSelected && styles.companyOptionTextSelected]}>
+                          {c.name}
+                        </Text>
+                      </View>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={22} color="#007AFF" />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -441,16 +510,137 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginLeft: 4,
   },
-  dropdownWrapper: {
+  companySelectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#F2F2F7',
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#E5E5EA',
-    overflow: 'hidden',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    minHeight: 52,
   },
-  picker: {
-    height: 52,
-    width: '100%',
+  companySelectLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  companySelectIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#007AFF15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  companySelectText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    flex: 1,
+  },
+  companyModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  companyModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    maxHeight: '75%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+  companyModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderColor: '#F2F2F7',
+    marginBottom: 8,
+  },
+  companyModalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  companyModalHeaderIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#007AFF15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  companyModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1C1C1E',
+  },
+  companyModalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F2F2F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  companyListScroll: {
+    paddingVertical: 8,
+  },
+  companyOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    marginVertical: 4,
+    backgroundColor: '#F8F9FB',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  companyOptionRowSelected: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#007AFF',
+  },
+  companyOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  companyOptionBullet: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#007AFF15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  companyOptionBulletSelected: {
+    backgroundColor: '#007AFF',
+  },
+  companyOptionText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#3A3A3C',
+    flex: 1,
+  },
+  companyOptionTextSelected: {
+    color: '#007AFF',
+    fontWeight: '700',
   },
   modalOverlay: {
     position: 'absolute',

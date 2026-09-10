@@ -15,6 +15,8 @@ import Animated, {
   withTiming,
   interpolateColor,
 } from 'react-native-reanimated';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useI18n } from '../../contexts/I18nContext';
 
 export interface InputProps extends TextInputProps {
   label?: string;
@@ -32,8 +34,11 @@ export const Input: React.FC<InputProps> = ({
   isPassword,
   onFocus,
   onBlur,
+  style,
   ...props
 }) => {
+  const { theme, mode } = useTheme();
+  const { isRTL } = useI18n();
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const focusAnim = useSharedValue(0);
@@ -50,11 +55,15 @@ export const Input: React.FC<InputProps> = ({
     if (onBlur) onBlur(e);
   };
 
+  const isDark = mode === 'dark';
+  const defaultBorder = isDark ? '#2A2A2E' : '#E5E5EA';
+  const activeBorder = theme.colors.primary || '#007AFF';
+
   const animatedBorder = useAnimatedStyle(() => {
     const borderColor = interpolateColor(
       focusAnim.value,
       [0, 1],
-      [error ? '#FF3B30' : '#E5E5EA', error ? '#FF3B30' : '#007AFF']
+      [error ? '#FF3B30' : defaultBorder, error ? '#FF3B30' : activeBorder]
     );
     return {
       borderColor,
@@ -64,19 +73,40 @@ export const Input: React.FC<InputProps> = ({
 
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      <Animated.View style={[styles.inputContainer, animatedBorder]}>
+      {label && (
+        <Text style={[styles.label, { color: theme.colors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+          {label}
+        </Text>
+      )}
+      <Animated.View
+        style={[
+          styles.inputContainer,
+          {
+            backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7',
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+          },
+          animatedBorder,
+        ]}
+      >
         {iconName && (
           <Ionicons
             name={iconName}
             size={20}
-            color={isFocused ? '#007AFF' : '#8E8E93'}
-            style={styles.leftIcon}
+            color={isFocused ? (theme.colors.primary || '#007AFF') : theme.colors.muted}
+            style={isRTL ? styles.rightIcon : styles.leftIcon}
           />
         )}
         <TextInput
-          style={[styles.input, iconName ? { paddingLeft: 8 } : {}]}
-          placeholderTextColor="#8E8E93"
+          style={[
+            styles.input,
+            {
+              color: theme.colors.textPrimary,
+              textAlign: isRTL ? 'right' : 'left',
+            },
+            iconName ? (isRTL ? { paddingRight: 8 } : { paddingLeft: 8 }) : {},
+            style,
+          ]}
+          placeholderTextColor={theme.colors.muted}
           onFocus={handleFocus}
           onBlur={handleBlur}
           secureTextEntry={isPassword && !showPassword}
@@ -90,12 +120,16 @@ export const Input: React.FC<InputProps> = ({
             <Ionicons
               name={showPassword ? 'eye-off' : 'eye'}
               size={20}
-              color="#8E8E93"
+              color={theme.colors.muted}
             />
           </TouchableOpacity>
         )}
       </Animated.View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && (
+        <Text style={[styles.errorText, { textAlign: isRTL ? 'right' : 'left' }]}>
+          {error}
+        </Text>
+      )}
     </View>
   );
 };
@@ -107,14 +141,11 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#3A3A3C',
     marginBottom: 8,
-    marginLeft: 4,
+    marginHorizontal: 4,
   },
   inputContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
     borderRadius: 12,
     minHeight: 52,
     paddingHorizontal: 16,
@@ -122,11 +153,13 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#1C1C1E',
     height: '100%',
   },
   leftIcon: {
     marginRight: 4,
+  },
+  rightIcon: {
+    marginLeft: 4,
   },
   eyeIcon: {
     padding: 8,
@@ -135,6 +168,6 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
     fontSize: 12,
     marginTop: 4,
-    marginLeft: 4,
+    marginHorizontal: 4,
   },
 });

@@ -229,7 +229,11 @@ export default function HomeScreen() {
 
   const handleBusPress = async (bus: Bus) => {
     if (bus.activeBusCount > 0) {
-      if (user) await saveToHistory(user.uid, bus.lineName, bus.companyName);
+      if (user) {
+        try {
+          await saveToHistory(user.uid, bus.lineName, bus.companyName);
+        } catch {}
+      }
       (navigation.navigate as any)('Map', { busLine: bus.lineName });
     } else {
       Alert.alert(isRTL ? 'لا حافلات نشطة' : 'No Active Buses', isRTL ? 'لا توجد حافلات نشطة لهذا الخط حالياً.' : 'There are currently no active buses for this line.');
@@ -247,6 +251,21 @@ export default function HomeScreen() {
         <View style={styles.busInfo}>
           <View style={[styles.busHeader, isRTL && styles.rowReverse]}>
             <Text style={[styles.busLineName, { color: theme.colors.textPrimary }, isRTL && styles.textRight]}>{item.lineName}</Text>
+            {user && (
+              <TouchableOpacity
+                style={styles.favoriteButton}
+                onPress={async () => {
+                  try {
+                    await saveToHistory(user.uid, item.lineName, item.companyName);
+                    Alert.alert(t('routeSavedSuccess'));
+                  } catch {
+                    Alert.alert(isRTL ? 'تعذر الحفظ' : 'Could not save', isRTL ? 'حاول مرة أخرى.' : 'Please try again.');
+                  }
+                }}
+              >
+                <Ionicons name="bookmark-outline" size={20} color={theme.colors.primary} />
+              </TouchableOpacity>
+            )}
             {user && item.id !== 'mock-bus' && item.companyName !== 'Demo Company' && !String(item.id).startsWith('fav-') && (
               <TouchableOpacity style={styles.favoriteButton} onPress={() => toggleFavorite(user.uid, item.lineName, favoriteLines.has(item.lineName))}>
                 <Ionicons name={favoriteLines.has(item.lineName) ? 'star' : 'star-outline'} size={20} color={favoriteLines.has(item.lineName) ? '#FFCC00' : theme.colors.muted} />
@@ -446,8 +465,13 @@ export default function HomeScreen() {
             <Button
               title={t('openMap')}
               icon={<Ionicons name="map-outline" size={20} color="#FFFFFF" />}
-              onPress={() => {
+              onPress={async () => {
                 const line = selectedActiveBus.lineName;
+                if (user) {
+                  try {
+                    await saveToHistory(user.uid, line, selectedActiveBus.driverName || t('busLine'));
+                  } catch {}
+                }
                 setSelectedActiveBus(null);
                 (navigation.navigate as any)('Map', { busLine: line });
               }}

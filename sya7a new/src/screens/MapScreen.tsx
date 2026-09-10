@@ -13,9 +13,11 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { database } from '../config/firebase';
 import { ref, onValue, off } from 'firebase/database';
 import { useLocation } from '../contexts/LocationContext';
+import { useAuth } from '../contexts/AuthContext';
 import SettingsModal from '../components/SettingsModal';
 import { useTheme } from '../contexts/ThemeContext';
 import { useI18n } from '../contexts/I18nContext';
+import { saveToHistory } from '../utils/historyUtils';
 import Animated, { FadeInDown, FadeOutDown, FadeInUp } from 'react-native-reanimated';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -267,8 +269,10 @@ export default function MapScreen() {
   const navigation = useNavigation();
   const { busLine } = route.params as { busLine: string };
   const { location, getCurrentLocation } = useLocation();
+  const { user } = useAuth();
   const { theme, mode } = useTheme();
   const { t, isRTL } = useI18n();
+  const [savingRoute, setSavingRoute] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const webViewRef = useRef<WebView>(null);
 
@@ -456,9 +460,31 @@ export default function MapScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.colors.searchBg }]} onPress={() => setSettingsVisible(true)}>
-          <Ionicons name="options-outline" size={24} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
+        <View style={[styles.headerActions, isRTL && styles.rowReverse]}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: theme.colors.searchBg }]}
+            onPress={async () => {
+              if (!user) {
+                Alert.alert(t('saveRoute'), isRTL ? 'سجّل الدخول لحفظ الخط.' : 'Sign in to save this route.');
+                return;
+              }
+              try {
+                setSavingRoute(true);
+                await saveToHistory(user.uid, busLine, t('busLine'));
+                Alert.alert(t('routeSavedSuccess'));
+              } catch {
+                Alert.alert(isRTL ? 'تعذر الحفظ' : 'Could not save', isRTL ? 'حاول مرة أخرى.' : 'Please try again.');
+              } finally {
+                setSavingRoute(false);
+              }
+            }}
+          >
+            <Ionicons name="bookmark-outline" size={22} color={theme.colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.colors.searchBg }]} onPress={() => setSettingsVisible(true)}>
+            <Ionicons name="options-outline" size={22} color={theme.colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
       </Animated.View>
 
       {/* Bottom Details Card */}
@@ -531,9 +557,24 @@ export default function MapScreen() {
             )}
 
             <Button
-              title={t('saveFavorites')}
+              title={t('saveRoute')}
+              loading={savingRoute}
               icon={<Ionicons name="bookmark-outline" size={18} color="#FFFFFF" />}
-              onPress={() => Alert.alert(isRTL ? 'تم الحفظ' : 'Saved', `Bus ${selectedBus.id} saved to favorites.`)}
+              onPress={async () => {
+                if (!user) {
+                  Alert.alert(t('saveRoute'), isRTL ? 'سجّل الدخول لحفظ الخط.' : 'Sign in to save this route.');
+                  return;
+                }
+                try {
+                  setSavingRoute(true);
+                  await saveToHistory(user.uid, busLine, selectedBus.endPoint || t('busLine'));
+                  Alert.alert(t('routeSavedSuccess'));
+                } catch {
+                  Alert.alert(isRTL ? 'تعذر الحفظ' : 'Could not save', isRTL ? 'حاول مرة أخرى.' : 'Please try again.');
+                } finally {
+                  setSavingRoute(false);
+                }
+              }}
               style={{ marginTop: 16 }}
             />
           </Card>
@@ -572,6 +613,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   headerTitleContainer: { flex: 1, alignItems: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800' },

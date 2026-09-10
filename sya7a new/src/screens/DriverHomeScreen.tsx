@@ -441,44 +441,126 @@ export default function DriverHomeScreen() {
     } catch {}
   };
 
+  const isDark = theme.mode === 'dark';
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F0F4FF' }]} edges={['top', 'bottom']}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { backgroundColor: isDark ? '#0A0E1A' : '#F0F4FF' },
+      ]}
+      edges={['top', 'bottom']}
+    >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
           {/* ── TOP DRIVER HEADER ── */}
-
-          <View style={styles.topBar}>
-            <View style={styles.driverInfoLeft}>
+          <View
+            style={[
+              styles.topBar,
+              {
+                backgroundColor: isDark ? '#111827' : '#FFFFFF',
+                borderColor: isDark ? '#1F2937' : '#E0E8F8',
+                flexDirection: isRTL ? 'row-reverse' : 'row',
+              },
+            ]}
+          >
+            <View style={[styles.driverInfoLeft, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <View style={styles.driverAvatarWrap}>
-                <View style={[styles.driverAvatarRing, { borderColor: sharing ? '#10B981' : '#93C5FD' }]}>
-                  <View style={styles.driverAvatar}>
-                    <Text style={styles.avatarInitials}>{driverInitials}</Text>
+                <View style={[styles.driverAvatarRing, { borderColor: sharing ? '#10B981' : (isDark ? '#3B82F6' : '#93C5FD') }]}>
+                  <View style={[styles.driverAvatar, { backgroundColor: isDark ? '#1E293B' : '#EFF6FF' }]}>
+                    <Text style={[styles.avatarInitials, { color: isDark ? '#60A5FA' : '#1D4ED8' }]}>{driverInitials}</Text>
                   </View>
                 </View>
-                <View style={[styles.statusDot, { backgroundColor: sharing ? '#10B981' : '#94A3B8' }]} />
+                <View
+                  style={[
+                    styles.statusDot,
+                    {
+                      backgroundColor: sharing ? '#10B981' : '#94A3B8',
+                      borderColor: isDark ? '#111827' : '#FFFFFF',
+                      [isRTL ? 'left' : 'right']: 1,
+                    },
+                  ]}
+                />
               </View>
               <View style={styles.driverTextCol}>
-                <Text style={styles.driverNameText}>{driverName}</Text>
-                <View style={styles.driverSubRow}>
-                  <View style={styles.companyBadge}>
-                    <Ionicons name="business" size={10} color="#2563EB" />
-                    <Text style={styles.companyBadgeText}>{companyId ? companyId.toUpperCase() : 'CTA'}</Text>
+                <Text
+                  style={[
+                    styles.driverNameText,
+                    {
+                      color: isDark ? '#F9FAFB' : '#0F172A',
+                      textAlign: isRTL ? 'right' : 'left',
+                    },
+                  ]}
+                >
+                  {driverName}
+                </Text>
+                <View style={[styles.driverSubRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                  <View
+                    style={[
+                      styles.companyBadge,
+                      {
+                        backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+                        borderColor: isDark ? '#334155' : '#BFDBFE',
+                        flexDirection: isRTL ? 'row-reverse' : 'row',
+                      },
+                    ]}
+                  >
+                    <Ionicons name="business" size={10} color={isDark ? '#60A5FA' : '#2563EB'} />
+                    <Text style={[styles.companyBadgeText, { color: isDark ? '#60A5FA' : '#1D4ED8' }]}>
+                      {companyId ? companyId.toUpperCase() : 'CTA'}
+                    </Text>
                   </View>
-                  <View style={[styles.statusChip, { backgroundColor: sharing ? '#ECFDF5' : '#F1F5F9', borderColor: sharing ? '#86EFAC' : '#CBD5E1' }]}>
+                  <View
+                    style={[
+                      styles.statusChip,
+                      {
+                        backgroundColor: sharing
+                          ? (isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5')
+                          : (isDark ? '#1F2937' : '#F1F5F9'),
+                        borderColor: sharing
+                          ? (isDark ? '#059669' : '#86EFAC')
+                          : (isDark ? '#374151' : '#CBD5E1'),
+                        flexDirection: isRTL ? 'row-reverse' : 'row',
+                      },
+                    ]}
+                  >
                     <View style={[styles.statusChipDot, { backgroundColor: sharing ? '#10B981' : '#94A3B8' }]} />
-                    <Text style={[styles.statusChipText, { color: sharing ? '#065F46' : '#64748B' }]}>
-                      {sharing ? (isRTL ? 'في رحلة نشطة' : 'On Live Trip') : (isRTL ? 'جاهز' : 'Standby')}
+                    <Text
+                      style={[
+                        styles.statusChipText,
+                        { color: sharing ? '#10B981' : (isDark ? '#9CA3AF' : '#64748B') },
+                      ]}
+                    >
+                      {sharing ? t('onLiveTrip') : t('standby')}
                     </Text>
                   </View>
                 </View>
               </View>
             </View>
-            <View style={styles.topBarActions}>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => setSettingsVisible(true)} activeOpacity={0.7}>
-                <Ionicons name="settings-outline" size={19} color="#475569" />
+            <View style={[styles.topBarActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <TouchableOpacity
+                style={[
+                  styles.iconBtn,
+                  {
+                    backgroundColor: isDark ? '#1F2937' : '#F1F5F9',
+                    borderColor: isDark ? '#374151' : '#E2E8F0',
+                  },
+                ]}
+                onPress={() => setSettingsVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="settings-outline" size={19} color={isDark ? '#D1D5DB' : '#475569'} />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.iconBtn, styles.logoutIconBtn]} onPress={handleLogout} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={[
+                  styles.iconBtn,
+                  styles.logoutIconBtn,
+                  isDark && { backgroundColor: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.3)' },
+                ]}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="log-out-outline" size={19} color="#EF4444" />
               </TouchableOpacity>
             </View>
@@ -488,32 +570,44 @@ export default function DriverHomeScreen() {
           {sharing && (
             <Animated.View entering={FadeInDown.duration(400)} style={styles.cockpitCard}>
               {/* Header row */}
-              <View style={styles.cockpitTopRow}>
-                <View style={styles.liveTag}>
+              <View style={[styles.cockpitTopRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View style={[styles.liveTag, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                   <View style={styles.pulsingDot} />
-                  <Text style={styles.liveTagText}>LIVE DISPATCH</Text>
+                  <Text style={styles.liveTagText}>{t('liveDispatch')}</Text>
                 </View>
                 <Text style={styles.timerText}>{formatTimer(tripSeconds)}</Text>
               </View>
 
               {/* Speed + Route */}
-              <View style={styles.speedRow}>
+              <View style={[styles.speedRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <View style={styles.speedBox}>
                   <Text style={styles.speedNum}>{currentSpeed}</Text>
-                  <Text style={styles.speedUnit}>KM/H</Text>
+                  <Text style={styles.speedUnit}>{t('speedUnitKmh')}</Text>
                 </View>
-                <View style={styles.routeCol}>
-                  <Text style={styles.routeLabel}>LINE</Text>
+                <View style={[styles.routeCol, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                  <Text style={styles.routeLabel}>{t('lineLabel')}</Text>
                   <Text style={styles.routeVal}>{selectedBusLine}</Text>
-                  <Text style={styles.routeLabel}>DESTINATION</Text>
-                  <Text style={styles.routeDest} numberOfLines={2}>{endPoint}</Text>
+                  <Text style={styles.routeLabel}>{t('destinationLabel')}</Text>
+                  <Text
+                    style={[
+                      styles.routeDest,
+                      { textAlign: isRTL ? 'right' : 'left' },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {endPoint}
+                  </Text>
                 </View>
               </View>
 
               {/* SOS */}
-              <TouchableOpacity style={styles.sosBtn} onPress={handleSendSOS} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={[styles.sosBtn, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+                onPress={handleSendSOS}
+                activeOpacity={0.8}
+              >
                 <Ionicons name="warning" size={17} color="#FFF" />
-                <Text style={styles.sosBtnText}>Emergency SOS Signal</Text>
+                <Text style={styles.sosBtnText}>{t('emergencySOS')}</Text>
               </TouchableOpacity>
             </Animated.View>
           )}
@@ -521,47 +615,128 @@ export default function DriverHomeScreen() {
           {/* ───────────────────────────────────────────── */}
           {/*  SAFETRIP GUARD™ — CAMERA + MIC MONITORING  */}
           {/* ───────────────────────────────────────────── */}
-          <Animated.View entering={FadeInUp.duration(450)} style={styles.safetyCard}>
+          <Animated.View
+            entering={FadeInUp.duration(450)}
+            style={[
+              styles.safetyCard,
+              {
+                backgroundColor: isDark ? '#111827' : '#FFFFFF',
+                borderColor: isDark ? '#1F2937' : '#E0EAF8',
+              },
+            ]}
+          >
 
             {/* Card header */}
-            <View style={styles.safetyCardHeader}>
-              <View style={styles.safetyTitleRow}>
-                <View style={styles.shieldPill}>
-                  <Ionicons name="shield-checkmark" size={16} color="#059669" />
+            <View style={[styles.safetyCardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <View style={[styles.safetyTitleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View
+                  style={[
+                    styles.shieldPill,
+                    {
+                      backgroundColor: isDark ? 'rgba(5,150,105,0.2)' : '#ECFDF5',
+                      borderColor: isDark ? '#059669' : '#A7F3D0',
+                    },
+                  ]}
+                >
+                  <Ionicons name="shield-checkmark" size={16} color={isDark ? '#10B981' : '#059669'} />
                 </View>
-                <View>
-                  <Text style={styles.safetyTitle}>SafeTrip Guard™</Text>
-                  <Text style={styles.safetySub}>Live cabin monitoring</Text>
+                <View style={{ alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
+                  <Text style={[styles.safetyTitle, { color: isDark ? '#F9FAFB' : '#0F172A' }]}>
+                    {t('safeTripGuard')}
+                  </Text>
+                  <Text style={[styles.safetySub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                    {t('liveCabinMonitoring')}
+                  </Text>
                 </View>
               </View>
               {/* CAM / MIC pills */}
-              <View style={styles.sensorRow}>
-                <View style={[styles.sensorPill, cameraPermission?.granted ? styles.sensorOn : styles.sensorOff]}>
+              <View style={[styles.sensorRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View
+                  style={[
+                    styles.sensorPill,
+                    cameraPermission?.granted
+                      ? (isDark ? { backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#059669' } : styles.sensorOn)
+                      : (isDark ? { backgroundColor: '#1F2937', borderColor: '#374151' } : styles.sensorOff),
+                    { flexDirection: isRTL ? 'row-reverse' : 'row' },
+                  ]}
+                >
                   <View style={[styles.sensorDot, { backgroundColor: cameraPermission?.granted ? '#10B981' : '#94A3B8' }]} />
-                  <Ionicons name="videocam" size={11} color={cameraPermission?.granted ? '#059669' : '#94A3B8'} />
-                  <Text style={[styles.sensorText, { color: cameraPermission?.granted ? '#059669' : '#94A3B8' }]}>CAM</Text>
+                  <Ionicons
+                    name="videocam"
+                    size={11}
+                    color={cameraPermission?.granted ? '#10B981' : (isDark ? '#6B7280' : '#94A3B8')}
+                  />
+                  <Text
+                    style={[
+                      styles.sensorText,
+                      { color: cameraPermission?.granted ? '#10B981' : (isDark ? '#9CA3AF' : '#94A3B8') },
+                    ]}
+                  >
+                    {t('camPill')}
+                  </Text>
                 </View>
-                <View style={[styles.sensorPill, micPermission?.granted ? styles.sensorOn : styles.sensorOff]}>
+                <View
+                  style={[
+                    styles.sensorPill,
+                    micPermission?.granted
+                      ? (isDark ? { backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#059669' } : styles.sensorOn)
+                      : (isDark ? { backgroundColor: '#1F2937', borderColor: '#374151' } : styles.sensorOff),
+                    { flexDirection: isRTL ? 'row-reverse' : 'row' },
+                  ]}
+                >
                   <View style={[styles.sensorDot, { backgroundColor: micPermission?.granted ? '#10B981' : '#94A3B8' }]} />
-                  <Ionicons name="mic" size={11} color={micPermission?.granted ? '#059669' : '#94A3B8'} />
-                  <Text style={[styles.sensorText, { color: micPermission?.granted ? '#059669' : '#94A3B8' }]}>MIC</Text>
+                  <Ionicons
+                    name="mic"
+                    size={11}
+                    color={micPermission?.granted ? '#10B981' : (isDark ? '#6B7280' : '#94A3B8')}
+                  />
+                  <Text
+                    style={[
+                      styles.sensorText,
+                      { color: micPermission?.granted ? '#10B981' : (isDark ? '#9CA3AF' : '#94A3B8') },
+                    ]}
+                  >
+                    {t('micPill')}
+                  </Text>
                 </View>
               </View>
             </View>
 
             {/* Permission prompt */}
             {(!cameraPermission?.granted || !micPermission?.granted) && (
-              <View style={styles.permPrompt}>
-                <View style={styles.permIconRing}>
+              <View
+                style={[
+                  styles.permPrompt,
+                  {
+                    backgroundColor: isDark ? '#1E293B' : '#F0F7FF',
+                    borderColor: isDark ? '#334155' : '#BFDBFE',
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.permIconRing,
+                    {
+                      backgroundColor: isDark ? '#0F172A' : '#DBEAFE',
+                      borderColor: isDark ? '#3B82F6' : '#93C5FD',
+                    },
+                  ]}
+                >
                   <Ionicons name="camera-outline" size={28} color="#3B82F6" />
                 </View>
-                <Text style={styles.permTitle}>Camera & Mic Access Required</Text>
-                <Text style={styles.permDesc}>
-                  Live cabin camera and audio monitoring keeps every trip safe, fully recorded, and accountable.
+                <Text style={[styles.permTitle, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>
+                  {t('camMicPermRequired')}
                 </Text>
-                <TouchableOpacity style={styles.grantBtn} onPress={ensureSafetyPermissions} activeOpacity={0.85}>
+                <Text style={[styles.permDesc, { color: isDark ? '#CBD5E1' : '#3B82F6' }]}>
+                  {t('camMicPermDesc')}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.grantBtn, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+                  onPress={ensureSafetyPermissions}
+                  activeOpacity={0.85}
+                >
                   <Ionicons name="shield-checkmark-outline" size={15} color="#FFF" />
-                  <Text style={styles.grantBtnText}>Enable Safety Monitoring</Text>
+                  <Text style={styles.grantBtnText}>{t('enableSafetyMonitoring')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -587,14 +762,12 @@ export default function DriverHomeScreen() {
                       <CameraView ref={cameraRef} facing={cameraFacing} style={styles.camView} mute={false} />
                     )}
 
-                    {/* Top HUD - suppressed during active WebRTC streaming to prevent covering video/status */}
+                    {/* Top HUD */}
                     {!isSafetyStreaming && (
-                      <View style={styles.camTopHUD}>
-                        <View style={styles.recBadge}>
+                      <View style={[styles.camTopHUD, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                        <View style={[styles.recBadge, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                           <View style={styles.recDot} />
-                          <Text style={styles.recText}>
-                            ● REC  LIVE CABIN FEED
-                          </Text>
+                          <Text style={styles.recText}>{t('recLiveCabin') || '● REC  LIVE CABIN FEED'}</Text>
                         </View>
                         <TouchableOpacity
                           style={styles.flipBtn}
@@ -618,13 +791,20 @@ export default function DriverHomeScreen() {
 
                     {/* Bottom audio HUD */}
                     {!isSafetyStreaming && (
-                      <View style={styles.camBottomHUD}>
+                      <View style={[styles.camBottomHUD, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                         <Ionicons name="mic" size={13} color="#10B981" />
-                        <Text style={styles.audioText}>
-                          {micPermission?.granted ? 'Audio Guard Active' : 'Mic Access Needed'}
+                        <Text
+                          style={[
+                            styles.audioText,
+                            { textAlign: isRTL ? 'right' : 'left' },
+                          ]}
+                        >
+                          {micPermission?.granted
+                            ? (t('audioGuardActive') || 'Audio Guard Active')
+                            : (t('micAccessNeeded') || 'Mic Access Needed')}
                         </Text>
                         {micPermission?.granted && (
-                          <View style={styles.waves}>
+                          <View style={[styles.waves, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                             {[5, 10, 7, 14, 6, 11, 8].map((h, i) => (
                               <View key={i} style={[styles.wave, { height: h }]} />
                             ))}
@@ -634,23 +814,49 @@ export default function DriverHomeScreen() {
                     )}
                   </View>
                 ) : (
-                  <View style={styles.camMini}>
-                    <View style={styles.camMiniLeft}>
-                      <View style={styles.camMiniIcon}>
-                        <Ionicons name="videocam" size={16} color="#059669" />
+                  <View
+                    style={[
+                      styles.camMini,
+                      {
+                        backgroundColor: isDark ? 'rgba(16,185,129,0.1)' : '#F0FDF4',
+                        borderColor: isDark ? '#065F46' : '#A7F3D0',
+                        flexDirection: isRTL ? 'row-reverse' : 'row',
+                      },
+                    ]}
+                  >
+                    <View style={[styles.camMiniLeft, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                      <View
+                        style={[
+                          styles.camMiniIcon,
+                          { backgroundColor: isDark ? 'rgba(16,185,129,0.2)' : '#DCFCE7' },
+                        ]}
+                      >
+                        <Ionicons name="videocam" size={16} color="#10B981" />
                       </View>
-                      <Text style={styles.camMiniText}>Cabin Camera Running in Background</Text>
+                      <Text style={[styles.camMiniText, { color: isDark ? '#34D399' : '#065F46' }]}>
+                        {t('cabinCameraBackground')}
+                      </Text>
                     </View>
-                    <View style={styles.livePill}>
+                    <View style={[styles.livePill, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                       <View style={styles.recDotSmall} />
-                      <Text style={styles.livePillText}>LIVE</Text>
+                      <Text style={styles.livePillText}>{t('liveBadge')}</Text>
                     </View>
                   </View>
                 )}
 
-                <TouchableOpacity style={styles.toggleRow} onPress={() => setCameraPreviewOpen(!cameraPreviewOpen)} activeOpacity={0.7}>
-                  <Text style={styles.toggleText}>{cameraPreviewOpen ? 'Hide Viewfinder' : 'Show Viewfinder'}</Text>
-                  <Ionicons name={cameraPreviewOpen ? 'chevron-up' : 'chevron-down'} size={15} color="#64748B" />
+                <TouchableOpacity
+                  style={[styles.toggleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+                  onPress={() => setCameraPreviewOpen(!cameraPreviewOpen)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.toggleText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                    {cameraPreviewOpen ? t('hideViewfinder') : t('showViewfinder')}
+                  </Text>
+                  <Ionicons
+                    name={cameraPreviewOpen ? 'chevron-up' : 'chevron-down'}
+                    size={15}
+                    color={isDark ? '#9CA3AF' : '#64748B'}
+                  />
                 </TouchableOpacity>
               </View>
             )}
@@ -662,29 +868,77 @@ export default function DriverHomeScreen() {
           {!sharing ? (
             <>
               {/* Bus Line */}
-              <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.configCard}>
-                <View style={styles.configCardHead}>
-                  <View style={styles.configTitleRow}>
-                    <View style={styles.configIcon}>
-                      <Ionicons name="bus" size={14} color="#2563EB" />
+              <Animated.View
+                entering={FadeInDown.delay(80).duration(400)}
+                style={[
+                  styles.configCard,
+                  {
+                    backgroundColor: isDark ? '#111827' : '#FFFFFF',
+                    borderColor: isDark ? '#1F2937' : '#E0EAF8',
+                  },
+                ]}
+              >
+                <View style={[styles.configCardHead, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                  <View style={[styles.configTitleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                    <View
+                      style={[
+                        styles.configIcon,
+                        {
+                          backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+                          borderColor: isDark ? '#334155' : '#BFDBFE',
+                        },
+                      ]}
+                    >
+                      <Ionicons name="bus" size={14} color={isDark ? '#60A5FA' : '#2563EB'} />
                     </View>
-                    <Text style={styles.configTitle}>{isRTL ? 'خط الحافلة' : 'Select Bus Line'}</Text>
+                    <Text style={[styles.configTitle, { color: isDark ? '#F9FAFB' : '#0F172A' }]}>
+                      {t('busLine')}
+                    </Text>
                   </View>
-                  <Text style={styles.configSub}>Active route</Text>
+                  <Text style={[styles.configSub, { color: isDark ? '#9CA3AF' : '#94A3B8' }]}>
+                    {t('activeRoute')}
+                  </Text>
                 </View>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={[
+                    styles.chipScroll,
+                    { flexDirection: isRTL ? 'row-reverse' : 'row' },
+                  ]}
+                >
                   {busLines.map((line) => {
                     const sel = selectedBusLine === line;
                     return (
                       <TouchableOpacity
                         key={line}
                         onPress={() => setSelectedBusLine(line)}
-                        style={[styles.busChip, sel && styles.busChipSel]}
+                        style={[
+                          styles.busChip,
+                          {
+                            backgroundColor: sel
+                              ? '#1D4ED8'
+                              : (isDark ? '#1F2937' : '#F8FAFC'),
+                            borderColor: sel
+                              ? '#1D4ED8'
+                              : (isDark ? '#374151' : '#CBD5E1'),
+                            flexDirection: isRTL ? 'row-reverse' : 'row',
+                          },
+                          sel && styles.busChipSel,
+                        ]}
                         activeOpacity={0.75}
                       >
-                        <Ionicons name="bus" size={15} color={sel ? '#FFF' : '#2563EB'} />
-                        <Text style={[styles.busChipText, sel && styles.busChipTextSel]}>{line}</Text>
+                        <Ionicons name="bus" size={15} color={sel ? '#FFF' : (isDark ? '#60A5FA' : '#2563EB')} />
+                        <Text
+                          style={[
+                            styles.busChipText,
+                            { color: sel ? '#FFF' : (isDark ? '#E5E7EB' : '#334155') },
+                            sel && styles.busChipTextSel,
+                          ]}
+                        >
+                          {line}
+                        </Text>
                         {sel && <Ionicons name="checkmark-circle" size={13} color="#FFF" />}
                       </TouchableOpacity>
                     );
@@ -692,26 +946,61 @@ export default function DriverHomeScreen() {
                 </ScrollView>
 
                 {selectedBusLine && (
-                  <View style={styles.selLineBanner}>
-                    <Ionicons name="checkmark-circle" size={14} color="#2563EB" />
-                    <Text style={styles.selLineBannerText}>
-                      {isRTL ? `المحدد: ${selectedBusLine}` : `Selected: ${selectedBusLine}`}
+                  <View
+                    style={[
+                      styles.selLineBanner,
+                      {
+                        backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+                        borderColor: isDark ? '#334155' : '#BFDBFE',
+                        flexDirection: isRTL ? 'row-reverse' : 'row',
+                      },
+                    ]}
+                  >
+                    <Ionicons name="checkmark-circle" size={14} color={isDark ? '#60A5FA' : '#2563EB'} />
+                    <Text style={[styles.selLineBannerText, { color: isDark ? '#93C5FD' : '#1D4ED8' }]}>
+                      {`${t('selectedLabel')}: ${selectedBusLine}`}
                     </Text>
                   </View>
                 )}
               </Animated.View>
 
               {/* Destination */}
-              <Animated.View entering={FadeInDown.delay(140).duration(400)} style={styles.configCard}>
-                <View style={styles.configCardHead}>
-                  <View style={styles.configTitleRow}>
-                    <View style={styles.configIcon}>
-                      <Ionicons name="navigate" size={14} color="#2563EB" />
+              <Animated.View
+                entering={FadeInDown.delay(140).duration(400)}
+                style={[
+                  styles.configCard,
+                  {
+                    backgroundColor: isDark ? '#111827' : '#FFFFFF',
+                    borderColor: isDark ? '#1F2937' : '#E0EAF8',
+                  },
+                ]}
+              >
+                <View style={[styles.configCardHead, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                  <View style={[styles.configTitleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                    <View
+                      style={[
+                        styles.configIcon,
+                        {
+                          backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+                          borderColor: isDark ? '#334155' : '#BFDBFE',
+                        },
+                      ]}
+                    >
+                      <Ionicons name="navigate" size={14} color={isDark ? '#60A5FA' : '#2563EB'} />
                     </View>
-                    <Text style={styles.configTitle}>{isRTL ? 'الوجهة' : 'Destination'}</Text>
+                    <Text style={[styles.configTitle, { color: isDark ? '#F9FAFB' : '#0F172A' }]}>
+                      {t('destination')}
+                    </Text>
                   </View>
                   <TouchableOpacity
-                    style={styles.mapPickBtn}
+                    style={[
+                      styles.mapPickBtn,
+                      {
+                        backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+                        borderColor: isDark ? '#334155' : '#BFDBFE',
+                        flexDirection: isRTL ? 'row-reverse' : 'row',
+                      },
+                    ]}
                     onPress={async () => {
                       try {
                         const hasServices = await Location.hasServicesEnabledAsync();
@@ -727,12 +1016,24 @@ export default function DriverHomeScreen() {
                     }}
                     activeOpacity={0.8}
                   >
-                    <Ionicons name="map-outline" size={14} color="#2563EB" />
-                    <Text style={styles.mapPickText}>{isRTL ? 'اختر على الخريطة' : 'Pick on Map'}</Text>
+                    <Ionicons name="map-outline" size={14} color={isDark ? '#60A5FA' : '#2563EB'} />
+                    <Text style={[styles.mapPickText, { color: isDark ? '#60A5FA' : '#2563EB' }]}>
+                      {t('pickOnMap')}
+                    </Text>
                     {tempPick && (
-                      <View style={styles.mapPickedBadge}>
-                        <Ionicons name="checkmark-circle" size={11} color="#059669" />
-                        <Text style={styles.mapPickedText}>{isRTL ? 'محدد' : 'Selected'}</Text>
+                      <View
+                        style={[
+                          styles.mapPickedBadge,
+                          {
+                            backgroundColor: isDark ? 'rgba(16,185,129,0.2)' : '#ECFDF5',
+                            flexDirection: isRTL ? 'row-reverse' : 'row',
+                          },
+                        ]}
+                      >
+                        <Ionicons name="checkmark-circle" size={11} color="#10B981" />
+                        <Text style={[styles.mapPickedText, { color: '#10B981' }]}>
+                          {t('selectedBadge')}
+                        </Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -746,44 +1047,90 @@ export default function DriverHomeScreen() {
                   containerStyle={{ marginBottom: 14 }}
                 />
 
-                <Text style={styles.quickLabel}>{isRTL ? 'وجهات شائعة' : 'QUICK DESTINATIONS'}</Text>
-                <View style={styles.quickWrap}>
-                  {quickDestinations.map((q) => (
-                    <TouchableOpacity
-                      key={q.name}
-                      style={[styles.quickChip, endPoint === q.name && styles.quickChipActive]}
-                      onPress={() => handleSelectQuickDest(q)}
-                      activeOpacity={0.75}
-                    >
-                      <Ionicons name="location" size={11} color={endPoint === q.name ? '#1D4ED8' : '#94A3B8'} />
-                      <Text style={[styles.quickChipText, endPoint === q.name && styles.quickChipTextActive]}>
-                        {q.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                <Text
+                  style={[
+                    styles.quickLabel,
+                    {
+                      color: isDark ? '#9CA3AF' : '#94A3B8',
+                      textAlign: isRTL ? 'right' : 'left',
+                    },
+                  ]}
+                >
+                  {t('quickDestinations')}
+                </Text>
+                <View style={[styles.quickWrap, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                  {quickDestinations.map((q) => {
+                    const isActive = endPoint === q.name;
+                    return (
+                      <TouchableOpacity
+                        key={q.name}
+                        style={[
+                          styles.quickChip,
+                          {
+                            backgroundColor: isActive
+                              ? (isDark ? '#1E3A8A' : '#EFF6FF')
+                              : (isDark ? '#1F2937' : '#F1F5F9'),
+                            borderColor: isActive
+                              ? '#3B82F6'
+                              : (isDark ? '#374151' : '#E2E8F0'),
+                            flexDirection: isRTL ? 'row-reverse' : 'row',
+                          },
+                        ]}
+                        onPress={() => handleSelectQuickDest(q)}
+                        activeOpacity={0.75}
+                      >
+                        <Ionicons
+                          name="location"
+                          size={11}
+                          color={isActive ? '#38BDF8' : (isDark ? '#9CA3AF' : '#94A3B8')}
+                        />
+                        <Text
+                          style={[
+                            styles.quickChipText,
+                            { color: isActive ? (isDark ? '#93C5FD' : '#1D4ED8') : (isDark ? '#D1D5DB' : '#475569') },
+                            isActive && { fontWeight: '700' },
+                          ]}
+                        >
+                          {q.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </Animated.View>
 
               {/* ── START TRIP BUTTON ── */}
               <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-                <TouchableOpacity style={styles.startBtn} onPress={startSharing} activeOpacity={0.83}>
+                <TouchableOpacity
+                  style={[styles.startBtn, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+                  onPress={startSharing}
+                  activeOpacity={0.83}
+                >
                   <View style={styles.startBtnIcon}>
                     <Ionicons name="radio" size={21} color="#2563EB" />
                   </View>
-                  <View style={styles.startBtnText}>
-                    <Text style={styles.startBtnLabel}>{isRTL ? 'بدء الرحلة الحية' : 'Start Live Trip'}</Text>
-                    <Text style={styles.startBtnSub}>{isRTL ? 'مشاركة الموقع + مراقبة الأمان' : 'Location sharing + Safety monitoring'}</Text>
+                  <View style={[styles.startBtnText, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                    <Text style={styles.startBtnLabel}>{t('startLiveTrip')}</Text>
+                    <Text style={styles.startBtnSub}>{t('startLiveTripSub')}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.65)" />
+                  <Ionicons
+                    name={isRTL ? 'chevron-back' : 'chevron-forward'}
+                    size={18}
+                    color="rgba(255,255,255,0.65)"
+                  />
                 </TouchableOpacity>
               </Animated.View>
             </>
           ) : (
             /* ── STOP TRIP BUTTON ── */
             <Animated.View entering={FadeInDown.duration(300)}>
-              <TouchableOpacity style={styles.stopBtn} onPress={stopSharing} activeOpacity={0.83}>
+              <TouchableOpacity
+                style={[styles.stopBtn, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+                onPress={stopSharing}
+                activeOpacity={0.83}
+              >
                 <Ionicons name="stop-circle" size={22} color="#FFFFFF" />
-                <Text style={styles.stopBtnText}>{isRTL ? 'إنهاء الرحلة الحالية' : 'End Live Trip Broadcast'}</Text>
+                <Text style={styles.stopBtnText}>{t('endLiveTrip')}</Text>
               </TouchableOpacity>
             </Animated.View>
           )}
@@ -793,9 +1140,20 @@ export default function DriverHomeScreen() {
 
       {/* ── MAP PICKER MODAL ── */}
       <Modal visible={pickerVisible} animationType="slide" onRequestClose={() => setPickerVisible(false)}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top', 'bottom']}>
-          <View style={styles.mapModalHeader}>
-            <View style={{ flex: 1, marginRight: 12 }}>
+        <SafeAreaView
+          style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#FFFFFF' }}
+          edges={['top', 'bottom']}
+        >
+          <View
+            style={[
+              styles.mapModalHeader,
+              {
+                borderColor: isDark ? '#1F2937' : '#E2E8F0',
+                flexDirection: isRTL ? 'row-reverse' : 'row',
+              },
+            ]}
+          >
+            <View style={{ flex: 1, marginHorizontal: 8 }}>
               <Input
                 placeholder={t('searchDestination')}
                 iconName="search"
@@ -825,13 +1183,20 @@ export default function DriverHomeScreen() {
               />
             </View>
             <TouchableOpacity onPress={() => setPickerVisible(false)} style={styles.modalDoneBtn}>
-              <Text style={styles.modalDoneBtn}>{isRTL ? 'تم' : 'Done'}</Text>
+              <Text style={styles.modalDoneBtnText}>{isRTL ? 'تم' : 'Done'}</Text>
             </TouchableOpacity>
           </View>
 
           {currentPos && (
             <TouchableOpacity
-              style={styles.useCurrentLocRow}
+              style={[
+                styles.useCurrentLocRow,
+                {
+                  backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+                  borderBottomColor: isDark ? '#334155' : '#DBEAFE',
+                  flexDirection: isRTL ? 'row-reverse' : 'row',
+                },
+              ]}
               onPress={() => {
                 const latNum = currentPos.lat;
                 const lngNum = currentPos.lng;
@@ -844,17 +1209,39 @@ export default function DriverHomeScreen() {
                 );
               }}
             >
-              <Ionicons name="locate" size={18} color="#2563EB" style={{ marginRight: 10 }} />
-              <Text style={styles.useCurrentLocText}>{t('useCurrentLocation')}</Text>
+              <Ionicons
+                name="locate"
+                size={18}
+                color={isDark ? '#60A5FA' : '#2563EB'}
+                style={isRTL ? { marginLeft: 10 } : { marginRight: 10 }}
+              />
+              <Text style={[styles.useCurrentLocText, { color: isDark ? '#93C5FD' : '#2563EB' }]}>
+                {t('useCurrentLocation')}
+              </Text>
             </TouchableOpacity>
           )}
 
           {searchResults.length > 0 && (
-            <ScrollView style={styles.searchResultsContainer} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              style={[
+                styles.searchResultsContainer,
+                {
+                  backgroundColor: isDark ? '#111827' : '#FFFFFF',
+                  borderBottomColor: isDark ? '#1F2937' : '#E2E8F0',
+                },
+              ]}
+              keyboardShouldPersistTaps="handled"
+            >
               {searchResults.map((r, idx) => (
                 <TouchableOpacity
                   key={`${r.lat},${r.lon}-${idx}`}
-                  style={styles.searchItem}
+                  style={[
+                    styles.searchItem,
+                    {
+                      borderBottomColor: isDark ? '#1F2937' : '#F1F5F9',
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
+                    },
+                  ]}
                   onPress={() => {
                     const latNum = Number(r.lat);
                     const lngNum = Number(r.lon);
@@ -868,8 +1255,24 @@ export default function DriverHomeScreen() {
                     );
                   }}
                 >
-                  <Ionicons name="location-outline" size={18} color="#64748B" style={{ marginRight: 10 }} />
-                  <Text style={styles.searchItemText} numberOfLines={1}>{r.display_name}</Text>
+                  <Ionicons
+                    name="location-outline"
+                    size={18}
+                    color={isDark ? '#9CA3AF' : '#64748B'}
+                    style={isRTL ? { marginLeft: 10 } : { marginRight: 10 }}
+                  />
+                  <Text
+                    style={[
+                      styles.searchItemText,
+                      {
+                        color: isDark ? '#F3F4F6' : '#1E293B',
+                        textAlign: isRTL ? 'right' : 'left',
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {r.display_name}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -915,7 +1318,15 @@ export default function DriverHomeScreen() {
               } catch {}
             }}
           />
-          <View style={styles.mapModalFooter}>
+          <View
+            style={[
+              styles.mapModalFooter,
+              {
+                backgroundColor: isDark ? '#111827' : '#FFFFFF',
+                borderColor: isDark ? '#1F2937' : '#E2E8F0',
+              },
+            ]}
+          >
             <Button title={t('confirmLocation')} onPress={() => setPickerVisible(false)} size="large" />
           </View>
         </SafeAreaView>
@@ -1580,11 +1991,13 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   modalDoneBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  modalDoneBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2563EB',
   },
   useCurrentLocRow: {
     flexDirection: 'row',

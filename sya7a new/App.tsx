@@ -138,6 +138,8 @@ function AppNavigator() {
   );
 }
 
+import { SubscriptionProvider } from './src/contexts/SubscriptionContext';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -145,7 +147,9 @@ export default function App() {
         <ThemeProvider>
           <I18nProvider>
             <UserTypeProvider>
-              <AppNavigator />
+              <SubscriptionProvider>
+                <AppNavigator />
+              </SubscriptionProvider>
             </UserTypeProvider>
           </I18nProvider>
         </ThemeProvider>
