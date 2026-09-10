@@ -1,13 +1,32 @@
-node_modules/
-.expo/
-dist/
-npm-debug.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-*.orig.*
-.DS_Store
+# Firebase credentials and environment secrets
+tracking-*.json
+*serviceAccount*.json
+*firebase-adminsdk*.json
+*.key.json
+.env
 .env.local
 .env.*.local
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# Expo & Mobile
+.expo/
+
+# Production build
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Backups
+*.git_backup/
+.git_backup/
+
+

@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Bus Tracker",
+    "slug": "bus-tracker",
+    "version": "1.0.0",
+    "sdkVersion": "53.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bustracker.app"
+    },
+    "android": {
+      "package": "com.bustracker.app"
+    },
+    "web": {},
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "This app needs access to location to show your position on the map and calculate bus ETAs.",
+          "locationWhenInUsePermission": "This app needs access to location to show your position on the map and calculate bus ETAs.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ]
+    ]
+  }
+}
