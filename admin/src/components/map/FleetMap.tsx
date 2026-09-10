@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import { LiveBusLocation, BusRouteDefinition } from '../../types';
 import { Layers, Eye, Filter, Crosshair, Maximize2 } from 'lucide-react';
+import { fetchRoadRoute } from '../../services/routingService';
 
 interface FleetMapProps {
   liveLocations: LiveBusLocation[];
@@ -98,8 +99,9 @@ export const FleetMap: React.FC<FleetMapProps> = ({
         const lineColor = bus.isActive ? (isSelected ? '#F59E0B' : '#10B981') : '#64748B';
 
         // Glowing outer casing polyline for active routes
+        let glowLine: L.Polyline | null = null;
         if (bus.isActive) {
-          const glowLine = L.polyline([startLatLng, endLatLng], {
+          glowLine = L.polyline([startLatLng, endLatLng], {
             color: lineColor,
             weight: 8,
             opacity: 0.25,
@@ -115,6 +117,13 @@ export const FleetMap: React.FC<FleetMapProps> = ({
           opacity: bus.isActive ? 0.9 : 0.45,
           dashArray: bus.isActive ? undefined : '6, 6',
           lineCap: 'round',
+        });
+
+        // Dynamically update coordinates to follow actual roads via OSRM routing engine
+        fetchRoadRoute(bus.startLat, bus.startLng, bus.endLat, bus.endLng).then((res) => {
+          if (!mapInstanceRef.current) return;
+          polyline.setLatLngs(res.coordinates);
+          if (glowLine) glowLine.setLatLngs(res.coordinates);
         });
 
         polyline.bindPopup(`
@@ -344,7 +353,7 @@ export const FleetMap: React.FC<FleetMapProps> = ({
         </span>
         <div className="flex items-center gap-2">
           <span className="h-2 w-6 rounded-full bg-emerald-500 shadow-sm"></span>
-          <span className="text-slate-300 font-medium">Active Bus Line (Route)</span>
+          <span className="text-slate-300 font-medium">Active Bus Line (Road Network)</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="h-3 w-5 rounded bg-emerald-600 border border-white text-[8px] font-bold text-white flex items-center justify-center">BUS</span>

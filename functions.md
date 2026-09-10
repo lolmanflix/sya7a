@@ -3,7 +3,7 @@
 > **Note:** This file is automatically compiled by `scripts/generate_functions_doc.py`.
 > Do not manually edit this file. Keep inline docstrings updated in the source code.
 
-**Total Documented Functions:** 295
+**Total Documented Functions:** 298
 
 ---
 
@@ -73,16 +73,16 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L265 | `handleResetView()` | *none* | No description provided. |
-| L271 | `handleFitAll()` | *none* | No description provided. |
+| L274 | `handleResetView()` | *none* | No description provided. |
+| L280 | `handleFitAll()` | *none* | No description provided. |
 
 ## [RoutePickerMap.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/map/RoutePickerMap.tsx)
 `admin/src/components/map/RoutePickerMap.tsx`
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L88 | `handleClick()` | `e: L.LeafletMouseEvent` | No description provided. |
-| L113 | `applyPreset()` | `landmark: { name: string; lat: number; lng: number }` | No description provided. |
+| L145 | `handleClick()` | `e: L.LeafletMouseEvent` | No description provided. |
+| L170 | `applyPreset()` | `landmark: { name: string; lat: number; lng: number }` | No description provided. |
 
 ## [DriverSafetyMediaModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/components/modals/DriverSafetyMediaModal.tsx)
 `admin/src/components/modals/DriverSafetyMediaModal.tsx`
@@ -228,6 +228,15 @@
 | L44 | `updateDriverCompany()` | `driverUid: string, companyId: string` | Updates assigned company for a driver. |
 | L52 | `saveDriverProfile()` | `driver: DriverProfile` | Saves or provisions a driver profile in RTDB. |
 | L65 | `removeDriverProfile()` | `driverUid: string` | Removes a driver record from RTDB. |
+
+## [routingService.ts](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/services/routingService.ts)
+`admin/src/services/routingService.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L1 | `buildKey()` | `startLat: number, startLng: number, endLat: number, endLng: number` | Routing Service for Wasalt Admin Panel Uses the Project-OSRM public routing engine to calculate road-following driving geometries with in-memory caching and fallback straight-line polylines. / export interface RouteGeometryResult { coordinates: [number, number][]; distanceKm: number; durationMin: number; isFallback: boolean; } // In-memory cache for computed road paths to avoid redundant network calls const routeCache = new Map<string, RouteGeometryResult>(); /** Builds a deterministic cache key from lat/lng endpoints. |
+| L24 | `haversineDistance()` | `lat1: number, lon1: number, lat2: number, lon2: number` | Calculates haversine distance in km as fallback. |
+| L40 | `fetchRoadRoute()` | `startLat: number,   startLng: number,   endLat: number,   endLng: number` | Fetches road-following route coordinates between two points using OSRM driving engine. Falls back to straight line if offline or endpoint is unresponsive. |
 
 ## [telemetryService.ts](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/admin/src/services/telemetryService.ts)
 `admin/src/services/telemetryService.ts`

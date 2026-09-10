@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { MapPin, Navigation, Landmark } from 'lucide-react';
+import { MapPin, Navigation, Landmark, Route, Clock, CheckCircle2 } from 'lucide-react';
+import { fetchRoadRoute, RouteGeometryResult } from '../../services/routingService';
 
 interface RoutePickerMapProps {
   startLat?: number;
@@ -36,10 +37,14 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
   const mapRef = useRef<L.Map | null>(null);
   const startMarkerRef = useRef<L.Marker | null>(null);
   const endMarkerRef = useRef<L.Marker | null>(null);
+  const routeLineRef = useRef<L.Polyline | null>(null);
+  const routeGlowRef = useRef<L.Polyline | null>(null);
 
   const [activeMode, setActiveMode] = useState<'start' | 'end'>('start');
   const [startPoint, setStartPoint] = useState({ lat: startLat, lng: startLng, address: 'Start Station' });
   const [endPoint, setEndPoint] = useState({ lat: endLat, lng: endLng, address: 'Destination' });
+  const [routeStats, setRouteStats] = useState<RouteGeometryResult | null>(null);
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState<boolean>(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -53,6 +58,24 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
     }).addTo(map);
+
+    // Outer glow polyline for route
+    const glow = L.polyline([[startLat, startLng], [endLat, endLng]], {
+      color: '#3B82F6',
+      weight: 7,
+      opacity: 0.25,
+      lineCap: 'round',
+    }).addTo(map);
+    routeGlowRef.current = glow;
+
+    // Road route polyline
+    const line = L.polyline([[startLat, startLng], [endLat, endLng]], {
+      color: '#2563EB',
+      weight: 4,
+      opacity: 0.9,
+      lineCap: 'round',
+    }).addTo(map);
+    routeLineRef.current = line;
 
     // Start Marker (Blue A)
     const sIcon = L.divIcon({
@@ -79,6 +102,40 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
       mapRef.current = null;
     };
   }, []);
+
+  // Fetch and draw road-following geometry whenever endpoints change
+  useEffect(() => {
+    let isMounted = true;
+    setIsCalculatingRoute(true);
+
+    fetchRoadRoute(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng)
+      .then((res) => {
+        if (!isMounted) return;
+        setIsCalculatingRoute(false);
+        setRouteStats(res);
+
+        if (routeLineRef.current && routeGlowRef.current) {
+          routeLineRef.current.setLatLngs(res.coordinates);
+          routeGlowRef.current.setLatLngs(res.coordinates);
+
+          routeLineRef.current.setStyle({
+            dashArray: res.isFallback ? '6, 6' : undefined,
+            color: res.isFallback ? '#64748B' : '#2563EB',
+          });
+          routeGlowRef.current.setStyle({
+            color: res.isFallback ? '#94A3B8' : '#3B82F6',
+            opacity: res.isFallback ? 0.15 : 0.25,
+          });
+        }
+      })
+      .catch(() => {
+        if (isMounted) setIsCalculatingRoute(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng]);
 
   // Map Click Handler (sets coordinates without requiring external geocoding APIs)
   useEffect(() => {
@@ -129,39 +186,66 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Mode Buttons */}
-      <div className="flex items-center justify-between">
+      {/* Mode Buttons & Quick Status */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveMode('start')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
               activeMode === 'start'
-                ? 'bg-blue-600 text-white shadow-md'
+                ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400/40'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             <MapPin className="w-3.5 h-3.5" />
-            Click Map to Place Start (A)
+            Set Start (A)
           </button>
           <button
             type="button"
             onClick={() => setActiveMode('end')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
               activeMode === 'end'
-                ? 'bg-purple-600 text-white shadow-md'
+                ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-400/40'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             <Navigation className="w-3.5 h-3.5" />
-            Click Map to Place Destination (B)
+            Set Destination (B)
           </button>
         </div>
+
+        {/* Real-time road distance badge */}
+        {routeStats && !isCalculatingRoute && (
+          <div className="flex items-center gap-2 text-xs text-slate-300 bg-slate-900/90 border border-slate-700/80 px-2.5 py-1 rounded-lg">
+            <Route className="w-3.5 h-3.5 text-blue-400" />
+            <span className="font-semibold text-white">{routeStats.distanceKm} km</span>
+            <span className="text-slate-500">•</span>
+            <span className="flex items-center gap-1 text-slate-400">
+              <Clock className="w-3 h-3 text-slate-400" />
+              ~{routeStats.durationMin} min
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Interactive Map Box */}
-      <div className="h-60 rounded-xl overflow-hidden border border-slate-700/80 shadow-inner">
+      <div className="h-60 rounded-xl overflow-hidden border border-slate-700/80 shadow-inner relative">
         <div ref={containerRef} className="w-full h-full" />
+        
+        {/* Road Engine Status Badge over Map */}
+        <div className="absolute top-2 right-2 z-[400] px-2 py-0.5 rounded-md bg-slate-900/90 backdrop-blur-sm border border-slate-700 text-[10px] font-medium flex items-center gap-1 shadow-lg">
+          <Route className="w-3 h-3 text-blue-400" />
+          {isCalculatingRoute ? (
+            <span className="text-amber-300 animate-pulse">Calculating road route...</span>
+          ) : routeStats?.isFallback ? (
+            <span className="text-slate-400">Direct line fallback</span>
+          ) : (
+            <span className="text-emerald-400 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Road route active
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Offline Landmark Quick Presets */}
@@ -186,3 +270,4 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     </div>
   );
 };
+
