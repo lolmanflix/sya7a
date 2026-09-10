@@ -27,7 +27,8 @@ import {
   getDriverBusLine,
   clearDriverSession,
 } from '../utils/driverStorage';
-import { database } from '../config/firebase';
+import { useDriverSafetyStream } from '../utils/driverSafetyStream';
+import { auth, database } from '../config/firebase';
 import SettingsModal from '../components/SettingsModal';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -72,6 +73,7 @@ export default function DriverHomeScreen() {
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [cameraFacing, setCameraFacing] = useState<'front' | 'back'>('front');
   const [cameraPreviewOpen, setCameraPreviewOpen] = useState(true);
+  const cameraRef = useRef<any>(null);
 
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [busLines, setBusLines] = useState<string[]>([]);
@@ -183,53 +185,19 @@ export default function DriverHomeScreen() {
     }
   };
 
-  // Listen to remote admin safety check requests
-  useEffect(() => {
-    if (!user) return;
-    const controlRef = ref(database, `driverControls/${user.uid}/mediaRequest`);
-    let lastRequestAt = '';
-    const unsubscribe = onValue(controlRef, (snapshot) => {
-      const request = snapshot.val();
-      if (!request || request.status !== 'pending' || !request.requestedAt || request.requestedAt === lastRequestAt) return;
-      lastRequestAt = request.requestedAt;
-      const kind = request.kind === 'video' ? 'video' : 'audio';
-      Alert.alert(
-        isRTL ? 'طلب فحص أمان' : 'Safety Check Requested',
-        isRTL
-          ? `طلب المشرف فحص ${kind === 'video' ? 'فيديو' : 'صوتي'}. هل توافق على بدء الفحص؟`
-          : `An administrator requested a live ${kind} safety check. Do you agree to connect?`,
-        [
-          {
-            text: isRTL ? 'رفض' : 'Decline',
-            style: 'cancel',
-            onPress: () =>
-              set(controlRef, {
-                ...request,
-                status: 'declined',
-                respondedAt: new Date().toISOString(),
-              }),
-          },
-          {
-            text: isRTL ? 'قبول' : 'Accept',
-            onPress: () =>
-              set(controlRef, {
-                ...request,
-                status: 'accepted',
-                respondedAt: new Date().toISOString(),
-              }).then(() => {
-                Alert.alert(
-                  isRTL ? 'تم قبول الفحص' : 'Check Accepted',
-                  isRTL
-                    ? 'كاميرا وميكروفون الكابينة متصلان بالأمان.'
-                    : 'Cab camera and audio stream connected securely.'
-                );
-              }),
-          },
-        ]
-      );
-    });
-    return unsubscribe;
-  }, [user, isRTL]);
+  // SafeTrip™ Remote Camera & Audio Safety Stream Manager (WebRTC P2P 30 FPS)
+  const {
+    isStreaming: isSafetyStreaming,
+    webrtcHtml,
+    webViewRef,
+    onWebViewMessage,
+  } = useDriverSafetyStream({
+    user,
+    driverName,
+    cameraRef,
+    isRTL,
+    onSessionStart: () => setCameraPreviewOpen(true),
+  });
 
   // Quick Curated Popular Destination Chips
   const quickDestinations = [
@@ -285,11 +253,29 @@ export default function DriverHomeScreen() {
     // Request camera and microphone permissions if not yet granted
     await ensureSafetyPermissions();
 
+    const activeUser = auth.currentUser || user;
+    if (!activeUser?.uid) {
+      Alert.alert(
+        isRTL ? 'تسجيل الدخول مطلوب' : 'Authentication Required',
+        isRTL ? 'يرجى تسجيل الدخول مرة أخرى لبدء مشاركة الموقع.' : 'Your session has expired. Please log in again to start broadcasting.'
+      );
+      return;
+    }
+
+    try {
+      if (auth.currentUser) {
+        await auth.currentUser.getIdToken(true).catch(() => {});
+      }
+    } catch {
+      // Allow attempt to continue
+    }
+
     try {
       const loc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.BestForNavigation,
       });
 
+      const driverUid = activeUser.uid;
       const payload = {
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
@@ -298,14 +284,14 @@ export default function DriverHomeScreen() {
         endLat: endLat.trim() ? Number(endLat.trim()) : tempPick ? tempPick.lat : null,
         endLng: endLng.trim() ? Number(endLng.trim()) : tempPick ? tempPick.lng : null,
         driverName,
-        driverEmail: user.email || null,
+        driverEmail: activeUser.email || null,
         speedKmh: 0,
         cameraMonitored: !!cameraPermission?.granted,
         micMonitored: !!micPermission?.granted,
         safetyStatus: 'monitored_secure',
       };
 
-      await set(ref(database, `busLocations/${selectedBusLine}/${user.uid}`), payload);
+      await set(ref(database, `busLocations/${selectedBusLine}/${driverUid}`), payload);
 
       if (selectedBusLine) {
         await setDriverBusLine(selectedBusLine);
@@ -323,49 +309,63 @@ export default function DriverHomeScreen() {
           distanceInterval: 1,
         },
         async (position) => {
-          const now = Date.now();
-          const dt = (now - prevTime) / 1000;
-          let instVel = 0;
-          if (dt > 0.2) {
-            const dist = haversineMeters(
-              prevLat,
-              prevLng,
-              position.coords.latitude,
-              position.coords.longitude
-            );
-            instVel = (dist / dt) * 3.6; // Convert m/s to km/h
-          }
-          prevLat = position.coords.latitude;
-          prevLng = position.coords.longitude;
-          prevTime = now;
+          try {
+            const now = Date.now();
+            const dt = (now - prevTime) / 1000;
+            let instVel = 0;
+            if (dt > 0.2) {
+              const dist = haversineMeters(
+                prevLat,
+                prevLng,
+                position.coords.latitude,
+                position.coords.longitude
+              );
+              instVel = (dist / dt) * 3.6; // Convert m/s to km/h
+            }
+            prevLat = position.coords.latitude;
+            prevLng = position.coords.longitude;
+            prevTime = now;
 
-          if (position.coords.speed !== null && position.coords.speed >= 0) {
-            instVel = position.coords.speed * 3.6;
-          }
-          smoothVel = smoothVel * 0.4 + instVel * 0.6;
-          setCurrentSpeed(Math.round(smoothVel));
+            if (position.coords.speed !== null && position.coords.speed >= 0) {
+              instVel = position.coords.speed * 3.6;
+            }
+            smoothVel = smoothVel * 0.4 + instVel * 0.6;
+            setCurrentSpeed(Math.round(smoothVel));
 
-          await set(ref(database, `busLocations/${selectedBusLine}/${user.uid}`), {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            lastUpdated: new Date().toISOString(),
-            speedKmh: Math.round(smoothVel),
-            endPoint: endPoint.trim(),
-            endLat: endLat.trim() ? Number(endLat.trim()) : tempPick ? tempPick.lat : null,
-            endLng: endLng.trim() ? Number(endLng.trim()) : tempPick ? tempPick.lng : null,
-            driverName,
-            driverEmail: user.email || null,
-            cameraMonitored: !!cameraPermission?.granted,
-            micMonitored: !!micPermission?.granted,
-            safetyStatus: 'monitored_secure',
-          });
+            const currentUid = auth.currentUser?.uid || user?.uid;
+            if (!currentUid || !selectedBusLine) return;
+
+            await set(ref(database, `busLocations/${selectedBusLine}/${currentUid}`), {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              lastUpdated: new Date().toISOString(),
+              speedKmh: Math.round(smoothVel),
+              endPoint: endPoint.trim(),
+              endLat: endLat.trim() ? Number(endLat.trim()) : tempPick ? tempPick.lat : null,
+              endLng: endLng.trim() ? Number(endLng.trim()) : tempPick ? tempPick.lng : null,
+              driverName,
+              driverEmail: auth.currentUser?.email || user?.email || null,
+              cameraMonitored: !!cameraPermission?.granted,
+              micMonitored: !!micPermission?.granted,
+              safetyStatus: 'monitored_secure',
+            });
+          } catch (syncErr: any) {
+            console.warn('[DriverGPS] Telemetry push warning:', syncErr?.message || syncErr);
+          }
         }
       );
 
       locationSubRef.current = sub;
       setSharing(true);
     } catch (err: any) {
-      Alert.alert(isRTL ? 'خطأ' : 'Error', err.message || 'Failed to start trip.');
+      console.error('[DriverGPS] Start trip error:', err);
+      const isPermissionDenied = err?.message?.includes('PERMISSION_DENIED') || err?.code === 'PERMISSION_DENIED';
+      Alert.alert(
+        isRTL ? 'خطأ' : 'Error',
+        isPermissionDenied
+          ? (isRTL ? 'تم رفض الإذن. يرجى تسجيل الخروج وتسجيل الدخول بحساب السائق مجدداً لتحديث الجلسة.' : 'Session expired or database permission denied. Please log out and log back in to refresh your credentials.')
+          : (err?.message || 'Failed to start trip.')
+      );
     }
   };
 
@@ -571,43 +571,67 @@ export default function DriverHomeScreen() {
               <View style={styles.camWrapper}>
                 {cameraPreviewOpen ? (
                   <View style={styles.camFrame}>
-                    <CameraView facing={cameraFacing} style={styles.camView} mute={false} />
+                    {isSafetyStreaming ? (
+                      <WebView
+                        ref={webViewRef}
+                        source={{ html: webrtcHtml, baseUrl: 'https://localhost' }}
+                        onMessage={onWebViewMessage}
+                        javaScriptEnabled={true}
+                        mediaPlaybackRequiresUserAction={false}
+                        allowsInlineMediaPlayback={true}
+                        mediaCapturePermissionGrantType="grant"
+                        originWhitelist={['*']}
+                        style={styles.camView}
+                      />
+                    ) : (
+                      <CameraView ref={cameraRef} facing={cameraFacing} style={styles.camView} mute={false} />
+                    )}
 
-                    {/* Top HUD */}
-                    <View style={styles.camTopHUD}>
-                      <View style={styles.recBadge}>
-                        <View style={styles.recDot} />
-                        <Text style={styles.recText}>● REC  LIVE CABIN FEED</Text>
+                    {/* Top HUD - suppressed during active WebRTC streaming to prevent covering video/status */}
+                    {!isSafetyStreaming && (
+                      <View style={styles.camTopHUD}>
+                        <View style={styles.recBadge}>
+                          <View style={styles.recDot} />
+                          <Text style={styles.recText}>
+                            ● REC  LIVE CABIN FEED
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.flipBtn}
+                          onPress={() => setCameraFacing((p) => (p === 'front' ? 'back' : 'front'))}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="camera-reverse-outline" size={17} color="#FFF" />
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity
-                        style={styles.flipBtn}
-                        onPress={() => setCameraFacing((p) => (p === 'front' ? 'back' : 'front'))}
-                        activeOpacity={0.8}
-                      >
-                        <Ionicons name="camera-reverse-outline" size={17} color="#FFF" />
-                      </TouchableOpacity>
-                    </View>
+                    )}
 
                     {/* Corner brackets */}
-                    <View style={[styles.corner, styles.cTL]} />
-                    <View style={[styles.corner, styles.cTR]} />
-                    <View style={[styles.corner, styles.cBL]} />
-                    <View style={[styles.corner, styles.cBR]} />
+                    {!isSafetyStreaming && (
+                      <>
+                        <View style={[styles.corner, styles.cTL]} />
+                        <View style={[styles.corner, styles.cTR]} />
+                        <View style={[styles.corner, styles.cBL]} />
+                        <View style={[styles.corner, styles.cBR]} />
+                      </>
+                    )}
 
                     {/* Bottom audio HUD */}
-                    <View style={styles.camBottomHUD}>
-                      <Ionicons name="mic" size={13} color="#10B981" />
-                      <Text style={styles.audioText}>
-                        {micPermission?.granted ? 'Audio Guard Active' : 'Mic Access Needed'}
-                      </Text>
-                      {micPermission?.granted && (
-                        <View style={styles.waves}>
-                          {[5, 10, 7, 14, 6, 11, 8].map((h, i) => (
-                            <View key={i} style={[styles.wave, { height: h }]} />
-                          ))}
-                        </View>
-                      )}
-                    </View>
+                    {!isSafetyStreaming && (
+                      <View style={styles.camBottomHUD}>
+                        <Ionicons name="mic" size={13} color="#10B981" />
+                        <Text style={styles.audioText}>
+                          {micPermission?.granted ? 'Audio Guard Active' : 'Mic Access Needed'}
+                        </Text>
+                        {micPermission?.granted && (
+                          <View style={styles.waves}>
+                            {[5, 10, 7, 14, 6, 11, 8].map((h, i) => (
+                              <View key={i} style={[styles.wave, { height: h }]} />
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    )}
                   </View>
                 ) : (
                   <View style={styles.camMini}>
