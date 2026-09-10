@@ -3,7 +3,7 @@
 > **Note:** This file is automatically compiled by `scripts/generate_functions_doc.py`.
 > Do not manually edit this file. Keep inline docstrings updated in the source code.
 
-**Total Documented Functions:** 283
+**Total Documented Functions:** 291
 
 ---
 
@@ -467,7 +467,7 @@
 | L40 | `handlePress()` | *none* | No description provided. |
 | L60 | `MainTabs()` | *none* | No description provided. |
 | L108 | `AppNavigator()` | *none* | No description provided. |
-| L141 | `App()` | *none* | No description provided. |
+| L143 | `App()` | *none* | No description provided. |
 
 ## [SettingsModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/components/SettingsModal.tsx)
 `sya7a new/src/components/SettingsModal.tsx`
@@ -481,11 +481,22 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L22 | `SidebarMenu()` | `{ visible, onClose }: SidebarMenuProps` | No description provided. |
-| L36 | `closeWithAnimation()` | *none* | No description provided. |
-| L42 | `handleLogout()` | *none* | No description provided. |
-| L64 | `handleHistoryPress()` | *none* | No description provided. |
-| L70 | `handleBusTrackerPress()` | *none* | No description provided. |
+| L36 | `SidebarMenu()` | `{ visible, onClose }: SidebarMenuProps` | No description provided. |
+| L68 | `closeWithAnimation()` | *none* | No description provided. |
+| L83 | `handleLogout()` | *none* | No description provided. |
+| L105 | `goToScreen()` | `name: string` | No description provided. |
+| L114 | `handleHistoryPress()` | *none* | No description provided. |
+| L119 | `handleBusTrackerPress()` | *none* | No description provided. |
+| L124 | `handleSubscriptionPress()` | *none* | No description provided. |
+
+## [SubscriptionModal.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/components/SubscriptionModal.tsx)
+`sya7a new/src/components/SubscriptionModal.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L67 | `SubscriptionModal()` | `{ visible, onClose }: Props` | No description provided. |
+| L86 | `closeWithAnimation()` | *none* | No description provided. |
+| L94 | `handleSelectPlan()` | `plan: PlanTier` | No description provided. |
 
 ## [Button.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/components/ui/Button.tsx)
 `sya7a new/src/components/ui/Button.tsx`
@@ -503,8 +514,8 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L41 | `handleFocus()` | `e: any` | No description provided. |
-| L47 | `handleBlur()` | `e: any` | No description provided. |
+| L46 | `handleFocus()` | `e: any` | No description provided. |
+| L52 | `handleBlur()` | `e: any` | No description provided. |
 
 ## [AuthContext.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/contexts/AuthContext.tsx)
 `sya7a new/src/contexts/AuthContext.tsx`
@@ -525,8 +536,8 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L114 | `I18nProvider()` | `{ children }: { children: React.ReactNode }` | No description provided. |
-| L144 | `useI18n()` | *none* | No description provided. |
+| L256 | `I18nProvider()` | `{ children }: { children: React.ReactNode }` | No description provided. |
+| L286 | `useI18n()` | *none* | No description provided. |
 
 ## [LocationContext.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/contexts/LocationContext.tsx)
 `sya7a new/src/contexts/LocationContext.tsx`
@@ -539,6 +550,15 @@
 | L89 | `getCurrentLocation()` | *none* | No description provided. |
 | L117 | `startLocationUpdates()` | *none* | No description provided. |
 | L159 | `stopLocationUpdates()` | *none* | No description provided. |
+
+## [SubscriptionContext.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/contexts/SubscriptionContext.tsx)
+`sya7a new/src/contexts/SubscriptionContext.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L15 | `SubscriptionProvider()` | `{ children }: { children: React.ReactNode }` | No description provided. |
+| L29 | `setPlan()` | `plan: PlanTier` | No description provided. |
+| L45 | `useSubscription()` | *none* | No description provided. |
 
 ## [ThemeContext.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/contexts/ThemeContext.tsx)
 `sya7a new/src/contexts/ThemeContext.tsx`
@@ -598,18 +618,18 @@
 | L372 | `stopSharing()` | *none* | No description provided. |
 | L397 | `handleSendSOS()` | *none* | No description provided. |
 | L430 | `handleLogout()` | *none* | No description provided. |
-| L895 | `setPin()` | `lat, lng` | No description provided. |
+| L1298 | `setPin()` | `lat, lng` | No description provided. |
 
 ## [HistoryScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/HistoryScreen.tsx)
 `sya7a new/src/screens/HistoryScreen.tsx`
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L27 | `HistoryScreen()` | *none* | No description provided. |
-| L54 | `handleHistoryItemPress()` | `item: HistoryItem` | No description provided. |
-| L58 | `handleClearHistory()` | *none* | No description provided. |
-| L83 | `renderHistoryItem()` | `{ item, index }: { item: HistoryItem; index: number }` | No description provided. |
-| L109 | `renderEmptyState()` | *none* | No description provided. |
+| L28 | `HistoryScreen()` | *none* | No description provided. |
+| L56 | `handleHistoryItemPress()` | `item: HistoryItem` | No description provided. |
+| L60 | `handleClearHistory()` | *none* | No description provided. |
+| L85 | `renderHistoryItem()` | `{ item, index }: { item: HistoryItem; index: number }` | No description provided. |
+| L124 | `renderEmptyState()` | *none* | No description provided. |
 
 ## [HomeScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/HomeScreen.tsx)
 `sya7a new/src/screens/HomeScreen.tsx`
@@ -623,37 +643,37 @@
 | L98 | `calculateTimeToArrival()` | `distanceKm: number` | No description provided. |
 | L225 | `onRefresh()` | *none* | No description provided. |
 | L230 | `handleBusPress()` | `bus: Bus` | No description provided. |
-| L239 | `renderBusItem()` | `{ item, index }: { item: Bus, index: number }` | No description provided. |
-| L303 | `renderActiveBusItem()` | `{ item, index }: { item: ActiveBus, index: number }` | No description provided. |
+| L243 | `renderBusItem()` | `{ item, index }: { item: Bus, index: number }` | No description provided. |
+| L322 | `renderActiveBusItem()` | `{ item, index }: { item: ActiveBus, index: number }` | No description provided. |
 
 ## [LoginScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/LoginScreen.tsx)
 `sya7a new/src/screens/LoginScreen.tsx`
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L27 | `LoginScreen()` | *none* | No description provided. |
-| L47 | `handleAuth()` | *none* | No description provided. |
-| L131 | `handleAppleSignIn()` | *none* | No description provided. |
-| L171 | `handlePasswordReset()` | *none* | No description provided. |
+| L28 | `LoginScreen()` | *none* | No description provided. |
+| L54 | `handleAuth()` | *none* | No description provided. |
+| L138 | `handleAppleSignIn()` | *none* | No description provided. |
+| L178 | `handlePasswordReset()` | *none* | No description provided. |
 
 ## [MapScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/MapScreen.tsx)
 `sya7a new/src/screens/MapScreen.tsx`
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L39 | `haversineKm()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
-| L50 | `getMapHTML()` | `isDark: boolean` | No description provided. |
-| L87 | `calcDistKm()` | `lat1, lng1, lat2, lng2` | No description provided. |
-| L98 | `drawRouteOSRM()` | `startLat, startLng, endLat, endLng, currentLat, currentLng, isInitialDraw` | No description provided. |
-| L133 | `updateBusMarkers()` | `busLocations` | No description provided. |
-| L265 | `MapScreen()` | *none* | No description provided. |
-| L278 | `calculateDistance()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
-| L281 | `calculateBearing()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
-| L290 | `getDirectionName()` | `bearing: number` | No description provided. |
-| L295 | `calculateTimeToArrival()` | `distanceKm: number` | No description provided. |
-| L305 | `pushBusUpdate()` | `locations: BusLocation[]` | No description provided. |
-| L317 | `pushUserLocation()` | *none* | No description provided. |
-| L331 | `pushUserToBusRoute()` | `bus: BusLocation` | No description provided. |
+| L41 | `haversineKm()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
+| L52 | `getMapHTML()` | `isDark: boolean` | No description provided. |
+| L89 | `calcDistKm()` | `lat1, lng1, lat2, lng2` | No description provided. |
+| L100 | `drawRouteOSRM()` | `startLat, startLng, endLat, endLng, currentLat, currentLng, isInitialDraw` | No description provided. |
+| L135 | `updateBusMarkers()` | `busLocations` | No description provided. |
+| L267 | `MapScreen()` | *none* | No description provided. |
+| L282 | `calculateDistance()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
+| L285 | `calculateBearing()` | `lat1: number, lon1: number, lat2: number, lon2: number` | No description provided. |
+| L294 | `getDirectionName()` | `bearing: number` | No description provided. |
+| L299 | `calculateTimeToArrival()` | `distanceKm: number` | No description provided. |
+| L309 | `pushBusUpdate()` | `locations: BusLocation[]` | No description provided. |
+| L321 | `pushUserLocation()` | *none* | No description provided. |
+| L335 | `pushUserToBusRoute()` | `bus: BusLocation` | No description provided. |
 
 ## [RoleSelectionScreen.tsx](file:///C:/Users/karee/OneDrive/Desktop/random projects/bus tracker sya7a version/sya7a new/src/screens/RoleSelectionScreen.tsx)
 `sya7a new/src/screens/RoleSelectionScreen.tsx`
