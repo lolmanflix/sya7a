@@ -1,0 +1,19 @@
+TestID,Category,Description,Preconditions,Action,ExpectedResult,Status
+AUTH-01,Auth,Admin Sign-up with Email/Password,User on onboarding step 1,Fill name email password and submit,Admin account created in Auth and Firestore admins collection,Ready
+AUTH-02,Auth,Admin Login with Email/Password,Admin account exists,Submit valid email and password on login page,User logged in and redirected to workspace or onboarding,Ready
+AUTH-03,Auth,Password Reset Request,Admin account exists,Enter registered email on forgot-password form,Password reset email sent with confirmation toast,Ready
+AUTH-04,Auth,Session Persistence across Refreshes,User authenticated,Refresh page or reopen browser tab,Authentication state preserved without re-prompt,Ready
+TENANT-01,Multi-Tenant,Company Creation during Onboarding,Authenticated admin,Complete onboarding step 2 and 3,Company doc created with AdminCompanyMembership (role: owner),Ready
+TENANT-02,Multi-Tenant,Workspace Switcher,Admin belongs to multiple companies,Select alternate company from dropdown,UI updates active company context data and dynamic theme,Ready
+TENANT-03,Multi-Tenant,Role-Based Permissions,Admin with Manager role,Attempt accessing company deletion or billing,Restricted actions hidden or blocked with permission warning,Ready
+THEME-01,Theme,Automatic Logo Color Extraction,User uploads brand PNG/SVG,Extract dominant color via Canvas,Generates complete accessible palette and previews in real-time,Ready
+THEME-02,Theme,WCAG AA Contrast Validation,Logo with low contrast color,Extract or select low-contrast color,Auto-adjusts text/surface luminance to pass 4.5:1 ratio,Ready
+THEME-03,Theme,Manual Theme Preset Selection,User on theme selection step,Select preset (Ocean Emerald or Amethyst),Dynamic preview updates live and persists to company document,Ready
+MKT-01,Marketing,Hero Conversion CTA,User navigates to marketing root,Click 'Start Free Trial' or 'Get Started',Smoothly navigates to onboarding wizard step 1,Ready
+MKT-02,Marketing,Interactive Pricing Toggle,User on pricing section,Toggle between monthly and annual billing,Display prices update with annual discount badge,Ready
+MKT-03,Marketing,FAQ Accordion Interaction,User on FAQ section,Click FAQ questions,Accordion expands/collapses smoothly with single-open behavior,Ready
+DASH-01,Dashboard,KPI Metrics Overview,Active company selected,Navigate to dashboard overview,Displays active members fleet/ops metrics and recent activities,Ready
+DASH-02,Dashboard,Team Member Invitation,Admin on team page,Enter email and role then submit invite,New member added to table with pending/active status,Ready
+DASH-03,Dashboard,Company Settings Update,Admin on settings page,Update company name website and theme,Changes persist immediately to Firestore and update UI theme,Ready
+BILL-01,Billing,Plan Upgrade Flow,Company on free plan,Select Pro or Business plan and click upgrade,Displays plan benefits and simulated checkout confirmation,Ready
+DESK-01,Desktop,Electron Scaffold & IPC,Desktop app launched,Verify contextIsolation and secure preload,Loads web app shell with window controls and desktop bridges,Ready

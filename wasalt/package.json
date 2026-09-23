@@ -1,0 +1,23 @@
+{
+  "name": "wasalt",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Wasalt Multi-Tenant Enterprise Operations Platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "build:web": "npm --prefix apps/web run build",
+    "dev:desktop": "npm --prefix apps/desktop start"
+  },
+  "keywords": [
+    "wasalt",
+    "saas",
+    "multi-tenant",
+    "operations"
+  ],
+  "author": "Kareem Diyaa",
+  "license": "UNLICENSED"
+}
