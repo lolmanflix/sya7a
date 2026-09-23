@@ -12,15 +12,16 @@ from pathlib import Path
 
 EXCLUDED_DIRS = {
     "node_modules", ".git", "dist", "build", ".system_generated",
-    "scratch", "__pycache__", ".vscode", ".gemini"
+    "scratch", "__pycache__", ".vscode", ".gemini",
+    "archive", "temp", ".expo", "android", "assets", "reports"
 }
 
 SUPPORTED_EXTENSIONS = {".js", ".jsx", ".ts", ".tsx", ".py"}
 
 JS_TS_FUNC_PATTERN = re.compile(
-    r'(?:/\*\*([\s\S]*?)\*/\s*)?'  # JSDoc comment
-    r'(?:(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)|'  # function foo(...)
-    r'(?:export\s+)?(?:const|let|var)\s+([A-Za-z0-9_$]+)\s*=\s*(?:async\s*)?\(([^)]*)\)\s*(?::\s*[^=]+)?\s*=>)',  # const foo = (...) =>
+    r'(?:(?:/\*\*([\s\S]*?)\*/)|((?://[^\n]*\n\s*)+))?\s*'
+    r'(?:(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)|'
+    r'(?:export\s+)?(?:const|let|var)\s+([A-Za-z0-9_$]+)\s*(?::\s*[^=]+)?\s*=\s*(?:async\s*)?\(([^)]*)\)\s*(?::\s*[^=]+)?\s*=>)',
     re.MULTILINE
 )
 
@@ -36,7 +37,7 @@ def clean_docstring(doc_str: str) -> str:
         return "No description provided."
     lines = []
     for line in doc_str.strip().splitlines():
-        cleaned = re.sub(r'^\s*[*#]\s?', '', line).strip()
+        cleaned = re.sub(r'^\s*(?:[*#]|//)\s?', '', line).strip()
         if cleaned:
             lines.append(cleaned)
     return " ".join(lines) if lines else "No description provided."
@@ -56,10 +57,11 @@ def parse_file(file_path: Path):
     if ext in {".js", ".jsx", ".ts", ".tsx"}:
         matches = JS_TS_FUNC_PATTERN.finditer(content)
         for m in matches:
-            jsdoc, name1, args1, name2, args2 = m.groups()
+            jsdoc, slash_comment, name1, args1, name2, args2 = m.groups()
+            doc = jsdoc or slash_comment
             fn_name = name1 or name2
             args = (args1 or args2 or "").strip().replace("\n", " ")
-            desc = clean_docstring(jsdoc)
+            desc = clean_docstring(doc)
             results.append({
                 "name": fn_name,
                 "args": args,

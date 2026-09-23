@@ -13,6 +13,9 @@ interface DriversPageProps {
   companies: CompanyRecord[];
 }
 
+/**
+ * Administrative directory for driver assignments, profiles, and permissions.
+ */
 export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) => {
   const [selectedCompanyFilter, setSelectedCompanyFilter] = useState('all');
   const [driverToAssign, setDriverToAssign] = useState<DriverProfile | null>(null);
@@ -29,11 +32,17 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
   const selectedCompObj = companies.find((c) => c.id === newDriverCompany);
   const availableLines = selectedCompObj?.busLines || [];
 
+  /**
+   * Saves driver line assignments to Firebase RTDB.
+   */
   const handleSaveAssignments = async (driverUid: string, companyId: string, lines: string[]) => {
     await updateDriverCompany(driverUid, companyId);
     await updateDriverLines(driverUid, lines);
   };
 
+  /**
+   * Removes driver account and assignment records from the system.
+   */
   const handleDeleteDriver = async (driverUid: string, driverName: string) => {
     if (confirm(`Are you sure you want to delete driver "${driverName}"?`)) {
       try {
@@ -45,6 +54,9 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
     }
   };
 
+  /**
+   * Creates a new driver record in the system directory.
+   */
   const handleCreateDriver = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDriverName.trim() || !newDriverEmail.trim()) {

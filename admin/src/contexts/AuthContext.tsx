@@ -19,6 +19,9 @@ const MASTER_USERNAME = import.meta.env.VITE_MASTER_ADMIN_USERNAME || 'masteradm
 const MASTER_PASSWORD = import.meta.env.VITE_MASTER_ADMIN_PASSWORD || 'adminPassword2026!';
 const MASTER_TOTP_SECRET = import.meta.env.VITE_MASTER_ADMIN_TOTP_SECRET || 'WASALTADMINSEC2026';
 
+/**
+ * Provides authentication state and user session context to child components.
+ */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
@@ -136,6 +139,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  /**
+   * Signs out the currently authenticated user.
+   */
   const logout = async () => {
     localStorage.removeItem('wasalt_admin_session');
     sessionStorage.removeItem('wasalt_admin_session');
@@ -154,6 +160,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+/**
+ * Provides master admin authentication credentials and actions.
+ */
 export const useAdminAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAdminAuth must be used within an AuthProvider');

@@ -10,6 +10,9 @@ interface BusTableProps {
   selectedCompanyFilter?: string;
 }
 
+/**
+ * Table rendering fleet buses and route details.
+ */
 export const BusTable: React.FC<BusTableProps> = ({
   buses,
   onToggleActive,

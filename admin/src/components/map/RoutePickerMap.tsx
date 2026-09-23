@@ -1,3 +1,4 @@
+import { attachMapBaseTheme } from './mapLayerManager';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import { Route, CheckCircle2 } from 'lucide-react';
@@ -21,6 +22,9 @@ interface RoutePickerMapProps {
   onStopsChange?: (stops: BusStop[], start: { lat: number; lng: number; address: string }, end: { lat: number; lng: number; address: string }) => void;
 }
 
+/**
+ * Interactive Leaflet map for picking route waypoints and stops.
+ */
 export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
   initialStops,
   startLat = 30.0444,
@@ -86,9 +90,8 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
       zoom: 13,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-    }).addTo(map);
+    // 100% Offline vector base map (River Nile, coastlines, and Egyptian road corridors)
+    const cleanupVectorBaseMap = attachMapBaseTheme(map, 'dark');
 
     routeGlowRef.current = L.polyline([], {
       color: '#3B82F6',
@@ -123,6 +126,7 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
 
     return () => {
       clearTimeout(timer);
+      cleanupVectorBaseMap();
       map.remove();
       mapRef.current = null;
     };
@@ -204,7 +208,10 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     };
   }, [stops]);
 
-  // Asynchronously resolve the nearest named landmark and update stop name
+  /**
+   * Asynchronously resolves the nearest named landmark via Overpass/Nominatim and updates stop name.
+   * @suggestion [INTEGRATE]: Connect this function to the map click handler below so that newly dropped custom waypoint pins automatically resolve and populate the nearest real-world landmark name.
+   */
   const updateStopWithLandmark = (targetId: string, lat: number, lng: number) => {
     resolveNearestLandmark(lat, lng).then((res) => {
       setStops((current) => {
@@ -223,6 +230,9 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     const map = mapRef.current;
     if (!map) return;
 
+    /**
+     * Handles map click event to add a coordinate stop.
+     */
     const handleClick = (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
 
@@ -262,18 +272,27 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     };
   }, [activeMode, stops]);
 
+  /**
+   * Removes an intermediate waypoint stop from the route sequence.
+   */
   const removeStop = (index: number) => {
     if (stops.length <= 2) return; // Keep at least start and destination
     const next = stops.filter((_, idx) => idx !== index);
     notifyChanges(next);
   };
 
+  /**
+   * Updates the descriptive landmark label for a waypoint stop.
+   */
   const updateStopName = (index: number, name: string) => {
     const next = [...stops];
     next[index] = { ...next[index], name };
     notifyChanges(next);
   };
 
+  /**
+   * Appends an Egyptian transit preset landmark to the route sequence.
+   */
   const addPresetAsStop = (landmark: EgyptianLandmark) => {
     if (activeMode === 'setStart') {
       const next = [...stops];
@@ -298,6 +317,9 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     }
   };
 
+  /**
+   * Sets the route starting point to current GPS location.
+   */
   const useCurrentLocationForStart = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((pos) => {

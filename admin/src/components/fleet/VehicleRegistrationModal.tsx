@@ -13,6 +13,9 @@ interface VehicleRegistrationModalProps {
   vehicleToEdit?: BusRouteDefinition | null;
 }
 
+/**
+ * Modal for registering a new bus vehicle in the fleet.
+ */
 export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> = ({
   isOpen,
   onClose,
@@ -37,6 +40,9 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
     (b) => b.companyId.toLowerCase() === companyId.toLowerCase() && b.lineId.toLowerCase() === lineId.toLowerCase()
   );
 
+  /**
+   * Persists new vehicle registration data.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanBusId = busId.trim() || `${lineId.trim() || 'BUS'}-${Date.now().toString().slice(-4)}`;

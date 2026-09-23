@@ -11,6 +11,9 @@ interface LineManagerModalProps {
   company: CompanyRecord | null;
 }
 
+/**
+ * Modal for managing bus lines assigned to a specific transport company.
+ */
 export const LineManagerModal: React.FC<LineManagerModalProps> = ({
   isOpen,
   onClose,
@@ -23,6 +26,9 @@ export const LineManagerModal: React.FC<LineManagerModalProps> = ({
   const [renamedValue, setRenamedValue] = useState('');
   const [saving, setSaving] = useState(false);
 
+  /**
+   * Adds a new bus line to the company line catalog.
+   */
   const handleAddLine = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = newLine.trim();
@@ -44,11 +50,17 @@ export const LineManagerModal: React.FC<LineManagerModalProps> = ({
     }
   };
 
+  /**
+   * Initiates inline line renaming mode.
+   */
   const handleStartRename = (line: string) => {
     setEditingLine(line);
     setRenamedValue(line);
   };
 
+  /**
+   * Persists updated line name across all related routes.
+   */
   const handleSaveRename = async (oldLine: string) => {
     const clean = renamedValue.trim();
     if (!clean || clean === oldLine) {
@@ -68,6 +80,9 @@ export const LineManagerModal: React.FC<LineManagerModalProps> = ({
     }
   };
 
+  /**
+   * Removes a bus line from the company.
+   */
   const handleDeleteLine = async (lineToDelete: string) => {
     if (confirm(`Are you sure you want to delete bus line "${lineToDelete}"?`)) {
       try {

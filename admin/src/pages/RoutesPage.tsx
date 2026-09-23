@@ -6,7 +6,7 @@ import { LineManagerModal } from '../components/companies/LineManagerModal';
 import { LineCatalogTable } from '../components/routes/LineCatalogTable';
 import { BusRouteDefinition, CompanyRecord } from '../types';
 import { saveBus, deleteBus } from '../services/busesService';
-import { renameCompanyLine, deleteCompanyLine } from '../services/companiesService';
+import { useLineOperations } from '../hooks/useLineOperations';
 import { toast } from 'sonner';
 
 interface RoutesPageProps {
@@ -14,10 +14,14 @@ interface RoutesPageProps {
   companies: CompanyRecord[];
 }
 
+/**
+ * Transit corridors manager and visual route designer page.
+ */
 export const RoutesPage: React.FC<RoutesPageProps> = ({ buses, companies }) => {
   const [activeSubTab, setActiveSubTab] = useState<'corridors' | 'lines'>('corridors');
   const [search, setSearch] = useState('');
   const [selectedCompanyFilter, setSelectedCompanyFilter] = useState('all');
+  const { handleRenameLine, handleDeleteLine } = useLineOperations();
 
   // Modals
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -68,6 +72,9 @@ export const RoutesPage: React.FC<RoutesPageProps> = ({ buses, companies }) => {
     return matchesCompany && matchesSearch;
   });
 
+  /**
+   * Deletes a configured route definition from the company node.
+   */
   const handleDeleteRoute = async (companyId: string, busId: string) => {
     if (confirm(`Are you sure you want to delete route definition '${busId}'?`)) {
       try {
@@ -79,25 +86,6 @@ export const RoutesPage: React.FC<RoutesPageProps> = ({ buses, companies }) => {
     }
   };
 
-  const handleRenameLine = async (companyId: string, oldLine: string, newLine: string) => {
-    try {
-      await renameCompanyLine(companyId, oldLine, newLine);
-      toast.success(`Renamed line to "${newLine}"`);
-    } catch {
-      toast.error('Failed to rename line');
-    }
-  };
-
-  const handleDeleteLine = async (companyId: string, line: string) => {
-    if (confirm(`Are you sure you want to delete line code '${line}'?`)) {
-      try {
-        await deleteCompanyLine(companyId, line);
-        toast.success(`Deleted line ${line}`);
-      } catch {
-        toast.error('Failed to delete line code');
-      }
-    }
-  };
 
   return (
     <div className="space-y-6">

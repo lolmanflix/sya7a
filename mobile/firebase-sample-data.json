@@ -1,0 +1,85 @@
+{
+  "buses": {
+    "bus1": {
+      "lineName": "Mwaslat Misr M554",
+      "companyName": "Mwaslat Misr",
+      "activeBusCount": 3,
+      "eta": "5 mins"
+    },
+    "bus2": {
+      "lineName": "N777",
+      "companyName": "CTA",
+      "activeBusCount": 2,
+      "eta": "8 mins"
+    },
+    "bus3": {
+      "lineName": "304",
+      "companyName": "CTA",
+      "activeBusCount": 0,
+      "eta": null
+    }
+  },
+  "busLocations": {
+    "Mwaslat Misr M554": {
+      "bus1": {
+        "latitude": 30.0444,
+        "longitude": 31.2357,
+        "lastUpdated": "2024-01-01T10:00:00Z",
+        "eta": "6 mins"
+      },
+      "bus2": {
+        "latitude": 30.0454,
+        "longitude": 31.2367,
+        "lastUpdated": "2024-01-01T10:01:00Z",
+        "eta": "4 mins"
+      },
+      "bus3": {
+        "latitude": 30.0464,
+        "longitude": 31.2377,
+        "lastUpdated": "2024-01-01T10:02:00Z",
+        "eta": "7 mins"
+      }
+    },
+    "N777": {
+      "bus1": {
+        "latitude": 30.0474,
+        "longitude": 31.2387,
+        "lastUpdated": "2024-01-01T10:03:00Z",
+        "eta": "3 mins"
+      },
+      "bus2": {
+        "latitude": 30.0484,
+        "longitude": 31.2397,
+        "lastUpdated": "2024-01-01T10:04:00Z",
+        "eta": "9 mins"
+      }
+    }
+  },
+  "companies": {
+    "cta": {
+      "name": "CTA",
+      "nameAr": "شركة أتوبيس القاهرة الكبرى",
+      "busLines": ["N777", "304", "M534"]
+    },
+    "mwaslat-misr": {
+      "name": "Mwaslat Misr",
+      "nameAr": "مواصلات مصر",
+      "busLines": ["Mwaslat Misr M554", "M534", "M555"]
+    },
+    "go-bus": {
+      "name": "Go Bus",
+      "busLines": ["G101", "G102", "G103"]
+    },
+    "super-jet": {
+      "name": "Super Jet",
+      "busLines": ["S201", "S202"]
+    },
+    "white-bus": {
+      "name": "White Bus",
+      "busLines": ["W301", "W302", "W303"]
+    }
+  }
+}
+
+
+

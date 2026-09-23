@@ -1,0 +1,125 @@
+/**
+ * @file driverHeaderStyles.ts
+ * @description Header bar, driver profile avatar, and action button styles.
+ */
+
+import { StyleSheet } from "react-native";
+
+export const styles = StyleSheet.create({  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: '#E0E8F8',
+    shadowColor: '#1E40AF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  driverInfoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    flex: 1,
+  },
+  driverAvatarWrap: { position: 'relative' },
+  driverAvatarRing: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  driverAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#1D4ED8',
+    letterSpacing: -0.5,
+  },
+  statusDot: {
+    position: 'absolute',
+    bottom: 1,
+    right: 1,
+    width: 13,
+    height: 13,
+    borderRadius: 7,
+    borderWidth: 2.5,
+    borderColor: '#FFFFFF',
+  },
+  driverTextCol: { flex: 1 },
+  driverNameText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.3,
+  },
+  driverSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginTop: 4,
+  },
+  companyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  companyBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#1D4ED8',
+    letterSpacing: 0.3,
+  },
+  statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  statusChipDot: { width: 5, height: 5, borderRadius: 3 },
+  statusChipText: { fontSize: 10, fontWeight: '700' },
+  topBarActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  logoutIconBtn: {
+    backgroundColor: '#FFF5F5',
+    borderColor: '#FECACA',
+  },
+
+  // ── COCKPIT HUD ─────────────────────────────────────────
+});

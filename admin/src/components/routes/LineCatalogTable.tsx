@@ -17,6 +17,9 @@ interface LineCatalogTableProps {
   onOpenCompanyLineManager: (company: CompanyRecord) => void;
 }
 
+/**
+ * Table component displaying bus line routes and metadata.
+ */
 export const LineCatalogTable: React.FC<LineCatalogTableProps> = ({
   lines,
   companies,
@@ -27,6 +30,9 @@ export const LineCatalogTable: React.FC<LineCatalogTableProps> = ({
   const [editingLineKey, setEditingLineKey] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
+  /**
+   * Saves renamed bus line in the catalog.
+   */
   const handleSaveRename = async (companyId: string, oldLine: string) => {
     const clean = renameValue.trim();
     if (!clean || clean === oldLine) {

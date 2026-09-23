@@ -11,6 +11,9 @@ interface DriverTableProps {
   selectedCompanyFilter?: string;
 }
 
+/**
+ * Directory table rendering driver accounts, lines, and actions.
+ */
 export const DriverTable: React.FC<DriverTableProps> = ({
   drivers,
   onAssignDriver,
@@ -21,6 +24,9 @@ export const DriverTable: React.FC<DriverTableProps> = ({
   const [search, setSearch] = useState('');
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
 
+  /**
+   * Copies driver UID or email to clipboard.
+   */
   const handleCopy = (uid: string) => {
     navigator.clipboard.writeText(uid);
     setCopiedUid(uid);

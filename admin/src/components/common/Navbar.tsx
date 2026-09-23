@@ -6,6 +6,9 @@ interface NavbarProps {
   activeVehiclesCount: number;
 }
 
+/**
+ * Top navigation bar for Admin Web Portal.
+ */
 export const Navbar: React.FC<NavbarProps> = ({ activeVehiclesCount }) => {
   const { adminSession, logout } = useAdminAuth();
 

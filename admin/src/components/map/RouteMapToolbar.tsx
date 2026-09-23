@@ -12,6 +12,9 @@ interface RouteMapToolbarProps {
   stopsCount: number;
 }
 
+/**
+ * Toolbar controls for the Route Picker Leaflet map.
+ */
 export const RouteMapToolbar: React.FC<RouteMapToolbarProps> = ({
   activeMode,
   onSetActiveMode,

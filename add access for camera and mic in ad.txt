@@ -1,0 +1,48 @@
+add access for camera and mic in admin panel x
+stop recentering on location update x
+separate fleet from route x
+add routing to the admin panel x
+add infographics to the powerpoint 
+optimize the docs and presentation for the judging criteria 
+add multipoint routes x
+map locations to nearest landmark
+add Arabic support in the admin panel
+add dark and light modes to the admin panel
+make point A the current driver's location x
+add bus line color coding
+
+
+
+
+add endpoint icon to the route (mobile)
+fix wrong speed estimation (mobile)
+add history (mobile)
+fix side drawer animation (mobile)
+fix destination entry (mobile)
+fix adaptive screen resizing (mobile)
+fix dark mode in driver page (mobile)
+fix language support (mobile)
+fix that the bus actually stops when the driver hits stop broadcast (mobile)
+fix app driver card solid background to transparent background (mobile)
+fix select company button in driver login in main app (mobile)
+
+
+
+
+add swarm intelligence for traffic prediction
+update code base to follow modern development standards
+create documentation files for easier maintenance 
+add error handling and logging steps in both the admin panel and main app so that client side errors don't appear to the user 
+clean the code base 
+add formal file structure 
+transition to a mor visual ui with less text and more icons 
+add security features like input sanitization sql injection prevention ddos protection malware injection dns poisoning and more security vulnerabilities
+create a detailed future features plan
+add load balancer
+hide actual database url to prevent database attacks
+add database sharding and redis caching 
+transition into a modular layered architecture 
+add a crowded bus button
+clean the database
+
+

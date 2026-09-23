@@ -10,6 +10,9 @@ interface CompanyCardProps {
   isDuplicate?: boolean;
 }
 
+/**
+ * Card component rendering company metrics and quick actions.
+ */
 export const CompanyCard: React.FC<CompanyCardProps> = ({
   company,
   busesCount,

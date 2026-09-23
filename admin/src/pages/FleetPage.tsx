@@ -11,6 +11,9 @@ interface FleetPageProps {
   companies: CompanyRecord[];
 }
 
+/**
+ * Fleet management dashboard showing road readiness, active vehicles, and dispatch controls.
+ */
 export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
   const [selectedCompanyFilter, setSelectedCompanyFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'idle'>('all');
@@ -21,6 +24,9 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
   const idleCount = buses.filter((b) => !b.isActive).length;
   const uniqueCarriersCount = new Set(buses.map((b) => b.companyId.toLowerCase())).size;
 
+  /**
+   * Toggles active dispatch status for a vehicle.
+   */
   const handleToggle = async (companyId: string, busId: string, currentActive: boolean) => {
     try {
       await toggleBusActive(companyId, busId, !currentActive);
@@ -30,6 +36,9 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
     }
   };
 
+  /**
+   * Deletes a vehicle record from the fleet directory.
+   */
   const handleDelete = async (companyId: string, busId: string) => {
     if (confirm(`Are you sure you want to delete fleet vehicle '${busId}'?`)) {
       try {
@@ -41,11 +50,17 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
     }
   };
 
+  /**
+   * Opens the vehicle registration modal.
+   */
   const handleOpenNew = () => {
     setVehicleToEdit(null);
     setIsRegisterOpen(true);
   };
 
+  /**
+   * Opens the vehicle editor modal for an existing bus.
+   */
   const handleOpenEdit = (bus: BusRouteDefinition) => {
     setVehicleToEdit(bus);
     setIsRegisterOpen(true);

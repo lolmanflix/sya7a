@@ -91,6 +91,7 @@ export async function verifyTOTP(token: string, base32Secret: string, stepSecond
 
 /**
  * Generates an otpauth:// URI string for setting up Google Authenticator via QR code.
+ * @suggestion [INTEGRATE]: Connect this function to a 'Show 2FA QR Code' modal in SecurityPage.tsx so new administrators can scan their TOTP key directly into Google Authenticator or Microsoft Authenticator.
  */
 export function getTOTPUri(accountName: string, issuer: string, base32Secret: string): string {
   const encodedIssuer = encodeURIComponent(issuer);

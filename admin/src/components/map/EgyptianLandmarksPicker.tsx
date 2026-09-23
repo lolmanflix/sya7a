@@ -6,6 +6,9 @@ interface EgyptianLandmarksPickerProps {
   onSelectLandmark: (landmark: EgyptianLandmark) => void;
 }
 
+/**
+ * Dropdown picker for preset Egyptian landmarks and transit hubs.
+ */
 export const EgyptianLandmarksPicker: React.FC<EgyptianLandmarksPickerProps> = ({
   onSelectLandmark,
 }) => {

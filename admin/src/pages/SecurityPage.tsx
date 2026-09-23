@@ -8,10 +8,16 @@ interface SecurityPageProps {
   companies: CompanyRecord[];
 }
 
+/**
+ * System diagnostic and security audit dashboard.
+ */
 export const SecurityPage: React.FC<SecurityPageProps> = ({ companies }) => {
   const [cleaning, setCleaning] = useState(false);
   const hasDuplicateBrt = companies.some((c) => c.id === 'BRT');
 
+  /**
+   * Cleans duplicate bus route corridor nodes from the database.
+   */
   const handleCleanDuplicateBrt = async () => {
     setCleaning(true);
     try {

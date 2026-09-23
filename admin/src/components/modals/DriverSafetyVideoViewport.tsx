@@ -14,6 +14,9 @@ interface DriverSafetyVideoViewportProps {
   longitude?: number;
 }
 
+/**
+ * Video viewport element rendering incoming driver WebRTC stream.
+ */
 export const DriverSafetyVideoViewport: React.FC<DriverSafetyVideoViewportProps> = ({
   streamData,
   remoteStream,
@@ -47,7 +50,10 @@ export const DriverSafetyVideoViewport: React.FC<DriverSafetyVideoViewportProps>
     }
   }, [isMuted]);
 
-  // Toggle local browser webcam for testing without mobile device
+  /**
+   * Toggle local browser webcam for testing without mobile device.
+   * @suggestion [DELETE]: SafeTrip WebRTC P2P hardware streaming from mobile devices is fully operational; this local browser loopback mock is an unused development artifact and can be safely deleted once confirmed.
+   */
   const toggleLocalWebcam = async () => {
     if (localWebcamActive) {
       if (mediaStreamRef.current) {

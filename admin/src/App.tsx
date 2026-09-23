@@ -19,6 +19,9 @@ import { subscribePassengers } from './services/usersService';
 
 import { LiveBusLocation, CompanyRecord, BusRouteDefinition, DriverProfile, PassengerRecord } from './types';
 
+/**
+ * Root React Native application entry point component.
+ */
 export default function App() {
   const { adminSession, loading } = useAdminAuth();
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');

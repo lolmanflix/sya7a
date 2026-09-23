@@ -11,6 +11,9 @@ interface StatCardProps {
   trend?: string;
 }
 
+/**
+ * Summary metric card with icon, count, and trend indicator.
+ */
 export const StatCard: React.FC<StatCardProps> = ({
   title,
   value,

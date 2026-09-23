@@ -1,0 +1,22 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.keystore
+*.mobileprovision
+*.orig.*
+.DS_Store
+.env
+.env.local
+.env.*.local
+
+# Android native build outputs
+android/.gradle/
+android/app/build/
+android/build/
+android/.kotlin/
+android/local.properties

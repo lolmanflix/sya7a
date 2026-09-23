@@ -13,6 +13,9 @@ interface AddBusLineModalProps {
   onLineAdded?: () => void;
 }
 
+/**
+ * Modal allowing dispatchers to register a new bus line.
+ */
 export const AddBusLineModal: React.FC<AddBusLineModalProps> = ({
   isOpen,
   onClose,
@@ -26,6 +29,9 @@ export const AddBusLineModal: React.FC<AddBusLineModalProps> = ({
   const [lineName, setLineName] = useState('');
   const [saving, setSaving] = useState(false);
 
+  /**
+   * Submits new line registration to company catalog.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = lineName.trim();

@@ -3,6 +3,9 @@ import { Bus, Lock, User, KeyRound, ArrowRight, ShieldCheck, QrCode, HelpCircle,
 import { useAdminAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
+/**
+ * Administrative login screen supporting master 2FA TOTP and company dispatch authentication.
+ */
 export const LoginPage: React.FC = () => {
   const [authMode, setAuthMode] = useState<'master' | 'company'>('master');
 
@@ -18,6 +21,9 @@ export const LoginPage: React.FC = () => {
   const { loginMasterAdmin, loginWithFirebase } = useAdminAuth();
   const secretKey = import.meta.env.VITE_MASTER_ADMIN_TOTP_SECRET || 'WASALTADMINSEC2026';
 
+  /**
+   * Copies 2FA secret key to clipboard for authenticator setup.
+   */
   const handleCopySecret = () => {
     navigator.clipboard.writeText(secretKey);
     setCopied(true);
@@ -25,6 +31,9 @@ export const LoginPage: React.FC = () => {
     setTimeout(() => setCopied(false), 2500);
   };
 
+  /**
+   * Submits admin login credentials to authentication services.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

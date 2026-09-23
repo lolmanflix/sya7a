@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
+import { DatabaseSync } from 'node:sqlite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,6 +42,19 @@ if (!fs.existsSync(DIST_DIR)) {
   console.error('\n[ERROR] The "dist" production build directory was not found.');
   console.error('Please run "npm run build" first to compile the web assets.\n');
   process.exit(1);
+}
+
+
+// In-process OpenStreetMap MBTiles reader for zero-external-service map rendering
+const MBTILES_PATH = '/home/kimo/Storage/datasets/map.mbtiles';
+let mbtilesDb = null;
+if (fs.existsSync(MBTILES_PATH)) {
+  try {
+    mbtilesDb = new DatabaseSync(MBTILES_PATH, { open: true, readOnly: true });
+    console.log('[LocalMap] In-process MBTiles engine initialized from:', MBTILES_PATH);
+  } catch (err) {
+    console.warn('[LocalMap] Could not initialize SQLite MBTiles:', err);
+  }
 }
 
 const server = http.createServer((req, res) => {

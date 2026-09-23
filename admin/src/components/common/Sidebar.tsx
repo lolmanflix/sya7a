@@ -17,6 +17,9 @@ interface SidebarProps {
   };
 }
 
+/**
+ * Collapsible left navigation sidebar for Admin Web Portal.
+ */
 export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab, counts }) => {
   const navItems = [
     { id: 'dashboard' as NavTab, label: 'Live Telemetry', icon: LayoutDashboard, badge: counts.liveBuses > 0 ? `${counts.liveBuses} live` : undefined, badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },

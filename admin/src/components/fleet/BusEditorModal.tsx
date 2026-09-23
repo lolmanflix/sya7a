@@ -12,6 +12,9 @@ interface BusEditorModalProps {
   onSaveBus: (companyId: string, bus: BusRouteDefinition) => Promise<void>;
 }
 
+/**
+ * Modal for creating or editing a bus vehicle and route definition.
+ */
 export const BusEditorModal: React.FC<BusEditorModalProps> = ({
   isOpen,
   onClose,
@@ -77,6 +80,9 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
   const selectedCompany = companies.find((c) => c.id === companyId);
   const availableLines = selectedCompany?.busLines || [];
 
+  /**
+   * Updates waypoint stops sequence in the route definition.
+   */
   const handleStopsChange = (
     updatedStops: BusStop[],
     start: { lat: number; lng: number; address: string },
@@ -91,6 +97,9 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
     setEndPoint(end.address);
   };
 
+  /**
+   * Saves bus route definition to Firebase RTDB.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!lineId.trim()) {

@@ -8,6 +8,9 @@ interface PassengersPageProps {
   passengers: PassengerRecord[];
 }
 
+/**
+ * Administrative directory for commuter passenger accounts and trip records.
+ */
 export const PassengersPage: React.FC<PassengersPageProps> = ({ passengers }) => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'PASSENGER' | 'DRIVER' | 'WITH_HISTORY'>('ALL');
@@ -31,6 +34,9 @@ export const PassengersPage: React.FC<PassengersPageProps> = ({ passengers }) =>
     return true;
   });
 
+  /**
+   * Copies commuter UID to system clipboard.
+   */
   const handleCopyUid = (uid: string) => {
     navigator.clipboard.writeText(uid);
     setCopiedUid(uid);
@@ -38,6 +44,9 @@ export const PassengersPage: React.FC<PassengersPageProps> = ({ passengers }) =>
     setTimeout(() => setCopiedUid(null), 2000);
   };
 
+  /**
+   * Clears trip history records for the selected passenger.
+   */
   const handleClearHistory = async (uid: string) => {
     if (confirm('Clear trip history logs for this user?')) {
       try {
@@ -52,6 +61,9 @@ export const PassengersPage: React.FC<PassengersPageProps> = ({ passengers }) =>
     }
   };
 
+  /**
+   * Deletes a passenger account from the system directory.
+   */
   const handleDeleteUser = async (uid: string, name: string) => {
     if (confirm(`Remove record for user "${name}" from database?`)) {
       try {

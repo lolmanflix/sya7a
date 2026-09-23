@@ -8,6 +8,9 @@ interface RouteStopsListProps {
   onRemoveStop: (index: number) => void;
 }
 
+/**
+ * Numbered list of intermediate waypoint stops with reordering controls.
+ */
 export const RouteStopsList: React.FC<RouteStopsListProps> = ({
   stops,
   onUpdateName,

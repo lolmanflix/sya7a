@@ -26,6 +26,9 @@ The **Wasalt Bus Tracker Platform & Admin Portal** is a secure, responsive, mode
 - [x] Confirm Cloud Firestore vs Realtime Database usage (Firestore is empty; RTDB is the active engine).
 
 ### Phase 2: Project Anchor Initialization & Development Baseline
+
+- [x] **Rule 8 Added (Multi-Tenant White-Labeling):** Support private schools, call centers, universities, and commercial shuttles with data-driven UI configuration.
+
 - [x] `dev_rules.md`: Architectural rules, under 400 lines limit, security and non-technical UX standards.
 - [x] `project_plan.md`: Scope, architecture, and phased roadmap.
 - [ ] Automated `functions.md` parser script (`scripts/generate_functions_doc.py`).

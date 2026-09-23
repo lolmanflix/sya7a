@@ -15,6 +15,9 @@ interface DashboardPageProps {
   onSelectBus: (busId: string) => void;
 }
 
+/**
+ * Master administrative overview metrics dashboard.
+ */
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   liveLocations,
   buses,
@@ -25,6 +28,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [mediaModalDriver, setMediaModalDriver] = useState<LiveBusLocation | null>(null);
   const activeCatalogBuses = buses.filter((b) => b.isActive);
 
+  /**
+   * Forcefully terminates an active driver telemetry broadcast session.
+   */
   const handleForceStopSession = async (lineId: string, driverUid: string) => {
     try {
       await terminateLiveSession(lineId, driverUid);

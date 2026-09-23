@@ -36,4 +36,25 @@ These development rules govern the design, implementation, and maintenance of th
 7. **Leverage Proven Open-Source Packages & Libraries:**
    - Prioritize mature, battle-tested open-source libraries, component primitives, and community tooling to accelerate development and eliminate reinventing the wheel.
    - Use proven solutions for maps (Leaflet / React-Leaflet), icons (Lucide React), utilities (clsx, tailwind-merge, date-fns), and UI primitives rather than custom ad-hoc re-implementations.
+8. **Data-Driven White-Labeling & Multi-Tenant Institutional Adaptability:**
+   - **Universal Institutional Fleet Support:** The platform is architected to seamlessly serve any organization operating bus fleets—including private schools, universities, corporate call center shuttles, and public transit.
+   - **Zero Hardcoded Branding in UI:** Logos, company display names, header titles, terminology ("Bus Line" vs "School Route" vs "Shift Shuttle", "Passenger" vs "Student" vs "Employee"), and brand accent palettes must NEVER be hardcoded inside components.
+   - **Centralized Data-Driven Configuration:** All branding, terminology, and visual themes must be powered by a centralized configuration file (`tenantConfig.ts`) and dynamic database properties. Re-theming or onboarding a new client institution must require updating only configuration, requiring zero component recoding.
+9. **Autonomous Agent Command Safety Guardrails (Zero Unapproved Destructive Actions):**
+   - **Autonomous Development Operations:** Routine development commands (`npm`, `npx`, `tsc`, `git`, `python3`, `cat`, `ls`, `grep`, etc.) execute autonomously to ensure seamless, uninterrupted productivity.
+   - **Strict Confirmation for Destructive Actions:** The AI agent is strictly prohibited from executing destructive or elevated commands (`rm`, `rm -rf`, `sudo`, `dd`, `killall`, `mkfs`, `chmod -R`, `chown -R`, etc.) without stopping, stating the proposed command in chat, and obtaining explicit confirmation from the user first.
+   - **Archival Over Destruction:** When reorganizing or deprecating code, files must be relocated to the `archive/` directory to preserve project history and prevent irreversible data loss.
+10. **Deterministic Compliance Verification Suite (`npm run test:rules`):**
+    - The project includes an automated, deterministic verification engine at `scripts/test_dev_rules.py`.
+    - Automatically checks and enforces:
+      1. **File Size Ceiling:** Every active source file must remain <= 400 lines of code.
+      2. **Layer Separation:** UI presentation components are decoupled from direct `firebase/database` calls.
+      3. **Secret Protection:** Guarantees zero committed `.env` files or credentials in the Git index.
+      4. **Multi-Tenant White-Labeling:** Verifies `tenantConfig.ts` presets across all institutional archetypes.
+      5. **Documentation Integrity:** Verifies `functions.md`, `code_wiki.md`, and `dev_rules.md` exist and stay updated.
+    - Run anytime via `npm run test:rules` in `mobile/` or `admin/`, or directly with `python3 scripts/test_dev_rules.py`.
 
+11. **Single Responsibility Principle (SRP) — Single-Purpose Functions:**
+    - **One Function, One Job:** Every function must have exactly one well-defined responsibility. A function should execute only one discrete logical task (e.g. compute a value, persist a record, or render a specific UI component).
+    - **No Mixed Concerns:** Never combine unrelated responsibilities in a single omnibus function (such as validating user input, performing network I/O, writing to local storage, and dispatching UI alerts all within one function body).
+    - **Decomposition & Composability:** Multi-step business workflows must be decomposed into focused, reusable helper functions coordinated by a high-level orchestrator. This guarantees predictable debugging, straightforward unit testing, and effortless maintainability.

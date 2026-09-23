@@ -12,6 +12,9 @@ interface DriverAssignModalProps {
   onSaveAssignments: (driverUid: string, companyId: string, lines: string[]) => Promise<void>;
 }
 
+/**
+ * Modal dialog for assigning operating lines to a driver.
+ */
 export const DriverAssignModal: React.FC<DriverAssignModalProps> = ({
   isOpen,
   onClose,
@@ -28,6 +31,9 @@ export const DriverAssignModal: React.FC<DriverAssignModalProps> = ({
   const activeCompany = companies.find((c) => c.id === companyId);
   const availableLines = activeCompany?.busLines || [];
 
+  /**
+   * Toggles line assignment checkbox state.
+   */
   const handleToggleLine = (line: string) => {
     if (selectedLines.includes(line)) {
       setSelectedLines(selectedLines.filter((l) => l !== line));
@@ -36,6 +42,9 @@ export const DriverAssignModal: React.FC<DriverAssignModalProps> = ({
     }
   };
 
+  /**
+   * Persists updated line assignments to driver RTDB node.
+   */
   const handleSave = async () => {
     setSaving(true);
     try {

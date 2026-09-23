@@ -1,5 +1,7 @@
+import { formatDuration } from '../../utils/timeUtils';
 import React, { useEffect, useState } from 'react';
-import { X, Camera, Mic, MicOff, Radio, Volume2, VolumeX, AlertCircle, Activity, ShieldCheck, UserCheck } from 'lucide-react';
+import { X, Camera, Mic, Radio, AlertCircle, Activity, ShieldCheck, UserCheck } from 'lucide-react';
+import { DriverSafetyAudioMonitor } from './DriverSafetyAudioMonitor';
 import { toast } from 'sonner';
 import { useAdminAuth } from '../../contexts/AuthContext';
 import { DriverMediaRequest, DriverMediaStream, MediaRequestKind } from '../../types';
@@ -21,6 +23,9 @@ interface DriverSafetyMediaModalProps {
   longitude?: number;
 }
 
+/**
+ * SafeTrip video monitoring modal inspecting real-time driver WebRTC camera feed.
+ */
 export const DriverSafetyMediaModal: React.FC<DriverSafetyMediaModalProps> = ({
   isOpen,
   onClose,
@@ -99,6 +104,9 @@ export const DriverSafetyMediaModal: React.FC<DriverSafetyMediaModalProps> = ({
 
   if (!isOpen) return null;
 
+  /**
+   * Sends camera feed request signal to driver mobile device.
+   */
   const handleSendRequest = async (kind: MediaRequestKind) => {
     setSubmitting(true);
     try {
@@ -112,6 +120,9 @@ export const DriverSafetyMediaModal: React.FC<DriverSafetyMediaModalProps> = ({
     }
   };
 
+  /**
+   * Terminates active SafeTrip video monitoring session.
+   */
   const handleEndSession = async () => {
     try {
       await closeDriverMediaRequest(activeDriverUid);
@@ -124,6 +135,9 @@ export const DriverSafetyMediaModal: React.FC<DriverSafetyMediaModalProps> = ({
     }
   };
 
+  /**
+   * Simulates driver consent response in test environments.
+   */
   const handleSimulateConsent = async (approved: boolean) => {
     try {
       await simulateDriverResponse(activeDriverUid, approved);
@@ -133,13 +147,15 @@ export const DriverSafetyMediaModal: React.FC<DriverSafetyMediaModalProps> = ({
     }
   };
 
-  const formatTimer = (s: number) =>
-    `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  
 
   const isStreaming = mediaRequest?.status === 'accepted';
   const showVideo = isStreaming && (mediaRequest?.kind === 'video' || mediaRequest?.kind === 'both');
   const showAudio = isStreaming && (mediaRequest?.kind === 'audio' || mediaRequest?.kind === 'both');
 
+  /**
+   * Switches active video viewport to another broadcasting driver.
+   */
   const switchToActiveDriver = () => {
     setActiveDriverUid('K3oE4lcub6gjAmbWxSc2mWhTNR73');
     setActiveDriverName('Kareem Diyaa (Active Driver)');
@@ -270,7 +286,7 @@ export const DriverSafetyMediaModal: React.FC<DriverSafetyMediaModalProps> = ({
                   SafeTrip Stream Active · {mediaRequest.kind.toUpperCase()}
                 </div>
                 <div className="flex items-center gap-3 text-xs font-mono text-emerald-300">
-                  <span>REC {formatTimer(elapsedSecs)}</span>
+                  <span>REC {formatDuration(elapsedSecs)}</span>
                   <button
                     onClick={handleEndSession}
                     className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 font-sans font-bold text-xs transition-colors"
@@ -296,40 +312,11 @@ export const DriverSafetyMediaModal: React.FC<DriverSafetyMediaModalProps> = ({
 
               {/* Audio Monitor & Waveform */}
               {showAudio && (
-                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center">
-                      {isMuted ? <MicOff className="w-4 h-4 text-rose-400" /> : <Mic className="w-4 h-4 text-emerald-400" />}
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                        Live Audio Monitor
-                        <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                          {isMuted ? 'MUTED' : remoteStream ? 'P2P OPUS LIVE' : '-18 dB RMS'}
-                        </span>
-                      </h4>
-                      <p className="text-[11px] text-slate-400">Cabin interior microphone telemetry stream</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-end gap-1 h-6 px-3 py-1 bg-slate-900 rounded-lg border border-slate-800">
-                      {[40, 75, 55, 90, 60, 80, 45].map((h, i) => (
-                        <div
-                          key={i}
-                          className="w-1 bg-emerald-500 rounded-full transition-all duration-150 animate-pulse"
-                          style={{ height: isMuted ? '4px' : `${h}%` }}
-                        />
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => setIsMuted(!isMuted)}
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                    >
-                      {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+                <DriverSafetyAudioMonitor
+                  isMuted={isMuted}
+                  remoteStream={remoteStream}
+                  onToggleMute={() => setIsMuted(!isMuted)}
+                />
               )}
             </div>
           ) : (
