@@ -45,9 +45,13 @@ export interface LiveBusLocation {
   latitude: number;
   longitude: number;
   lastUpdated: string;
+  startPoint?: string;
+  startLat?: number | null;
+  startLng?: number | null;
   endPoint?: string;
   endLat?: number | null;
   endLng?: number | null;
+  speedKmh?: number;
   driverName?: string;
   driverEmail?: string;
   cameraMonitored?: boolean;

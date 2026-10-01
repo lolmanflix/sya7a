@@ -196,40 +196,54 @@ export const FleetMap: React.FC<FleetMapProps> = ({
         const livePos: [number, number] = [loc.latitude, loc.longitude];
         boundsPoints.push(livePos);
 
-        // If beacon has destination coordinates, draw road route and terminal B
+        // If beacon has destination coordinates, draw authentic road corridor & both terminals
         if (typeof loc.endLat === "number" && typeof loc.endLng === "number" && loc.endLat !== 0) {
-          const startPt: [number, number] = [loc.latitude, loc.longitude];
-          const endPt: [number, number] = [loc.endLat, loc.endLng];
-          boundsPoints.push(startPt, endPt);
+          const originLat = typeof loc.startLat === "number" && loc.startLat !== 0 ? loc.startLat : loc.latitude;
+          const originLng = typeof loc.startLng === "number" && loc.startLng !== 0 ? loc.startLng : loc.longitude;
+          const originPt: [number, number] = [originLat, originLng];
+          const destPt: [number, number] = [loc.endLat, loc.endLng];
+          boundsPoints.push(originPt, destPt);
 
-          const liveRouteGlow = L.polyline([startPt, endPt], {
-            color: "#06B6D4",
-            weight: 8,
-            opacity: 0.25,
+          const liveRouteHalo = L.polyline([originPt, destPt], {
+            color: "#06b6d4",
+            weight: 9,
+            opacity: 0.3,
             lineCap: "round",
+            lineJoin: "round",
           });
-          linesLayer.addLayer(liveRouteGlow);
+          linesLayer.addLayer(liveRouteHalo);
 
-          const liveRouteLine = L.polyline([startPt, endPt], {
-            color: "#0891B2",
-            weight: 4,
+          const liveRouteCasing = L.polyline([originPt, destPt], {
+            color: "#083344",
+            weight: 5.5,
             opacity: 0.9,
             lineCap: "round",
+            lineJoin: "round",
+          });
+          linesLayer.addLayer(liveRouteCasing);
+
+          const liveRouteLine = L.polyline([originPt, destPt], {
+            color: "#22d3ee",
+            weight: 3.5,
+            opacity: 1.0,
+            lineCap: "round",
+            lineJoin: "round",
           });
           linesLayer.addLayer(liveRouteLine);
 
           fetchRoadRoute([
-            { lat: startPt[0], lng: startPt[1] },
-            { lat: loc.latitude, lng: loc.longitude },
-            { lat: endPt[0], lng: endPt[1] },
+            { lat: originLat, lng: originLng },
+            { lat: destPt[0], lng: destPt[1] },
           ]).then((res) => {
-            if (mapInstanceRef.current) {
+            if (mapInstanceRef.current && res.coordinates.length > 0) {
               liveRouteLine.setLatLngs(res.coordinates);
-              liveRouteGlow.setLatLngs(res.coordinates);
+              liveRouteCasing.setLatLngs(res.coordinates);
+              liveRouteHalo.setLatLngs(res.coordinates);
             }
           });
 
-          markersLayer.addLayer(createTerminalMarker(endPt, "B", loc.lineId, loc.endPoint || "Destination"));
+          markersLayer.addLayer(createTerminalMarker(originPt, "A", loc.lineId, loc.startPoint || "Start Terminal"));
+          markersLayer.addLayer(createTerminalMarker(destPt, "B", loc.lineId, loc.endPoint || "Destination"));
         }
 
         markersLayer.addLayer(createLiveBeaconMarker(livePos, loc));

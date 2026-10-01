@@ -1,5 +1,5 @@
 import React from "react";
-import { Moon, Sun, WifiOff } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { MapTheme } from "./mapLayerManager";
 
 interface MapThemeSelectorProps {
@@ -8,7 +8,8 @@ interface MapThemeSelectorProps {
 }
 
 /**
- * Toolbar widget allowing operators to switch between Dark Ops, Clean Street, and Offline maps.
+ * Toolbar widget allowing operators to toggle between Dark Operations and Clean Street maps.
+ * Both themes are 100% locally rendered from /home/kimo/Storage/datasets/map.mbtiles.
  */
 export const MapThemeSelector: React.FC<MapThemeSelectorProps> = ({
   currentTheme,
@@ -19,43 +20,29 @@ export const MapThemeSelector: React.FC<MapThemeSelectorProps> = ({
       <button
         type="button"
         onClick={() => onThemeChange("dark")}
-        title="Dark Operations Theme (Clear Nile, Buildings & Streets)"
-        className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+        title="Dark Operations Theme"
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all ${
           currentTheme === "dark"
             ? "bg-brand-600 text-white shadow-sm font-semibold"
             : "text-slate-400 hover:text-white"
         }`}
       >
-        <Moon className="w-3 h-3 text-cyan-400" />
-        <span className="hidden sm:inline">Dark</span>
+        <Moon className="w-3.5 h-3.5 text-cyan-400" />
+        <span>Dark</span>
       </button>
 
       <button
         type="button"
         onClick={() => onThemeChange("clean")}
-        title="Clean Transit Street Map (Daylight High-Contrast)"
-        className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+        title="Street Daylight Theme"
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all ${
           currentTheme === "clean"
             ? "bg-brand-600 text-white shadow-sm font-semibold"
             : "text-slate-400 hover:text-white"
         }`}
       >
-        <Sun className="w-3 h-3 text-amber-400" />
-        <span className="hidden sm:inline">Street</span>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => onThemeChange("offline")}
-        title="Offline Vector Wireframe (Local File Fallback)"
-        className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
-          currentTheme === "offline"
-            ? "bg-amber-600 text-white shadow-sm font-semibold"
-            : "text-slate-400 hover:text-white"
-        }`}
-      >
-        <WifiOff className="w-3 h-3 text-rose-400" />
-        <span className="hidden sm:inline">Offline</span>
+        <Sun className="w-3.5 h-3.5 text-amber-400" />
+        <span>Street</span>
       </button>
     </div>
   );

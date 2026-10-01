@@ -1,44 +1,65 @@
 /**
  * @file mapLayerManager.ts
- * @description Manages cartographic base tile layers and themes for Leaflet maps.
- * Supports CartoDB Dark Matter (operations dark mode), CartoDB Voyager (clean transit),
- * and an offline vector fallback mode.
+ * @description Manages cartographic base vector tile layers for Leaflet maps.
+ * 100% offline and local, powered directly by /home/kimo/Storage/datasets/map.mbtiles
+ * via the in-process Vite tile server on /local-tiles/{z}/{x}/{y}.
+ * Zero external cloud server dependencies (no OSM server requests, no CartoDB API keys).
  */
 
 import L from 'leaflet';
-import { attachOfflineVectorBaseMap } from './offlineMapLayer';
+import * as maplibregl from 'maplibre-gl';
+import { maplibreGL } from '@maplibre/maplibre-gl-leaflet';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { createLocalVectorStyle } from './localMapStyles';
+
+// Configure the self-hosted worker so MapLibre GL operates 100% offline without Vite bundler resolution errors
+if (typeof window !== 'undefined' && typeof maplibregl.setWorkerUrl === 'function') {
+  maplibregl.setWorkerUrl(`${window.location.origin}/maplibre-gl-worker.mjs`);
+}
 
 export type MapTheme = 'dark' | 'clean' | 'offline';
 
-const CARTO_DARK_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png';
-const CARTO_VOYAGER_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
-
 /**
- * Attaches the selected cartographic base layer to a Leaflet map instance.
+ * Attaches the local MBTiles vector base layer to a Leaflet map instance.
  * @param map - Leaflet map instance.
  * @param theme - Selected map theme ('dark' | 'clean' | 'offline').
  * @returns Cleanup function to remove base layer on theme change or unmount.
  */
 export function attachMapBaseTheme(map: L.Map, theme: MapTheme): () => void {
   const container = map.getContainer();
+  const vectorTheme: 'dark' | 'clean' = theme === 'clean' ? 'clean' : 'dark';
 
-  if (theme === 'offline') {
-    container.style.backgroundColor = '#0b132b';
-    return attachOfflineVectorBaseMap(map);
+  // Set background to prevent flash during layer loading
+  container.style.backgroundColor = vectorTheme === 'dark' ? '#090d16' : '#f8fafc';
+
+  // Ensure Leaflet animation proxy exists to prevent zoom animation null listener errors
+  const mapAny = map as unknown as { _createAnimProxy?: () => void; _proxy?: HTMLElement };
+  if (typeof mapAny._createAnimProxy === 'function' && !mapAny._proxy) {
+    try {
+      mapAny._createAnimProxy();
+    } catch {
+      // Graceful fallback
+    }
   }
 
-  // Set background matching the tile theme to prevent flash during tile load
-  container.style.backgroundColor = theme === 'dark' ? '#090d16' : '#f8fafc';
-
-  const tileUrl = theme === 'dark' ? CARTO_DARK_URL : CARTO_VOYAGER_URL;
-  const tileLayer = L.tileLayer(tileUrl, {
-    attribution: ATTRIBUTION,
-    maxZoom: 19,
-    subdomains: 'abcd',
-  }).addTo(map);
+  let glLayer: L.Layer | null = null;
+  try {
+    const style = createLocalVectorStyle(vectorTheme);
+    glLayer = maplibreGL({
+      style,
+      interactive: false,
+    }).addTo(map);
+  } catch (err) {
+    console.error('[MapLayerManager] Failed to initialize local vector layer:', err);
+  }
 
   return () => {
-    tileLayer.remove();
+    if (glLayer) {
+      try {
+        glLayer.remove();
+      } catch (removeErr) {
+        console.warn('[MapLayerManager] Cleanup warning:', removeErr);
+      }
+    }
   };
 }

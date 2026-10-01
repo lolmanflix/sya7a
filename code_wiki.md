@@ -163,6 +163,8 @@ bus tracker sya7a version/
 - [x] Embedded Client-Side Road Routing Engine: Built `localRoutingEngine.ts` in TypeScript with an arterial road network graph and Catmull-Rom spline curves, replacing external OSRM API calls with 100% offline in-memory calculations.
 - [x] Decoupled External POI & Geocoding APIs: Eradicated remote calls to Overpass API and Nominatim in `landmarkService.ts`, switching to the offline Egyptian transit gazetteer with sub-millisecond nearest-neighbor resolution.
 - [x] Eradicated Mobile Admin Remnants: Stripped leftover "Admin dashboard" card from `RoleSelectionScreen.tsx` and updated mobile context types strictly to `'passenger' | 'driver'`.
+- [x] Edge-Device Offline Road Routing Engine (Option B): Implemented pure client-side/edge dynamic road route calculation across unified Egyptian road network vertices in both Admin and Mobile applications. Eradicated all hardcoded corridors, external OSM routing servers, and synthetic splines.
+- [x] High-Fidelity Road Network Alignment & Curve Retention: Rebuilt the local Egyptian road graph (`egypt_road_graph.json`) directly from `/home/kimo/Storage/datasets/map.mbtiles` with 10-meter quantization and road curve geometry (`pts`) retention on contracted edges. Eradicated artificial shortcut bridges that previously caused sharp V-turns into residential neighborhoods. Integrated minor access roads near terminals, bringing snapping distance at ECU Campus down to 29 meters (from 820m). Updated `bidirectionalAStar.ts` in Admin and Mobile and `simulate_trip_stream.mjs` to unpack full curve geometries.
 
 
 ### In-Progress

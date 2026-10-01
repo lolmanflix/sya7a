@@ -58,4 +58,7 @@ function localMBTilesPlugin(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), localMBTilesPlugin()],
+  optimizeDeps: {
+    exclude: ['maplibre-gl', '@maplibre/maplibre-gl-leaflet'],
+  },
 })
