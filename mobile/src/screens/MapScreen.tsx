@@ -17,6 +17,7 @@ import { saveToHistory } from '../utils/historyUtils';
 
 // Modular Presentation & State Layers
 import { getMapHTML } from '../components/map/passengerMapHtml';
+import { getLocalTileServerUrl } from '../config/mapConfig';
 import BusDetailsSheet, { BusLocation } from '../components/map/BusDetailsSheet';
 import SettingsModal from '../components/SettingsModal';
 import { MapFloatingHeader } from '../components/map/MapFloatingHeader';
@@ -131,7 +132,7 @@ export default function MapScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <WebView
         ref={webViewRef}
-        source={{ html: getMapHTML(mode === 'dark') }}
+        source={{ html: getMapHTML(mode === 'dark', getLocalTileServerUrl()) }}
         style={styles.map}
         javaScriptEnabled={true}
         domStorageEnabled={true}

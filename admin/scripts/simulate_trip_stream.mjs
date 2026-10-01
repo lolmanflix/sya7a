@@ -1,8 +1,8 @@
 /**
  * @file simulate_trip_stream.mjs
  * @description Simulates a live driver GPS broadcast on Firebase Realtime Database
- * along an authentic Cairo arterial road transit corridor (Tahrir -> Ramses -> Abbasiya -> Nasr City -> ECU).
- * Follows road curves with realistic speeds and publishes full telemetry to RTDB.
+ * along an authentic road transit corridor dynamically computed from the local road network.
+ * Follows 100% real turn-by-turn road coordinates with realistic speeds and publishes full telemetry to RTDB.
  */
 
 import { initializeApp } from "firebase/app";
@@ -35,73 +35,159 @@ function loadFirebaseEnv() {
   return env;
 }
 
-/**
- * Natural Catmull-Rom spline interpolation between control coordinates.
- */
-function interpolateRoadCurve(p0, p1, p2, p3, steps = 5) {
-  const points = [];
-  for (let t = 0; t <= 1; t += 1 / steps) {
-    const t2 = t * t;
-    const t3 = t2 * t;
-    const lat =
-      0.5 *
-      (2 * p1[0] +
-        (-p0[0] + p2[0]) * t +
-        (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
-        (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
-    const lng =
-      0.5 *
-      (2 * p1[1] +
-        (-p0[1] + p2[1]) * t +
-        (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
-        (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3);
-    points.push([lat, lng]);
-  }
-  return points;
+function haversineDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/**
- * Generates turn-by-turn road coordinates along the real arterial corridor.
- */
-function generateRoadTrajectory() {
-  const waypoints = [
-    { name: "Tahrir Square Hub", lat: 30.0444, lng: 31.2357 },
-    { name: "Galaa St / Ramses Approach", lat: 30.0520, lng: 31.2410 },
-    { name: "Ramses Square Transit Hub", lat: 30.0626, lng: 31.2469 },
-    { name: "Ghamra Corridor", lat: 30.0680, lng: 31.2680 },
-    { name: "Abbasiya Square", lat: 30.0667, lng: 31.2833 },
-    { name: "Salah Salem / Qobba Axis", lat: 30.0710, lng: 31.3050 },
-    { name: "Salah Salem / Panorama", lat: 30.0670, lng: 31.3180 },
-    { name: "Tayaran St / Nasr City Entrance", lat: 30.0610, lng: 31.3250 },
-    { name: "Makram Ebeid Intersection", lat: 30.0561, lng: 31.3300 },
-    { name: "Mostafa El-Nahas Corridor", lat: 30.0450, lng: 31.3450 },
-    { name: "Hassan Maamoun St", lat: 30.0380, lng: 31.3530 },
-    { name: "ECU Campus Final Terminal", lat: 30.0345, lng: 31.3588 },
-  ];
-
-  const coords = [];
-  for (let i = 0; i < waypoints.length - 1; i++) {
-    const p0 = i > 0 ? [waypoints[i - 1].lat, waypoints[i - 1].lng] : [waypoints[i].lat, waypoints[i].lng];
-    const p1 = [waypoints[i].lat, waypoints[i].lng];
-    const p2 = [waypoints[i + 1].lat, waypoints[i + 1].lng];
-    const p3 = i < waypoints.length - 2 ? [waypoints[i + 2].lat, waypoints[i + 2].lng] : p2;
-
-    const segmentPoints = interpolateRoadCurve(p0, p1, p2, p3, 5);
-    for (const pt of segmentPoints) {
-      coords.push({
-        lat: pt[0],
-        lng: pt[1],
-        segment: `${waypoints[i].name} -> ${waypoints[i + 1].name}`,
-      });
+class FastRouter {
+  constructor(nodes) {
+    this.nodesMap = new Map();
+    this.adjMap = new Map();
+    this.grid = new Map();
+    this.CELL = 0.01;
+    for (const n of nodes) {
+      this.nodesMap.set(n.id, n);
+      if (!this.adjMap.has(n.id)) this.adjMap.set(n.id, []);
+      for (const e of n.adj) {
+        this.adjMap.get(n.id).push({ t: e.t, d: e.d, pts: e.pts });
+        if (!this.adjMap.has(e.t)) this.adjMap.set(e.t, []);
+        const revPts = e.pts ? [...e.pts].reverse() : undefined;
+        this.adjMap.get(e.t).push({ t: n.id, d: e.d, pts: revPts });
+      }
+      const gx = Math.floor(n.lng / this.CELL);
+      const gy = Math.floor(n.lat / this.CELL);
+      const k = `${gx},${gy}`;
+      if (!this.grid.has(k)) this.grid.set(k, []);
+      this.grid.get(k).push(n);
     }
   }
 
-  return coords;
+  findNearest(lat, lng) {
+    const gx = Math.floor(lng / this.CELL);
+    const gy = Math.floor(lat / this.CELL);
+    let best = null;
+    let bestD = Infinity;
+    for (let r = 0; r <= 8; r++) {
+      for (let dx = -r; dx <= r; dx++) {
+        for (let dy = -r; dy <= r; dy++) {
+          if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+          const k = `${gx + dx},${gy + dy}`;
+          for (const n of this.grid.get(k) || []) {
+            const d = haversineDistanceKm(lat, lng, n.lat, n.lng);
+            if (d < bestD) {
+              bestD = d;
+              best = n;
+            }
+          }
+        }
+      }
+      if (bestD < (r + 1) * 0.9) break;
+    }
+    return best;
+  }
+
+  findPath(startCoord, goalCoord) {
+    const sNode = this.findNearest(startCoord.lat, startCoord.lng);
+    const gNode = this.findNearest(goalCoord.lat, goalCoord.lng);
+    if (!sNode || !gNode) return [startCoord, goalCoord];
+
+    const pq = [{ id: sNode.id, p: 0 }];
+    const dist = new Map();
+    const parent = new Map();
+    dist.set(sNode.id, 0);
+
+    const h = (id) => {
+      const n = this.nodesMap.get(id);
+      return n ? haversineDistanceKm(n.lat, n.lng, gNode.lat, gNode.lng) : 0;
+    };
+
+    let iterations = 0;
+    let found = false;
+    while (pq.length > 0 && iterations++ < 25000) {
+      pq.sort((a, b) => a.p - b.p);
+      const curr = pq.shift();
+      const u = curr.id;
+      if (u === gNode.id) { found = true; break; }
+      const dU = dist.get(u);
+      for (const edge of this.adjMap.get(u) || []) {
+        const v = edge.t;
+        const nd = dU + edge.d;
+        if (nd < (dist.get(v) ?? Infinity)) {
+          dist.set(v, nd);
+          parent.set(v, { prev: u, pts: edge.pts });
+          pq.push({ id: v, p: nd + h(v) });
+        }
+      }
+    }
+
+    if (!found) return [startCoord, goalCoord];
+    const traversedEdges = [];
+    let curr = gNode.id;
+    while (curr !== sNode.id) {
+      const p = parent.get(curr);
+      if (!p) break;
+      traversedEdges.push(p);
+      curr = p.prev;
+    }
+    traversedEdges.reverse();
+
+    const coords = [{ lat: startCoord.lat, lng: startCoord.lng }];
+    for (const edge of traversedEdges) {
+      if (edge.pts && edge.pts.length > 0) {
+        for (const pt of edge.pts) {
+          const last = coords[coords.length - 1];
+          if (!last || last.lat !== pt[0] || last.lng !== pt[1]) {
+            coords.push({ lat: pt[0], lng: pt[1] });
+          }
+        }
+      } else {
+        const n = this.nodesMap.get(edge.prev);
+        if (n) {
+          const last = coords[coords.length - 1];
+          if (!last || last.lat !== n.lat || last.lng !== n.lng) {
+            coords.push({ lat: n.lat, lng: n.lng });
+          }
+        }
+      }
+    }
+    const last = coords[coords.length - 1];
+    if (!last || last.lat !== goalCoord.lat || last.lng !== goalCoord.lng) {
+      coords.push({ lat: goalCoord.lat, lng: goalCoord.lng });
+    }
+    return coords;
+  }
+}
+
+/**
+ * Computes road trajectory dynamically between Tahrir Square and ECU Campus using the road graph.
+ */
+function computeDynamicTrajectory() {
+  const graphPath = path.resolve(__dirname, "../public/data/egypt_road_graph.json");
+  if (!fs.existsSync(graphPath)) {
+    throw new Error("Road network graph missing at: " + graphPath);
+  }
+  const graphData = JSON.parse(fs.readFileSync(graphPath, "utf8"));
+  const router = new FastRouter(graphData.nodes);
+
+  const start = { lat: 30.0444, lng: 31.2357 }; // Tahrir Square
+  const end = { lat: 30.0345, lng: 31.3588 };   // ECU Campus Nasr City
+
+  const rawPath = router.findPath(start, end);
+  return rawPath.map((pt, idx) => ({
+    lat: pt.lat,
+    lng: pt.lng,
+    index: idx + 1,
+    total: rawPath.length,
+  }));
 }
 
 async function runSimulation() {
   console.log("====================================================");
-  console.log("   WASALT BUS TRACKER - ROAD-FOLLOWING TELEMETRY");
+  console.log("   WASALT BUS TRACKER - DYNAMIC ROAD ROUTE STREAM");
   console.log("====================================================");
 
   const env = loadFirebaseEnv();
@@ -127,11 +213,11 @@ async function runSimulation() {
   const lineId = "BRT-1";
   const db = getDatabase(app);
   const locationRef = ref(db, `busLocations/${lineId}/${driverUid}`);
-  const trajectory = generateRoadTrajectory();
+  const trajectory = computeDynamicTrajectory();
 
   console.log(`[Simulator] Driver Beacon: ${userCred.user.email}`);
   console.log(`[Simulator] Target RTDB Path: /busLocations/${lineId}/${driverUid}`);
-  console.log(`[Simulator] Generated ${trajectory.length} turn-by-turn road waypoints.`);
+  console.log(`[Simulator] Dynamically computed ${trajectory.length} real road-following GPS nodes.`);
   console.log("[Simulator] Press Ctrl+C at any time to end trip cleanly.\n");
 
   const cleanup = async () => {
@@ -148,9 +234,9 @@ async function runSimulation() {
   process.on("SIGINT", cleanup);
   process.on("SIGTERM", cleanup);
 
-  let step = 0;
+  let stepIdx = 0;
   while (true) {
-    const point = trajectory[step % trajectory.length];
+    const point = trajectory[stepIdx % trajectory.length];
     const payload = {
       latitude: point.lat,
       longitude: point.lng,
@@ -163,21 +249,21 @@ async function runSimulation() {
       endLng: 31.3588,
       driverName: "Captain Tarek (Demo Trip)",
       driverEmail: userCred.user.email,
-      speedKmh: Math.floor(40 + Math.sin(step) * 12),
+      speedKmh: Math.floor(42 + Math.sin(stepIdx) * 10),
       cameraMonitored: true,
       micMonitored: false,
       safetyStatus: "monitored_secure",
     };
 
     await set(locationRef, payload);
-    const progress = Math.round(((step % trajectory.length) / trajectory.length) * 100);
+    const progress = Math.round(((stepIdx % trajectory.length) / trajectory.length) * 100);
     console.log(
-      `[Trip Live] Node ${step + 1}/${trajectory.length} (${progress}%): ` +
-      `GPS (${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}) | ` +
-      `Speed: ${payload.speedKmh} km/h | ${point.segment}`
+      `[Trip Live] Node ${stepIdx + 1}/${trajectory.length} (${progress}%): ` +
+      `GPS (${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}) | ` +
+      `Speed: ${payload.speedKmh} km/h | Road Vertex ${point.index}/${point.total}`
     );
 
-    step++;
+    stepIdx++;
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 }
