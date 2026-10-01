@@ -1,67 +1,269 @@
-# Project Plan: Wasalt Bus Tracker Platform & Admin Portal
+# Wasalt — SaaS Platform Project Plan
 
-## 1. Executive Summary & Goal
-The **Wasalt Bus Tracker Platform & Admin Portal** is a secure, responsive, modern web application designed for transit dispatchers and system administrators to oversee and manage the bus tracking ecosystem. It connects directly to the production Firebase Realtime Database and Firebase Authentication backend to provide full real-time visibility, fleet control, route configuration, and driver dispatching.
+## 1. Product Vision
+**Wasalt** is a premium multi-tenant SaaS platform where businesses create their own branded company workspace, manage their teams and operations, and access the platform through both Web and Electron desktop applications.
 
----
-
-## 2. Technical Architecture & Tech Stack
-- **Frontend Framework:** React (Vite)
-- **Styling & UI:** Tailwind CSS (Modern, premium styling, dark/light mode support)
-- **Backend & Database:**
-  - Firebase Realtime Database (`tracking-72393-default-rtdb.firebaseio.com/`)
-  - Firebase Authentication (59+ registered users/drivers/admins)
-  - Firebase Admin SDK (Node/Express or serverless API layer for elevated admin operations like user provisioning and claim management)
-- **Map & Geolocation:** Leaflet / OpenStreetMap for interactive bus visualization and route endpoint mapping.
-- **Language:** TypeScript / JavaScript with strict typing and schema validation.
+**Core Value:** One Admin account → Multiple Companies. One Company → Multiple Admins. Full data isolation per company with dynamic branding.
 
 ---
 
-## 3. Core Functional Pillars
+## 2. User Personas
 
-### Phase 1: Real-time Database Diagnostics & Architecture Mapping (Complete)
-- [x] Secure service account credentials via `.gitignore`.
-- [x] Query and map live Firebase Realtime Database nodes (`/companies`, `/drivers`, `/users`).
-- [x] Audit Firebase Authentication accounts and role distribution.
-- [x] Confirm Cloud Firestore vs Realtime Database usage (Firestore is empty; RTDB is the active engine).
+### Persona A — Business Owner (Primary)
+- Wants to manage their business operations centrally
+- Creates a company workspace, invites team admins
+- Expects their brand colors and logo in the dashboard
 
-### Phase 2: Project Anchor Initialization & Development Baseline
+### Persona B — Company Admin
+- Invited to manage one or more company workspaces
+- Manages team members, settings, and analytics
+- May have Owner, Admin, or Manager role per company
 
-- [x] **Rule 8 Added (Multi-Tenant White-Labeling):** Support private schools, call centers, universities, and commercial shuttles with data-driven UI configuration.
+### Persona C — Enterprise Client
+- Multiple departments / subsidiaries as separate companies
+- Needs multi-company switching
+- Requires subscription management per company
 
-- [x] `dev_rules.md`: Architectural rules, under 400 lines limit, security and non-technical UX standards.
-- [x] `project_plan.md`: Scope, architecture, and phased roadmap.
-- [ ] Automated `functions.md` parser script (`scripts/generate_functions_doc.py`).
-- [ ] High-Level Architecture Documentation (`code_wiki.md`).
-- [ ] Quality Assurance Checklist (`manual_tests.csv`).
+---
 
-### Phase 3: Portal Foundation & Security Layer
-- [ ] Initialize React + Tailwind application with centralized configuration (`.env`).
-- [ ] Authentication & Role-Based Access Control (RBAC):
-  - Super Admin Dashboard (all companies, drivers, users, system settings).
-  - Company Admin View (scoped to specific company, e.g., CTA, BRT).
-- [ ] Firebase Service Layer with multi-step error handling.
+## 3. Functional Requirements
 
-### Phase 4: Core Admin Modules & Feature Set
-- [ ] **Live Telemetry & Fleet Map:**
-  - Real-time map displaying all active buses and terminals.
-  - Active trip counter, company breakdown, and live status toggle.
-- [ ] **Company Management:**
-  - Create, view, edit transit companies and official domains.
-  - Manage company bus lines.
-  - Data hygiene: Deduplicate duplicate company keys (e.g., `BRT` vs `brt`).
-- [ ] **Fleet & Route Manager:**
-  - Visual bus creator with interactive map coordinate picker.
-  - Route line assignment and terminal addresses.
-  - Bus status toggling (`isActive: true/false`).
-- [ ] **Driver Dispatch & Assignment:**
-  - Driver directory with assigned companies and lines.
-  - Provision new driver accounts directly into Firebase Auth and RTDB.
-  - Reassign lines and update driver credentials safely.
-- [ ] **User & Passenger Analytics:**
-  - View passenger directory and ride history logs.
-  - Account status controls (enable/disable).
+### Authentication
+- [x] Email/password sign-up and login
+- [x] Password reset via email
+- [x] Session persistence
+- [x] Protected routes
+- [x] Loading / unauthorized states
 
-### Phase 5: Verification & Quality Assurance
-- [ ] Execute automated tests and document manual test verifications in `manual_tests.csv`.
-- [ ] Security audit: Validate input sanitization and verify no credentials leakage.
+### Admin Account
+- [x] Global Admin identity (name, email, profile)
+- [x] One Admin → many Companies via AdminCompanyMembership
+- [x] Admin profile management
+
+### Company
+- [x] Company creation (name, logo, description, industry, website)
+- [x] Company-scoped data isolation
+- [x] Company theme (logo-extracted or manual)
+- [x] Company settings management
+
+### AdminCompanyMembership (Many-to-Many)
+- [x] Roles: Owner, Admin, Manager
+- [x] Permissions per membership
+- [x] Admin can have different roles in different companies
+- [x] Add/remove/change role operations
+
+### Multi-Company Switching
+- [x] Company selector after login
+- [x] Active company context drives all data, theme, permissions
+- [x] Create new company from dashboard
+
+### Theme System
+- [x] Logo upload → color extraction → palette generation → contrast validation → theme
+- [x] Manual: 3 predefined theme choices with live preview
+- [x] CSS custom property injection per company
+- [x] Tokens: primary, secondary, accent, background, surface, text, border, success, warning, error
+
+### Onboarding Flow
+- [x] Step 1: Admin account creation
+- [x] Step 2: Company information
+- [x] Step 3: Logo upload OR manual theme selection
+- [x] Step 4: Workspace confirmation → enter dashboard
+
+### Marketing Website
+- [x] Hero with CTA
+- [x] Problem section
+- [x] Features (data-driven)
+- [x] How it works (4-step)
+- [x] Product preview
+- [x] Benefits
+- [x] Pricing (centralized config)
+- [x] Testimonials (placeholder)
+- [x] FAQ (data-driven)
+- [x] Final CTA
+- [x] Footer
+
+### Web Application Dashboard
+- [x] Sidebar navigation
+- [x] Dashboard overview
+- [x] Company settings
+- [x] Team / admin management
+- [x] Analytics (placeholder)
+- [x] Billing
+- [x] Help
+
+### Subscription & Billing
+- [ ] Plan selection during onboarding
+- [ ] Payment provider integration (Stripe)
+- [ ] Subscription status per company
+- [ ] Billing management page
+
+### Electron Desktop Application
+- [ ] Electron + Vite + React scaffold
+- [ ] Shared backend / auth / companies / billing
+- [ ] Context isolation, secure IPC, preload
+- [ ] Windows / macOS / Linux targets
+
+---
+
+## 4. Non-Functional Requirements
+- Every file < 400 lines of code
+- Zero hardcoded credentials, colors, or business logic in UI
+- WCAG AA accessible contrast in all generated themes
+- Fully responsive: Desktop, Tablet (768px), Mobile (375px)
+- Firebase Firestore tenant isolation enforced server-side
+- No raw passwords stored
+- Structured logging for all critical backend operations
+- SEO: title, meta description, Open Graph, semantic HTML
+
+---
+
+## 5. Architecture
+
+### Ecosystem Structure
+```
+sya7a-main/
+├── admin/           ← Transit Ops Admin Portal (existing, unchanged)
+├── mobile/          ← Expo React Native Mobile App (existing, unchanged)
+├── wasalt/          ← NEW: Wasalt SaaS Platform (monorepo)
+│   ├── apps/
+│   │   ├── marketing/   ← Vite + React marketing website
+│   │   ├── web/         ← Vite + React SaaS web application
+│   │   └── desktop/     ← Electron desktop app (scaffold)
+│   └── packages/
+│       ├── types/       ← Shared TypeScript types
+│       ├── config/      ← Branding, pricing, features, FAQs
+│       ├── theme/       ← Theme system (tokens, generation, contrast)
+│       └── validation/  ← Zod schemas shared across apps
+├── project_plan.md
+├── dev_rules.md
+├── code_wiki.md
+├── manual_tests.csv
+├── mistakes.md
+└── user.md
+```
+
+### Database Architecture (Firebase Firestore)
+```
+Firestore (tracking-72393 — existing Firebase project)
+├── admins/{adminId}
+│   ├── id: string (= Firebase Auth UID)
+│   ├── name: string
+│   ├── email: string
+│   ├── phone?: string
+│   ├── avatarUrl?: string
+│   ├── createdAt: Timestamp
+│   └── updatedAt: Timestamp
+│
+├── companies/{companyId}
+│   ├── id: string
+│   ├── name: string
+│   ├── logoUrl?: string
+│   ├── description?: string
+│   ├── industry?: string
+│   ├── website?: string
+│   ├── theme: CompanyTheme
+│   ├── subscriptionId?: string
+│   ├── createdAt: Timestamp
+│   └── updatedAt: Timestamp
+│
+├── adminCompanyMemberships/{membershipId}
+│   ├── adminId: string
+│   ├── companyId: string
+│   ├── role: 'owner' | 'admin' | 'manager'
+│   ├── permissions: string[]
+│   ├── createdAt: Timestamp
+│   └── updatedAt: Timestamp
+│
+└── subscriptions/{subscriptionId}
+    ├── companyId: string
+    ├── plan: 'free' | 'pro' | 'business' | 'enterprise'
+    ├── status: 'active' | 'trialing' | 'past_due' | 'canceled'
+    ├── currentPeriodEnd: Timestamp
+    └── paymentProvider: 'stripe'
+```
+
+### Authentication Architecture
+- Firebase Authentication (email/password)
+- After sign-up: create `admins/{uid}` document in Firestore
+- Session: Firebase Auth built-in persistence
+- Protected routes: check `auth.currentUser` + Firestore admin doc
+- Authorization: check `adminCompanyMemberships` for every company operation
+
+### Theme Architecture
+```
+company.theme = {
+  source: 'logo' | 'manual',
+  primary: '#hex',
+  secondary: '#hex',
+  accent: '#hex',
+  background: '#hex',
+  surface: '#hex',
+  text: '#hex',
+  border: '#hex',
+  success: '#hex',
+  warning: '#hex',
+  error: '#hex'
+}
+```
+Applied via CSS custom properties on `:root` within CompanyContext.
+
+---
+
+## 6. Technology Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Web Framework | React 19 + TypeScript + Vite |
+| Styling | Tailwind CSS v3 |
+| Icons | Lucide React |
+| Routing | React Router v6 |
+| Auth + DB | Firebase Auth + Cloud Firestore |
+| Storage | Firebase Storage (logos) |
+| Notifications | Sonner |
+| Color Extraction | Canvas API (client-side, zero deps) |
+| Validation | Zod |
+| Utilities | clsx, tailwind-merge, date-fns |
+| Desktop | Electron + Vite (future) |
+| Monorepo | npm workspaces |
+
+---
+
+## 7. Development Phases
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1 | Architecture & Documentation | ✅ Done |
+| 2 | Project Scaffold + Shared Packages | 🔄 In Progress |
+| 3 | Multi-Tenant Backend (Firestore services) | 🔄 In Progress |
+| 4 | Authentication (sign-up, login, sessions) | 🔄 In Progress |
+| 5 | Company Onboarding + Theme System | 🔄 In Progress |
+| 6 | Billing Architecture | ⏳ Pending |
+| 7 | Web Application Dashboard | 🔄 In Progress |
+| 8 | Marketing Website | 🔄 In Progress |
+| 9 | Electron Foundation | ⏳ Pending |
+| 10 | QA + Testing | ⏳ Pending |
+
+---
+
+## 8. Roadmap
+
+### v0.1.0 — Foundation
+- Project scaffold, shared packages, auth, Firestore schema
+
+### v0.2.0 — Core SaaS
+- Admin account, company creation, AdminCompanyMembership, roles
+
+### v0.3.0 — Theme System
+- Logo upload, color extraction, manual themes, live preview
+
+### v0.4.0 — Web Application
+- Dashboard, company switching, settings, admin management
+
+### v0.5.0 — Marketing Website
+- Full landing page with all sections, SEO, responsive
+
+### v0.6.0 — Billing
+- Stripe integration, subscription plans, checkout flow
+
+### v1.0.0 — Production
+- Electron desktop, full QA, security audit, performance optimization
