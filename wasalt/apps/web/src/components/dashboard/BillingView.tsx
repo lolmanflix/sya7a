@@ -77,7 +77,7 @@ export const BillingView: React.FC = () => {
           </div>
           <h3 className="text-2xl font-extrabold text-slate-900">Professional Plan</h3>
           <p className="text-xs text-slate-500 mt-1">
-            $79 / month &bull; Billed to card ending in 4242
+            3,850 EGP / month &bull; Billed to card ending in 4242
           </p>
         </div>
 
@@ -205,10 +205,11 @@ export const BillingView: React.FC = () => {
                     >
                       <div className="text-sm font-bold text-slate-900">{plan.name}</div>
                       <div className="text-xl font-extrabold text-slate-900 my-2">
-                        ${plan.priceMonthly}
+                        {plan.priceMonthly.toLocaleString()}
+                        <span className="text-xs font-semibold text-blue-600 ml-1">EGP</span>
                         <span className="text-xs font-normal text-slate-500">/mo</span>
                       </div>
-                      <p className="text-[11px] text-slate-500">{plan.tagline}</p>
+                      <p className="text-[11px] text-slate-500 leading-tight">{plan.tagline}</p>
                     </button>
                   );
                 })}

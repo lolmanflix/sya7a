@@ -4,12 +4,18 @@ import { useAdminAuth } from '../../contexts/AuthContext';
 
 interface NavbarProps {
   activeVehiclesCount: number;
+  onOpenLogin?: () => void;
+  isDemo?: boolean;
 }
 
 /**
  * Top navigation bar for Admin Web Portal.
  */
-export const Navbar: React.FC<NavbarProps> = ({ activeVehiclesCount }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  activeVehiclesCount,
+  onOpenLogin,
+  isDemo = false,
+}) => {
   const { adminSession, logout } = useAdminAuth();
 
   return (
@@ -46,25 +52,44 @@ export const Navbar: React.FC<NavbarProps> = ({ activeVehiclesCount }) => {
 
       {/* Admin Profile & Actions */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2.5 bg-slate-800/60 border border-slate-700/60 rounded-xl px-3 py-1.5">
-          <ShieldCheck className="w-4 h-4 text-brand-400" />
-          <div className="text-left">
-            <p className="text-xs font-medium text-slate-200 truncate max-w-[140px] sm:max-w-[200px]">
-              {adminSession?.email || 'Super Administrator'}
-            </p>
-            <span className="text-[10px] uppercase tracking-wider text-brand-400 font-semibold">
-              {adminSession?.role === 'SUPER_ADMIN' ? 'Super Admin' : `Dispatcher: ${adminSession?.companyId?.toUpperCase()}`}
+        {isDemo ? (
+          <div className="flex items-center gap-3">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">
+              Mock Data Mode
             </span>
+            {onOpenLogin && (
+              <button
+                onClick={onOpenLogin}
+                className="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin Sign In</span>
+              </button>
+            )}
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2.5 bg-slate-800/60 border border-slate-700/60 rounded-xl px-3 py-1.5">
+              <ShieldCheck className="w-4 h-4 text-brand-400" />
+              <div className="text-left">
+                <p className="text-xs font-medium text-slate-200 truncate max-w-[140px] sm:max-w-[200px]">
+                  {adminSession?.email || 'Super Administrator'}
+                </p>
+                <span className="text-[10px] uppercase tracking-wider text-brand-400 font-semibold">
+                  {adminSession?.role === 'SUPER_ADMIN' ? 'Super Admin' : `Dispatcher: ${adminSession?.companyId?.toUpperCase()}`}
+                </span>
+              </div>
+            </div>
 
-        <button
-          onClick={() => logout()}
-          title="Sign Out"
-          className="p-2 rounded-xl bg-slate-800/40 hover:bg-rose-500/10 hover:text-rose-400 border border-slate-700/50 hover:border-rose-500/30 text-slate-400 transition-all"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+            <button
+              onClick={() => logout()}
+              title="Sign Out"
+              className="p-2 rounded-xl bg-slate-800/40 hover:bg-rose-500/10 hover:text-rose-400 border border-slate-700/50 hover:border-rose-500/30 text-slate-400 transition-all"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </>
+        )}
       </div>
     </header>
   );

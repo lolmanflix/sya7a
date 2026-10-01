@@ -3,10 +3,14 @@ import { Bus, Lock, User, KeyRound, ArrowRight, ShieldCheck, QrCode, HelpCircle,
 import { useAdminAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
+interface LoginPageProps {
+  onBackToDashboard?: () => void;
+}
+
 /**
  * Administrative login screen supporting master 2FA TOTP and company dispatch authentication.
  */
-export const LoginPage: React.FC = () => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onBackToDashboard }) => {
   const [authMode, setAuthMode] = useState<'master' | 'company'>('master');
 
   // Form states
@@ -217,6 +221,19 @@ export const LoginPage: React.FC = () => {
             <p className="text-[10px] text-slate-500">
               Type of key: <strong>Time-based</strong>. Account: <strong>masteradmin (Wasalt)</strong>.
             </p>
+          </div>
+        )}
+
+        {onBackToDashboard && (
+          <div className="pt-2 border-t border-slate-800 text-center">
+            <button
+              type="button"
+              onClick={onBackToDashboard}
+              className="text-xs text-brand-400 hover:text-brand-300 font-semibold py-1.5 transition-colors inline-flex items-center gap-1.5"
+            >
+              <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+              <span>Back to Live Dashboard (Mock Data Mode)</span>
+            </button>
           </div>
         )}
       </div>

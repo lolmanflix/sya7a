@@ -17,6 +17,8 @@ export interface PricingPlan {
   tagline: string;
   priceMonthly: number;
   priceAnnual: number;
+  currency?: string; // e.g. 'EGP'
+  currencySymbol?: string; // e.g. 'ج.م' or 'EGP'
   maxCompanies: number;
   maxAdmins: number;
   features: PlanFeature[];

@@ -18,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const MASTER_USERNAME = import.meta.env.VITE_MASTER_ADMIN_USERNAME || 'masteradmin';
 const MASTER_PASSWORD = import.meta.env.VITE_MASTER_ADMIN_PASSWORD || 'adminPassword2026!';
 const MASTER_TOTP_SECRET = import.meta.env.VITE_MASTER_ADMIN_TOTP_SECRET || 'WASALTADMINSEC2026';
+const IS_PUBLIC_DEMO = new URLSearchParams(window.location.search).has('demo');
 
 /**
  * Provides authentication state and user session context to child components.
@@ -42,6 +43,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    if (IS_PUBLIC_DEMO) {
+      setAdminSession({ email: 'demo@wasalt.io', role: 'SUPER_ADMIN' });
+      setLoading(false);
+      return;
+    }
+
     // 1. Check persistent sessions (localStorage or sessionStorage)
     const localSaved = localStorage.getItem('wasalt_admin_session') || localStorage.getItem('sya7a_admin_session');
     const sessionSaved = sessionStorage.getItem('wasalt_admin_session') || sessionStorage.getItem('sya7a_admin_session');

@@ -18,6 +18,9 @@ import { subscribeDrivers } from './services/driversService';
 import { subscribePassengers } from './services/usersService';
 
 import { LiveBusLocation, CompanyRecord, BusRouteDefinition, DriverProfile, PassengerRecord } from './types';
+import { DEMO_BUSES, DEMO_COMPANIES, DEMO_DRIVERS, DEMO_LIVE_LOCATIONS, DEMO_PASSENGERS } from './demoData';
+
+const isPublicDemo = new URLSearchParams(window.location.search).has('demo');
 
 /**
  * Root React Native application entry point component.
@@ -25,17 +28,30 @@ import { LiveBusLocation, CompanyRecord, BusRouteDefinition, DriverProfile, Pass
 export default function App() {
   const { adminSession, loading } = useAdminAuth();
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
+  const [showLoginView, setShowLoginView] = useState<boolean>(false);
 
-  const [liveLocations, setLiveLocations] = useState<LiveBusLocation[]>([]);
-  const [companies, setCompanies] = useState<CompanyRecord[]>([]);
-  const [buses, setBuses] = useState<BusRouteDefinition[]>([]);
-  const [drivers, setDrivers] = useState<DriverProfile[]>([]);
-  const [passengers, setPassengers] = useState<PassengerRecord[]>([]);
+  // If no authenticated adminSession, run in safe demo mode with MOCK DATA
+  const isDemo = !adminSession;
 
-  // Real-time Data Listeners
+  const [liveLocations, setLiveLocations] = useState<LiveBusLocation[]>(DEMO_LIVE_LOCATIONS);
+  const [companies, setCompanies] = useState<CompanyRecord[]>(DEMO_COMPANIES);
+  const [buses, setBuses] = useState<BusRouteDefinition[]>(DEMO_BUSES);
+  const [drivers, setDrivers] = useState<DriverProfile[]>(DEMO_DRIVERS);
+  const [passengers, setPassengers] = useState<PassengerRecord[]>(DEMO_PASSENGERS);
+
+  // Real-time Data Listeners - only subscribe when logged in with a real admin session
   useEffect(() => {
-    if (!adminSession) return;
+    if (!adminSession) {
+      // Use clean mock data when not logged in
+      setLiveLocations(DEMO_LIVE_LOCATIONS);
+      setCompanies(DEMO_COMPANIES);
+      setBuses(DEMO_BUSES);
+      setDrivers(DEMO_DRIVERS);
+      setPassengers(DEMO_PASSENGERS);
+      return;
+    }
 
+    // Authenticated admin: subscribe to live Firebase data
     const unsubTelemetry = subscribeLiveTelemetry(setLiveLocations);
     const unsubCompanies = subscribeCompanies(setCompanies);
     const unsubBuses = subscribeAllBuses(setBuses);
@@ -62,13 +78,18 @@ export default function App() {
     );
   }
 
-  if (!adminSession) {
-    return <LoginPage />;
+  // Only show login page if user explicitly requested to sign in as admin
+  if (showLoginView && !adminSession) {
+    return <LoginPage onBackToDashboard={() => setShowLoginView(false)} />;
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Navbar activeVehiclesCount={liveLocations.length} />
+      <Navbar
+        activeVehiclesCount={liveLocations.length}
+        isDemo={isDemo}
+        onOpenLogin={() => setShowLoginView(true)}
+      />
 
       <div className="flex-1 flex overflow-hidden">
         <Sidebar

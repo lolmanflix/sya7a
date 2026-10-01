@@ -19,11 +19,23 @@
   --wasalt-error: #EF4444;
 }
 
+.dark {
+  --wasalt-background: #090D16;
+  --wasalt-surface: #111827;
+  --wasalt-surface-muted: #1F2937;
+  --wasalt-text: #F9FAFB;
+  --wasalt-text-muted: #9CA3AF;
+  --wasalt-border: #1F2937;
+  --wasalt-primary-light: #1E293B;
+  color-scheme: dark;
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--wasalt-background);
   color: var(--wasalt-text);
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom delicate scrollbars */
@@ -41,8 +53,16 @@ body {
   border-radius: 4px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* Glassmorphism utility */
@@ -51,4 +71,9 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.dark .glass-panel {
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(31, 41, 55, 0.8);
 }
