@@ -3,7 +3,7 @@
 > **Note:** This file is automatically compiled by `scripts/generate_functions_doc.py`.
 > Do not manually edit this file. Keep inline docstrings updated in the source code.
 
-**Total Documented Functions:** 293
+**Total Documented Functions:** 409
 
 ---
 
@@ -163,7 +163,7 @@
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L10 | `MapThemeSelector()` | `{   currentTheme,   onThemeChange, }` | Toolbar widget allowing operators to toggle between Dark Operations and Clean Street maps. Both themes are 100% locally rendered from /home/kimo/Storage/datasets/map.mbtiles. |
+| L10 | `MapThemeSelector()` | `{   currentTheme,   onThemeChange, }` | Toolbar widget allowing operators to toggle between Dark Operations and OpenStreetMap Daylight themes. |
 
 ## [RouteMapToolbar.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/src/components/map/RouteMapToolbar.tsx)
 `admin/src/components/map/RouteMapToolbar.tsx`
@@ -202,29 +202,12 @@
 | L28 | `createCatalogBusMarker()` | `pos: [number, number],   bus: BusRouteDefinition,   isSelected: boolean,   liveMatch: LiveBusLocation | undefined,   onSelectBus?: (busId: string` | Creates a bus vehicle marker along the line with telemetry popup. |
 | L82 | `createLiveBeaconMarker()` | `pos: [number, number], loc: LiveBusLocation` | Creates an orphan live driver beacon marker with radar ping. |
 
-## [localMapStyles.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/src/components/map/localMapStyles.ts)
-`admin/src/components/map/localMapStyles.ts`
-
-| Line | Function Name | Arguments | Description |
-| :--- | :--- | :--- | :--- |
-| L1 | `createLocalVectorStyle()` | `theme: 'dark' | 'clean', tileOrigin?: string` | @file localMapStyles.ts @description MapLibre GL vector styling definitions for 100% local MBTiles rendering. Translates OpenMapTiles vector layers (water, roads, buildings, landuse) into high-contrast dark and daytime cartographic presentations with zero external server dependencies. / import type { StyleSpecification } from 'maplibre-gl'; /** Generates MapLibre vector style specification for the local MBTiles endpoint. @param theme - 'dark' | 'clean' @param tileOrigin - Host origin for tiles (default window.location.origin) |
-
 ## [mapLayerManager.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/src/components/map/mapLayerManager.ts)
 `admin/src/components/map/mapLayerManager.ts`
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L1 | `attachMapBaseTheme()` | `map: L.Map, theme: MapTheme` | @file mapLayerManager.ts @description Manages cartographic base vector tile layers for Leaflet maps. 100% offline and local, powered directly by /home/kimo/Storage/datasets/map.mbtiles via the in-process Vite tile server on /local-tiles/{z}/{x}/{y}. Zero external cloud server dependencies (no OSM server requests, no CartoDB API keys). / import L from 'leaflet'; import * as maplibregl from 'maplibre-gl'; import { maplibreGL } from '@maplibre/maplibre-gl-leaflet'; import 'maplibre-gl/dist/maplibre-gl.css'; import { createLocalVectorStyle } from './localMapStyles'; Configure the self-hosted worker so MapLibre GL operates 100% offline without Vite bundler resolution errors if (typeof window !== 'undefined' && typeof maplibregl.setWorkerUrl === 'function') { maplibregl.setWorkerUrl(`${window.location.origin}/maplibre-gl-worker.mjs`); } export type MapTheme = 'dark' | 'clean' | 'offline'; /** Attaches the local MBTiles vector base layer to a Leaflet map instance. @param map - Leaflet map instance. @param theme - Selected map theme ('dark' | 'clean' | 'offline'). @returns Cleanup function to remove base layer on theme change or unmount. |
-
-## [offlineMapLayer.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/src/components/map/offlineMapLayer.ts)
-`admin/src/components/map/offlineMapLayer.ts`
-
-| Line | Function Name | Arguments | Description |
-| :--- | :--- | :--- | :--- |
-| L1 | `preloadOfflineMapAssets()` | *none* | @file offlineMapLayer.ts @description Attaches high-performance, 100% offline vector base map layers (River Nile, coastlines, and Egyptian transit road network) directly to any Leaflet map instance. Eliminates all external tile server network requests. / import L from 'leaflet'; interface RoadProperties { c?: string; // class s?: number; // speed } let cachedWaterGeoJson: GeoJSON.FeatureCollection | null = null; let cachedRoadsGeoJson: GeoJSON.FeatureCollection | null = null; /** Preloads vector map assets in background to ensure instantaneous rendering. |
-| L36 | `attachOfflineVectorBaseMap()` | `map: L.Map` | Attaches offline vector base map layers to a Leaflet map. @param map - Leaflet map instance. @returns Clean-up function to remove layers when map unmounts. |
-| L48 | `renderWater()` | `geojson: GeoJSON.FeatureCollection` | 1. Render Water Layer (River Nile & Waterbodies) |
-| L74 | `renderRoads()` | `geojson: GeoJSON.FeatureCollection` | 2. Render Road Network Layer (Arteries, Ring Road, Corridors) |
+| L1 | `attachMapBaseTheme()` | `map: L.Map, theme: MapTheme` | @file mapLayerManager.ts @description Manages cartographic base tile layers for Leaflet maps in Wasalt Admin Portal. Uses reliable OpenStreetMap (OSM) and CartoDB Dark Matter raster tile layers with instantaneous rendering, zero WebGL worker dependencies, and smooth transitions. / import L from 'leaflet'; export type MapTheme = 'dark' | 'clean' | 'osm'; const OSM_STANDARD_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'; const CARTO_DARK_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png'; const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'; const CARTO_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>'; /** Attaches the selected OpenStreetMap raster base layer to a Leaflet map instance. @param map - Leaflet map instance. @param theme - Selected map theme ('dark' | 'clean' | 'osm'). @returns Cleanup function to detach the tile layer on theme change or unmount. |
 
 ## [DriverSafetyAudioMonitor.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/src/components/modals/DriverSafetyAudioMonitor.tsx)
 `admin/src/components/modals/DriverSafetyAudioMonitor.tsx`
@@ -351,13 +334,6 @@
 | L11 | `SecurityPage()` | `{ companies }` | System diagnostic and security audit dashboard. |
 | L18 | `handleCleanDuplicateBrt()` | *none* | Cleans duplicate bus route corridor nodes from the database. |
 
-## [bidirectionalAStar.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/src/services/bidirectionalAStar.ts)
-`admin/src/services/bidirectionalAStar.ts`
-
-| Line | Function Name | Arguments | Description |
-| :--- | :--- | :--- | :--- |
-| L196 | `heuristic()` | `id: string` | No description provided. |
-
 ## [busesService.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/src/services/busesService.ts)
 `admin/src/services/busesService.ts`
 
@@ -412,20 +388,15 @@
 | L30 | `findClosestPreset()` | `lat: number, lng: number` | Finds the closest offline Egyptian landmark using geodesic distance. @param lat - Latitude coordinate. @param lng - Longitude coordinate. @returns Nearest landmark record with distance in meters. |
 | L53 | `resolveNearestLandmark()` | `lat: number,   lng: number` | Resolves the nearest named transit hub, campus, or landmark from local spatial memory. Completely offline with zero third-party network dependencies. @param lat - Latitude coordinate. @param lng - Longitude coordinate. @returns Nearest named landmark result. |
 
-## [localRoutingEngine.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/src/services/localRoutingEngine.ts)
-`admin/src/services/localRoutingEngine.ts`
-
-| Line | Function Name | Arguments | Description |
-| :--- | :--- | :--- | :--- |
-| L1 | `computeLocalRoadRoute()` | `waypoints: RouteWaypoint[]` | @file localRoutingEngine.ts @description Edge-device transit routing engine for Egyptian corridors. Operates completely offline with zero external cloud routing API dependencies. Computes authentic turn-by-turn road network paths dynamically with zero hardcoded routes. / import { haversineDistanceKm } from '../utils/geoUtils'; import { bidirectionalRouter } from './bidirectionalAStar'; export interface RouteWaypoint { lat: number; lng: number; name?: string; } export interface LocalRouteResult { coordinates: [number, number][]; distanceKm: number; durationMin: number; isFallback: boolean; } Asynchronously load the Egyptian road network graph into the edge router if (typeof window !== 'undefined' && typeof fetch !== 'undefined') { fetch('/data/egypt_road_graph.json') .then((r) => (r.ok ? r.json() : null)) .then((data) => { if (data?.nodes && Array.isArray(data.nodes)) { bidirectionalRouter.loadNodes(data.nodes); console.log(`[RoutingEngine] Preloaded ${data.nodes.length} road network nodes.`); } }) .catch((e) => console.warn('[RoutingEngine] Road graph preload note:', e)); } /** Computes an authentic road-following transit polyline, distance, and duration across arbitrary waypoints. Strictly calculates geometry dynamically along the road network on the edge device. @param waypoints - Sequence of GPS waypoints along the route. @returns Local route result with road polyline geometry, distance in km, and duration in minutes. |
-
 ## [routingService.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/src/services/routingService.ts)
 `admin/src/services/routingService.ts`
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L1 | `buildWaypointKey()` | `waypoints: WaypointCoord[]` | @file routingService.ts @description In-app client-side routing service for Wasalt Admin Panel. Computes road-following driving geometries, distances, and durations offline using the embedded local routing engine with zero external API dependencies. / import { computeLocalRoadRoute, RouteWaypoint, LocalRouteResult } from './localRoutingEngine'; export interface WaypointCoord { lat: number; lng: number; name?: string; } export interface RouteGeometryResult { coordinates: [number, number][]; distanceKm: number; durationMin: number; isFallback: boolean; } In-memory cache for computed road paths to avoid redundant calculations const routeCache = new Map<string, RouteGeometryResult>(); /** Builds a deterministic cache key from a list of waypoints. @param waypoints - List of route waypoints. @returns Serialized string key. |
-| L35 | `fetchRoadRoute()` | `startLatOrWaypoints: number | WaypointCoord[],   startLng?: number,   endLat?: number,   endLng?: number` | Computes road-following route coordinates between two or more stops using the embedded local routing engine. Completely offline with zero external cloud dependencies. Supports passing either an array of WaypointCoord or traditional (startLat, startLng, endLat, endLng). @param startLatOrWaypoints - Starting latitude or array of waypoints. @param startLng - Optional starting longitude. @param endLat - Optional ending latitude. @param endLng - Optional ending longitude. @returns Computed route geometry, distance, and duration. |
+| L1 | `buildWaypointKey()` | `waypoints: WaypointCoord[]` | @file routingService.ts @description Online road-following routing service for Wasalt Admin Panel. Uses the Project-OSRM public driving engine to compute authentic road geometries, distances, and durations between waypoints with smart in-memory caching and graceful straight-line fallback. / export interface WaypointCoord { lat: number; lng: number; name?: string; } export interface RouteGeometryResult { coordinates: [number, number][]; distanceKm: number; durationMin: number; isFallback: boolean; } In-memory cache for computed road paths to avoid redundant network requests const routeCache = new Map<string, RouteGeometryResult>(); /** Builds a deterministic cache key from a list of waypoints. @param waypoints - List of route waypoints. @returns Serialized string key. |
+| L34 | `haversineDistance()` | `lat1: number, lon1: number, lat2: number, lon2: number` | Calculates great-circle haversine distance between two coordinates in kilometers. @param lat1 - Latitude of origin. @param lon1 - Longitude of origin. @param lat2 - Latitude of destination. @param lon2 - Longitude of destination. @returns Geodesic distance in kilometers. |
+| L55 | `normalizeWaypoints()` | `startLatOrWaypoints: number | WaypointCoord[],   startLng?: number,   endLat?: number,   endLng?: number` | Normalizes input arguments into a clean array of valid coordinates. @param startLatOrWaypoints - Starting latitude or array of waypoints. @param startLng - Optional starting longitude. @param endLat - Optional ending latitude. @param endLng - Optional ending longitude. @returns Array of validated WaypointCoord objects. |
+| L88 | `fetchRoadRoute()` | `startLatOrWaypoints: number | WaypointCoord[],   startLng?: number,   endLat?: number,   endLng?: number` | Computes road-following route coordinates between two or more stops using the OSRM online driving engine. Supports passing either an array of WaypointCoord or traditional (startLat, startLng, endLat, endLng). @param startLatOrWaypoints - Starting latitude or array of waypoints. @param startLng - Optional starting longitude. @param endLat - Optional ending latitude. @param endLng - Optional ending longitude. @returns Computed road route geometry, distance, and duration. |
 
 ## [telemetryService.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/src/services/telemetryService.ts)
 `admin/src/services/telemetryService.ts`
@@ -483,12 +454,58 @@
 | L63 | `verifyTOTP()` | `token: string, base32Secret: string, stepSeconds = 30` | Verifies a 6-digit TOTP token against a Base32 secret key. Allows a +/- 1 step (30-second) drift window to accommodate client clock differences. |
 | L92 | `getTOTPUri()` | `accountName: string, issuer: string, base32Secret: string` | Generates an otpauth:// URI string for setting up Google Authenticator via QR code. @suggestion [INTEGRATE]: Connect this function to a 'Show 2FA QR Code' modal in SecurityPage.tsx so new administrators can scan their TOTP key directly into Google Authenticator or Microsoft Authenticator. |
 
-## [vite.config.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/admin/vite.config.ts)
-`admin/vite.config.ts`
+## [localMapStyles.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/future_plans/offline_maps_and_routing/admin/components_map/localMapStyles.ts)
+`future_plans/offline_maps_and_routing/admin/components_map/localMapStyles.ts`
 
 | Line | Function Name | Arguments | Description |
 | :--- | :--- | :--- | :--- |
-| L6 | `localMBTilesPlugin()` | *none* | In-process Vite plugin to serve local OpenStreetMap vector tiles directly from /home/kimo/Storage/datasets/map.mbtiles on the same server port. |
+| L1 | `createLocalVectorStyle()` | `theme: 'dark' | 'clean', tileOrigin?: string` | @file localMapStyles.ts @description MapLibre GL vector styling definitions for 100% local MBTiles rendering. Translates OpenMapTiles vector layers (water, roads, buildings, landuse) into high-contrast dark and daytime cartographic presentations with zero external server dependencies. / import type { StyleSpecification } from 'maplibre-gl'; /** Generates MapLibre vector style specification for the local MBTiles endpoint. @param theme - 'dark' | 'clean' @param tileOrigin - Host origin for tiles (default window.location.origin) |
+
+## [offlineMapLayer.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/future_plans/offline_maps_and_routing/admin/components_map/offlineMapLayer.ts)
+`future_plans/offline_maps_and_routing/admin/components_map/offlineMapLayer.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L1 | `preloadOfflineMapAssets()` | *none* | @file offlineMapLayer.ts @description Attaches high-performance, 100% offline vector base map layers (River Nile, coastlines, and Egyptian transit road network) directly to any Leaflet map instance. Eliminates all external tile server network requests. / import L from 'leaflet'; interface RoadProperties { c?: string; // class s?: number; // speed } let cachedWaterGeoJson: GeoJSON.FeatureCollection | null = null; let cachedRoadsGeoJson: GeoJSON.FeatureCollection | null = null; /** Preloads vector map assets in background to ensure instantaneous rendering. |
+| L36 | `attachOfflineVectorBaseMap()` | `map: L.Map` | Attaches offline vector base map layers to a Leaflet map. @param map - Leaflet map instance. @returns Clean-up function to remove layers when map unmounts. |
+| L48 | `renderWater()` | `geojson: GeoJSON.FeatureCollection` | 1. Render Water Layer (River Nile & Waterbodies) |
+| L74 | `renderRoads()` | `geojson: GeoJSON.FeatureCollection` | 2. Render Road Network Layer (Arteries, Ring Road, Corridors) |
+
+## [bidirectionalAStar.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/future_plans/offline_maps_and_routing/admin/services/bidirectionalAStar.ts)
+`future_plans/offline_maps_and_routing/admin/services/bidirectionalAStar.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L196 | `heuristic()` | `id: string` | No description provided. |
+
+## [localRoutingEngine.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/future_plans/offline_maps_and_routing/admin/services/localRoutingEngine.ts)
+`future_plans/offline_maps_and_routing/admin/services/localRoutingEngine.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L1 | `computeLocalRoadRoute()` | `waypoints: RouteWaypoint[]` | @file localRoutingEngine.ts @description Edge-device transit routing engine for Egyptian corridors. Operates completely offline with zero external cloud routing API dependencies. Computes authentic turn-by-turn road network paths dynamically with zero hardcoded routes. / import { haversineDistanceKm } from '../utils/geoUtils'; import { bidirectionalRouter } from './bidirectionalAStar'; export interface RouteWaypoint { lat: number; lng: number; name?: string; } export interface LocalRouteResult { coordinates: [number, number][]; distanceKm: number; durationMin: number; isFallback: boolean; } Asynchronously load the Egyptian road network graph into the edge router if (typeof window !== 'undefined' && typeof fetch !== 'undefined') { fetch('/data/egypt_road_graph.json') .then((r) => (r.ok ? r.json() : null)) .then((data) => { if (data?.nodes && Array.isArray(data.nodes)) { bidirectionalRouter.loadNodes(data.nodes); console.log(`[RoutingEngine] Preloaded ${data.nodes.length} road network nodes.`); } }) .catch((e) => console.warn('[RoutingEngine] Road graph preload note:', e)); } /** Computes an authentic road-following transit polyline, distance, and duration across arbitrary waypoints. Strictly calculates geometry dynamically along the road network on the edge device. @param waypoints - Sequence of GPS waypoints along the route. @returns Local route result with road polyline geometry, distance in km, and duration in minutes. |
+
+## [build_road_graph.py](file:////home/kimo/Projects/active/bus-tracker-sya7a/future_plans/offline_maps_and_routing/scripts/build_road_graph.py)
+`future_plans/offline_maps_and_routing/scripts/build_road_graph.py`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L44 | `main()` | *none* | No description provided. |
+
+## [extract_demo_map.py](file:////home/kimo/Projects/active/bus-tracker-sya7a/future_plans/offline_maps_and_routing/scripts/extract_demo_map.py)
+`future_plans/offline_maps_and_routing/scripts/extract_demo_map.py`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L254 | `build_simplifier()` | *none* | Create Douglas-Peucker simplifier using shapely. |
+| L266 | `main()` | *none* | Execute full demo map vector extraction and synchronization. |
+
+## [vite_mbtiles_plugin.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/future_plans/offline_maps_and_routing/vite_mbtiles_plugin.ts)
+`future_plans/offline_maps_and_routing/vite_mbtiles_plugin.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L5 | `localMBTilesPlugin()` | `mbtilesPath = '/home/kimo/Storage/datasets/map.mbtiles'` | In-process Vite/Electron plugin to serve local OpenStreetMap vector tiles directly from /home/kimo/Storage/datasets/map.mbtiles. |
 
 ## [App.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/mobile/App.tsx)
 `mobile/App.tsx`
@@ -977,3 +994,402 @@
 | :--- | :--- | :--- | :--- |
 | L33 | `count_lines()` | `filepath` | Counts total lines in a source code file. |
 | L38 | `get_active_files()` | *none* | Retrieves all active source files excluding build and archive dirs. |
+
+## [main.js](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/desktop/main.js)
+`wasalt/apps/desktop/main.js`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L4 | `createWindow()` | *none* | No description provided. |
+
+## [App.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/App.tsx)
+`wasalt/apps/web/src/App.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L20 | `AppContent()` | *none* | No description provided. |
+| L30 | `handleStartOnboarding()` | `planId: string = 'pro'` | No description provided. |
+| L36 | `handleOnboardingComplete()` | *none* | No description provided. |
+| L41 | `handleLoginSuccess()` | *none* | No description provided. |
+| L128 | `App()` | *none* | No description provided. |
+
+## [ForgotPasswordModal.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/auth/ForgotPasswordModal.tsx)
+`wasalt/apps/web/src/components/auth/ForgotPasswordModal.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L10 | `ForgotPasswordModal()` | `{ isOpen, onClose }` | No description provided. |
+| L15 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
+| L27 | `handleClose()` | *none* | No description provided. |
+
+## [LoginForm.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/auth/LoginForm.tsx)
+`wasalt/apps/web/src/components/auth/LoginForm.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L12 | `LoginForm()` | `{   onSuccess,   onCancel,   onForgotPassword,   onSwitchToSignUp, }` | No description provided. |
+| L25 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
+
+## [Badge.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/common/Badge.tsx)
+`wasalt/apps/web/src/components/common/Badge.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L8 | `Badge()` | `{   children,   variant = 'neutral',   size = 'md',   className = '', }` | No description provided. |
+
+## [Button.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/common/Button.tsx)
+`wasalt/apps/web/src/components/common/Button.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L9 | `Button()` | `{   children,   variant = 'primary',   size = 'md',   isLoading = false,   icon,   className = '',   disabled,   ...props }` | No description provided. |
+
+## [Footer.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/common/Footer.tsx)
+`wasalt/apps/web/src/components/common/Footer.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L3 | `Footer()` | *none* | No description provided. |
+
+## [Modal.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/common/Modal.tsx)
+`wasalt/apps/web/src/components/common/Modal.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L10 | `Modal()` | `{   isOpen,   onClose,   title,   children,   maxWidth = 'md', }` | No description provided. |
+| L19 | `handleKeyDown()` | `e: KeyboardEvent` | No description provided. |
+
+## [Navbar.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/common/Navbar.tsx)
+`wasalt/apps/web/src/components/common/Navbar.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L13 | `Navbar()` | `{   onOpenLogin,   onStartOnboarding,   onGoToDashboard,   isAuthenticated, }` | No description provided. |
+| L24 | `handleScroll()` | *none* | No description provided. |
+
+## [BillingView.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/dashboard/BillingView.tsx)
+`wasalt/apps/web/src/components/dashboard/BillingView.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L16 | `BillingView()` | *none* | No description provided. |
+| L30 | `handleUpgrade()` | *none* | No description provided. |
+
+## [BrandingSettingsView.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/dashboard/BrandingSettingsView.tsx)
+`wasalt/apps/web/src/components/dashboard/BrandingSettingsView.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L17 | `BrandingSettingsView()` | *none* | No description provided. |
+| L29 | `handleFileUpload()` | `e: React.ChangeEvent<HTMLInputElement>` | No description provided. |
+| L54 | `handleSelectPreset()` | `presetId: string` | No description provided. |
+| L60 | `handleSave()` | *none* | No description provided. |
+
+## [CompanySettingsView.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/dashboard/CompanySettingsView.tsx)
+`wasalt/apps/web/src/components/dashboard/CompanySettingsView.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L4 | `CompanySettingsView()` | *none* | No description provided. |
+| L27 | `handleSave()` | `e: React.FormEvent` | No description provided. |
+
+## [DashboardHeader.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/dashboard/DashboardHeader.tsx)
+`wasalt/apps/web/src/components/dashboard/DashboardHeader.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L10 | `DashboardHeader()` | `{   onCreateNewWorkspace, }` | No description provided. |
+| L20 | `handleClickOutside()` | `e: MouseEvent` | No description provided. |
+
+## [DashboardLayout.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/dashboard/DashboardLayout.tsx)
+`wasalt/apps/web/src/components/dashboard/DashboardLayout.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L13 | `DashboardLayout()` | `{   onExitToWebsite,   onCreateNewWorkspace, }` | No description provided. |
+
+## [DashboardSidebar.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/dashboard/DashboardSidebar.tsx)
+`wasalt/apps/web/src/components/dashboard/DashboardSidebar.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L27 | `DashboardSidebar()` | `{   currentTab,   onSelectTab,   onExitToWebsite, }` | No description provided. |
+
+## [OverviewView.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/dashboard/OverviewView.tsx)
+`wasalt/apps/web/src/components/dashboard/OverviewView.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L17 | `OverviewView()` | `{ onNavigateTab }` | No description provided. |
+
+## [TeamManagementView.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/dashboard/TeamManagementView.tsx)
+`wasalt/apps/web/src/components/dashboard/TeamManagementView.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L17 | `TeamManagementView()` | *none* | No description provided. |
+| L30 | `loadMembers()` | *none* | No description provided. |
+| L45 | `handleInviteSubmit()` | `e: React.FormEvent` | No description provided. |
+| L76 | `handleRoleChange()` | `memberId: string, role: AdminRole` | No description provided. |
+| L83 | `handleRemove()` | `memberId: string` | No description provided. |
+
+## [WorkspaceSwitcher.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/dashboard/WorkspaceSwitcher.tsx)
+`wasalt/apps/web/src/components/dashboard/WorkspaceSwitcher.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L7 | `WorkspaceSwitcher()` | `{   onCreateNewWorkspace, }` | No description provided. |
+| L16 | `handleClickOutside()` | `e: MouseEvent` | No description provided. |
+
+## [CtaBanner.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/marketing/CtaBanner.tsx)
+`wasalt/apps/web/src/components/marketing/CtaBanner.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L7 | `CtaBanner()` | `{ onStartOnboarding }` | No description provided. |
+
+## [FaqSection.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/marketing/FaqSection.tsx)
+`wasalt/apps/web/src/components/marketing/FaqSection.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L4 | `FaqSection()` | *none* | No description provided. |
+| L7 | `toggleItem()` | `id: string` | No description provided. |
+
+## [FeaturesGrid.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/marketing/FeaturesGrid.tsx)
+`wasalt/apps/web/src/components/marketing/FeaturesGrid.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L22 | `FeaturesGrid()` | *none* | No description provided. |
+
+## [HeroSection.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/marketing/HeroSection.tsx)
+`wasalt/apps/web/src/components/marketing/HeroSection.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L19 | `HeroSection()` | `{   onStartOnboarding,   onExploreDemo, }` | No description provided. |
+
+## [HowItWorksSection.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/marketing/HowItWorksSection.tsx)
+`wasalt/apps/web/src/components/marketing/HowItWorksSection.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L3 | `HowItWorksSection()` | *none* | No description provided. |
+
+## [LiveThemeDemo.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/marketing/LiveThemeDemo.tsx)
+`wasalt/apps/web/src/components/marketing/LiveThemeDemo.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L10 | `LiveThemeDemo()` | `{ onStartWithTheme }` | No description provided. |
+| L19 | `handlePresetSelect()` | `id: string, color: string` | No description provided. |
+| L24 | `handleColorChange()` | `hex: string` | No description provided. |
+
+## [PricingSection.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/marketing/PricingSection.tsx)
+`wasalt/apps/web/src/components/marketing/PricingSection.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L9 | `PricingSection()` | `{ onSelectPlan }` | No description provided. |
+
+## [ProblemSolutionSection.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/marketing/ProblemSolutionSection.tsx)
+`wasalt/apps/web/src/components/marketing/ProblemSolutionSection.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L3 | `ProblemSolutionSection()` | *none* | No description provided. |
+
+## [TestimonialsSection.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/marketing/TestimonialsSection.tsx)
+`wasalt/apps/web/src/components/marketing/TestimonialsSection.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L3 | `TestimonialsSection()` | *none* | No description provided. |
+
+## [OnboardingWizard.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/onboarding/OnboardingWizard.tsx)
+`wasalt/apps/web/src/components/onboarding/OnboardingWizard.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L16 | `OnboardingWizard()` | `{   onComplete,   onCancel,   initialPlanId = 'pro', }` | No description provided. |
+| L53 | `handleStep1Next()` | `data: {     fullName: string;     email: string;     password: string;     jobTitle?: string;   }` | No description provided. |
+| L80 | `handleStep2Next()` | `data: {     name: string;     slug: string;     industry: string;     companySize: string;     website?: string;   }` | No description provided. |
+| L97 | `handleStep3Next()` | `chosenTheme: CompanyTheme, uploadedLogo?: string` | No description provided. |
+| L103 | `handleLaunch()` | *none* | No description provided. |
+
+## [StepAdminAccount.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/onboarding/StepAdminAccount.tsx)
+`wasalt/apps/web/src/components/onboarding/StepAdminAccount.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L15 | `StepAdminAccount()` | `{   initialData,   onNext,   onCancel, }` | No description provided. |
+| L26 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
+
+## [StepBrandTheme.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/onboarding/StepBrandTheme.tsx)
+`wasalt/apps/web/src/components/onboarding/StepBrandTheme.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L23 | `StepBrandTheme()` | `{   initialTheme,   companyName,   onNext,   onBack, }` | No description provided. |
+| L38 | `handleFileUpload()` | `e: React.ChangeEvent<HTMLInputElement>` | No description provided. |
+| L63 | `handleSelectPreset()` | `presetId: string` | No description provided. |
+| L69 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
+
+## [StepCompanyDetails.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/onboarding/StepCompanyDetails.tsx)
+`wasalt/apps/web/src/components/onboarding/StepCompanyDetails.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L22 | `StepCompanyDetails()` | `{   initialData,   onNext,   onBack, }` | No description provided. |
+| L34 | `handleNameChange()` | `val: string` | No description provided. |
+| L45 | `handleSubmit()` | `e: React.FormEvent` | No description provided. |
+
+## [StepConfirmWorkspace.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/components/onboarding/StepConfirmWorkspace.tsx)
+`wasalt/apps/web/src/components/onboarding/StepConfirmWorkspace.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L24 | `StepConfirmWorkspace()` | `{   adminData,   companyData,   theme,   logoUrl,   isLoading,   onLaunch,   onBack, }` | No description provided. |
+
+## [AuthContext.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/context/AuthContext.tsx)
+`wasalt/apps/web/src/context/AuthContext.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L17 | `AuthProvider()` | `{ children }` | No description provided. |
+| L32 | `login()` | `credentials: AdminCredentials` | No description provided. |
+| L42 | `signUp()` | `credentials: AdminCredentials` | No description provided. |
+| L52 | `logout()` | *none* | No description provided. |
+| L73 | `useAuth()` | *none* | No description provided. |
+
+## [CompanyContext.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/context/CompanyContext.tsx)
+`wasalt/apps/web/src/context/CompanyContext.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L20 | `CompanyProvider()` | `{ children }` | No description provided. |
+| L27 | `loadCompanies()` | *none* | No description provided. |
+| L56 | `setActiveCompanyId()` | `companyId: string` | No description provided. |
+| L66 | `createNewCompany()` | `payload: CompanyCreatePayload` | No description provided. |
+| L74 | `updateCurrentCompany()` | `updates: Partial<Company>` | No description provided. |
+| L102 | `useCompany()` | *none* | No description provided. |
+
+## [ThemeContext.tsx](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/context/ThemeContext.tsx)
+`wasalt/apps/web/src/context/ThemeContext.tsx`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L15 | `ThemeProvider()` | `{ initialTheme, children }` | No description provided. |
+| L27 | `setTheme()` | `newTheme: CompanyTheme` | No description provided. |
+| L32 | `applyTemporaryTheme()` | `tempTheme: CompanyTheme` | No description provided. |
+| L36 | `resetToCompanyTheme()` | *none* | No description provided. |
+| L54 | `useTheme()` | *none* | No description provided. |
+
+## [authService.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/services/authService.ts)
+`wasalt/apps/web/src/services/authService.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L8 | `getCurrentAdmin()` | *none* | No description provided. |
+| L22 | `signInAdmin()` | `credentials: AdminCredentials` | No description provided. |
+| L38 | `signUpAdmin()` | `credentials: AdminCredentials` | No description provided. |
+| L42 | `signOutAdmin()` | *none* | No description provided. |
+| L46 | `sendPasswordReset()` | `email: string` | No description provided. |
+
+## [companyService.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/services/companyService.ts)
+`wasalt/apps/web/src/services/companyService.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L8 | `getStoredCompanies()` | *none* | No description provided. |
+| L22 | `saveCompanies()` | `companies: Company[]` | No description provided. |
+| L28 | `fetchCompaniesForAdmin()` | `adminId: string` | No description provided. |
+| L34 | `createCompany()` | `payload: CompanyCreatePayload` | No description provided. |
+| L67 | `updateCompany()` | `id: string, updates: Partial<Company>` | No description provided. |
+
+## [membershipService.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/services/membershipService.ts)
+`wasalt/apps/web/src/services/membershipService.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L8 | `getStoredMemberships()` | *none* | No description provided. |
+| L22 | `saveMemberships()` | `items: AdminCompanyMembership[]` | No description provided. |
+| L28 | `fetchMembersForCompany()` | `companyId: string` | No description provided. |
+| L34 | `inviteMember()` | `companyId: string,   payload: InviteMemberPayload` | No description provided. |
+| L57 | `updateMemberRole()` | `membershipId: string,   newRole: AdminRole` | No description provided. |
+| L76 | `removeMember()` | `membershipId: string` | No description provided. |
+
+## [subscriptionService.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/apps/web/src/services/subscriptionService.ts)
+`wasalt/apps/web/src/services/subscriptionService.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L7 | `fetchSubscription()` | `companyId: string` | No description provided. |
+| L41 | `updatePlan()` | `companyId: string, newPlanId: string` | No description provided. |
+
+## [colorExtractor.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/packages/theme/src/colorExtractor.ts)
+`wasalt/packages/theme/src/colorExtractor.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L1 | `extractColorsFromImageUrl()` | `imageUrl: string` | Client-Side Canvas Dominant Color Extractor Extracts dominant tones from an image/logo without external dependencies. / import { RGB, rgbToHex } from './colorUtils'; export interface ExtractedColorResult { dominantHex: string; palette: string[]; // Up to 5 dominant colors } /** Quantizes image pixels from an HTMLImageElement or data URL via Offscreen/HTML Canvas. |
+
+## [colorUtils.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/packages/theme/src/colorUtils.ts)
+`wasalt/packages/theme/src/colorUtils.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L1 | `getRelativeLuminance()` | `rgb: RGB` | Color math and conversion utilities (Hex, RGB, HSL, Relative Luminance) / export interface RGB { r: number; g: number; b: number; } export interface HSL { h: number; s: number; l: number; } export function hexToRgb(hex: string): RGB { let cleaned = hex.replace('#', '').trim(); if (cleaned.length === 3) { cleaned = cleaned .split('') .map((c) => c + c) .join(''); } const intVal = parseInt(cleaned, 16); if (isNaN(intVal) || cleaned.length !== 6) { return { r: 37, g: 99, b: 235 }; // Fallback to Sapphire Blue } return { r: (intVal >> 16) & 255, g: (intVal >> 8) & 255, b: intVal & 255, }; } export function rgbToHex(rgb: RGB): string { const toHex = (n: number) => { const clamped = Math.max(0, Math.min(255, Math.round(n))); return clamped.toString(16).padStart(2, '0'); }; return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`; } export function rgbToHsl(rgb: RGB): HSL { const r = rgb.r / 255; const g = rgb.g / 255; const b = rgb.b / 255; const max = Math.max(r, g, b); const min = Math.min(r, g, b); let h = 0; let s = 0; const l = (max + min) / 2; if (max !== min) { const d = max - min; s = l > 0.5 ? d / (2 - max - min) : d / (max + min); switch (max) { case r: h = (g - b) / d + (g < b ? 6 : 0); break; case g: h = (b - r) / d + 2; break; case b: h = (r - g) / d + 4; break; } h /= 6; } return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100), }; } export function hslToRgb(hsl: HSL): RGB { const h = hsl.h / 360; const s = hsl.s / 100; const l = hsl.l / 100; if (s === 0) { const val = Math.round(l * 255); return { r: val, g: val, b: val }; } const hue2rgb = (p: number, q: number, t: number) => { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; }; const q = l < 0.5 ? l * (1 + s) : l + s - l * s; const p = 2 * l - q; return { r: Math.round(hue2rgb(p, q, h + 1 / 3) * 255), g: Math.round(hue2rgb(p, q, h) * 255), b: Math.round(hue2rgb(p, q, h - 1 / 3) * 255), }; } /** Calculates WCAG 2.1 Relative Luminance of an sRGB color. |
+
+## [contrastValidator.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/packages/theme/src/contrastValidator.ts)
+`wasalt/packages/theme/src/contrastValidator.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L1 | `calculateContrastRatio()` | `foregroundHex: string, backgroundHex: string` | WCAG 2.1 Contrast Calculation and Automated Adjustment Engine / import { hexToRgb, getRelativeLuminance, rgbToHsl, hslToRgb, rgbToHex } from './colorUtils'; export interface ContrastResult { ratio: number; isAccessible: boolean; // >= 4.5:1 isLargeAccessible: boolean; // >= 3:1 grade: 'AAA' | 'AA' | 'AA-Large' | 'Fail'; } /** Calculates WCAG 2.1 contrast ratio between two hex colors. |
+| L28 | `evaluateContrast()` | `foregroundHex: string, backgroundHex: string` | No description provided. |
+| L48 | `ensureAccessibleColor()` | `colorHex: string, backgroundHex: string = '#FFFFFF'` | Adjusts color luminance dynamically until it satisfies WCAG AA (4.5:1) against a background. |
+
+## [cssVariables.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/packages/theme/src/cssVariables.ts)
+`wasalt/packages/theme/src/cssVariables.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L4 | `applyThemeTokens()` | `theme: CompanyTheme, targetElement?: HTMLElement | null` | No description provided. |
+
+## [paletteGenerator.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/packages/theme/src/paletteGenerator.ts)
+`wasalt/packages/theme/src/paletteGenerator.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L15 | `generateThemeFromColor()` | `options: GenerateThemeOptions` | No description provided. |
+
+## [presetThemes.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/packages/theme/src/presetThemes.ts)
+`wasalt/packages/theme/src/presetThemes.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L45 | `getPresetThemeById()` | `id: string` | No description provided. |
+
+## [authSchemas.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/packages/validation/src/authSchemas.ts)
+`wasalt/packages/validation/src/authSchemas.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L8 | `validateSignUp()` | `data: {   fullName?: string;   email?: string;   password?: string; }` | No description provided. |
+| L34 | `validateLogin()` | `data: { email?: string; password?: string }` | No description provided. |
+
+## [companySchemas.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/packages/validation/src/companySchemas.ts)
+`wasalt/packages/validation/src/companySchemas.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L4 | `validateCompanySetup()` | `data: {   name?: string;   slug?: string;   industry?: string;   website?: string; }` | No description provided. |
+
+## [memberSchemas.ts](file:////home/kimo/Projects/active/bus-tracker-sya7a/wasalt/packages/validation/src/memberSchemas.ts)
+`wasalt/packages/validation/src/memberSchemas.ts`
+
+| Line | Function Name | Arguments | Description |
+| :--- | :--- | :--- | :--- |
+| L5 | `validateInviteMember()` | `data: {   email?: string;   fullName?: string;   role?: AdminRole; }` | No description provided. |
