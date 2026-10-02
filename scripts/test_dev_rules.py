@@ -16,7 +16,7 @@ import sys
 import re
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-IGNORE_DIRS = {".git", "node_modules", "archive", "temp", "dist", ".expo", "reports"}
+IGNORE_DIRS = {".git", "node_modules", "archive", "temp", "dist", ".expo", "reports", "future_plans"}
 SOURCE_EXTENSIONS = {".ts", ".tsx", ".js", ".jsx", ".py"}
 
 class Colors:

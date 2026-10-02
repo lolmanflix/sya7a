@@ -8,8 +8,7 @@ interface MapThemeSelectorProps {
 }
 
 /**
- * Toolbar widget allowing operators to toggle between Dark Operations and Clean Street maps.
- * Both themes are 100% locally rendered from /home/kimo/Storage/datasets/map.mbtiles.
+ * Toolbar widget allowing operators to toggle between Dark Operations and OpenStreetMap Daylight themes.
  */
 export const MapThemeSelector: React.FC<MapThemeSelectorProps> = ({
   currentTheme,
@@ -34,7 +33,7 @@ export const MapThemeSelector: React.FC<MapThemeSelectorProps> = ({
       <button
         type="button"
         onClick={() => onThemeChange("clean")}
-        title="Street Daylight Theme"
+        title="OpenStreetMap Daylight Theme"
         className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all ${
           currentTheme === "clean"
             ? "bg-brand-600 text-white shadow-sm font-semibold"
@@ -42,7 +41,7 @@ export const MapThemeSelector: React.FC<MapThemeSelectorProps> = ({
         }`}
       >
         <Sun className="w-3.5 h-3.5 text-amber-400" />
-        <span>Street</span>
+        <span>Street (OSM)</span>
       </button>
     </div>
   );

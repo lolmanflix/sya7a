@@ -4,7 +4,7 @@
 - **Project Name:** Wasalt Bus Tracker Platform & Admin Portal
 - **Semantic Version:** v0.1.0-alpha
 - **Start Date:** 2026-09-08
-- **Last Updated:** 2026-09-19
+- **Last Updated:** 2026-10-02
 - **Author/Owner:** Kareem
 - **AI Butler/Lead Engineering Assistant:** Jarvis
 - **Core Mission:** Provide a secure, intuitive, white-label transit & fleet operations platform supporting any institution operating passenger fleets—including private schools, universities, corporate call center shuttles, and municipal transit.
@@ -167,8 +167,17 @@ bus tracker sya7a version/
 - [x] High-Fidelity Road Network Alignment & Curve Retention: Rebuilt the local Egyptian road graph (`egypt_road_graph.json`) directly from `/home/kimo/Storage/datasets/map.mbtiles` with 10-meter quantization and road curve geometry (`pts`) retention on contracted edges. Eradicated artificial shortcut bridges that previously caused sharp V-turns into residential neighborhoods. Integrated minor access roads near terminals, bringing snapping distance at ECU Campus down to 29 meters (from 820m). Updated `bidirectionalAStar.ts` in Admin and Mobile and `simulate_trip_stream.mjs` to unpack full curve geometries.
 
 
+- [x] Restored OpenStreetMap (OSM Standard + CartoDB Dark Matter) raster tile engine in Admin Portal with instant rendering and 0 WebGL overhead.
+- [x] Reconnected online OSRM driving engine in `admin/src/services/routingService.ts` with multi-stop waypoint routing and non-caching fallback protection.
+- [x] Preserved and relocated all offline vector map layers, MBTiles plugins, Web Workers, and A* road graphs to `future_plans/offline_maps_and_routing/` for future offline desktop embedding.
+
+- [x] Electron Desktop Application Scaffold: Created `admin/electron/main.cjs` (main process), `preload.cjs` (secure context bridge with IPC), and `menu.cjs` (native cross-platform menu). Verified production dist loads via `file://` protocol with relative asset paths (`base: "./"`).
+- [x] Cross-Platform Packaging via electron-builder: Configured builds for Linux (AppImage, deb), Windows (NSIS installer, Portable), and macOS (DMG, ZIP) under `admin/package.json#build`.
+- [x] Native Desktop Integration: Window minimize/maximize/close IPC, native OS notifications, single-instance lock, external link routing to system browser, and macOS hidden-inset titlebar.
+- [x] TypeScript Type Definitions: Added `admin/src/types/electron.d.ts` exposing the `window.wasaltDesktop` context bridge API.
 ### In-Progress
-- *(All core milestones completed and verified)*
+- [x] Admin Portal Stability & OSM Mapping Verification — OSM tiles and OSRM routing confirmed operational.
+- [x] Electron Desktop Application — scaffolded and verified loading production dist bundle.
 
 ### Backlog & Future R&D Initiatives
 - [ ] Push notification dispatch from admin console to mobile drivers/passengers.

@@ -1,17 +1,25 @@
 {
   "name": "admin",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Wasalt Transit Operations Command Center Desktop Application",
   "type": "module",
+  "main": "electron/main.cjs",
+  "author": "Wasalt Transit Systems",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "electron:dev": "concurrently -k -s first \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:start": "electron .",
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:linux": "npm run build && electron-builder --linux AppImage deb",
+    "electron:build:win": "npm run build && electron-builder --win nsis portable",
+    "electron:build:mac": "npm run build && electron-builder --mac dmg zip",
     "test:rules": "python3 ../scripts/test_dev_rules.py"
   },
   "dependencies": {
-    "@maplibre/maplibre-gl-leaflet": "^0.1.4",
     "@types/leaflet": "^1.9.22",
     "autoprefixer": "^10.5.5",
     "clsx": "^2.1.1",
@@ -19,7 +27,6 @@
     "firebase": "^12.18.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.43.0",
-    "maplibre-gl": "^6.11.1",
     "postcss": "^8.5.28",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -33,8 +40,45 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
+    "concurrently": "^10.0.5",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
     "oxlint": "^1.79.0",
     "typescript": "~6.0.2",
-    "vite": "^8.2.2"
+    "vite": "^8.2.2",
+    "wait-on": "^9.5.1"
+  },
+  "build": {
+    "appId": "com.wasalt.transit.admin",
+    "productName": "Wasalt Transit Command",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "maintainer": "kareemaimandev@gmail.com"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.utilities"
+    }
   }
 }
