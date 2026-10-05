@@ -1,36 +1,57 @@
 import React from 'react';
 import { Badge } from '../common/Badge';
+import { useLanguageTheme } from '../../context/LanguageThemeContext';
 import { XCircle, CheckCircle, ShieldAlert, Sparkles } from 'lucide-react';
 
 export const ProblemSolutionSection: React.FC = () => {
-  const problems = [
+  const { language } = useLanguageTheme();
+  const isAr = language === 'ar';
+
+  const problemsEn = [
     'Unclear bus locations when teams need answers quickly',
     'Manual driver coordination through phone calls and messages',
     'Scattered route, stop, and schedule information',
     'Difficult fleet monitoring across active transportation operations',
     'No centralized view of buses and route progress',
   ];
+  const problemsAr = [
+    ' مواقع الحافلات غير واضحين عندما يحتاج الفريق إلى إجابات سريعة',
+    'تنسيق يدوي للسائقين عبر المكالمات والرسائل',
+    'بيانات المسارات والمحطات والجداول مبعثرة',
+    'صعوبة مراقبة الأسطول في عمليات النقل النشطة',
+    'لا يوجد عرض مركزي للحافلات وتقدم خطوط السير',
+  ];
 
-  const solutions = [
+  const solutionsEn = [
     'Real-time bus visibility from a centralized fleet view',
     'Organized routes, stops, drivers, and transportation schedules',
     'A clear operational picture for transportation administrators',
     'Role-based access for the people responsible for transportation',
     'Organization-wide visibility without losing the details',
   ];
+  const solutionsAr = [
+    'رؤية لحظية للحافلات من عرض أسطول مركزي',
+    'مسارات ومحطات وسائقون وجداول نقل منظمة',
+    'صورة تشغيلية واضحة لمشرفي النقل',
+    'صلاحيات وصول حسب الدور للمسؤولين عن النقل',
+    'رؤية على مستوى المؤسسة دون فقدان التفاصيل',
+  ];
+
+  const problems = isAr ? problemsAr : problemsEn;
+  const solutions = isAr ? solutionsAr : solutionsEn;
 
   return (
     <section className="py-24 bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <Badge variant="primary" size="md" className="mb-4">
-            Transportation operations
+            {isAr ? 'عمليات النقل' : 'Transportation operations'}
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-4">
-            Transportation shouldn’t run on phone calls and spreadsheets.
+            {isAr ? 'النقل لا يجب أن يقوم على المكالمات وجداول البيانات.' : 'Transportation shouldn’t run on phone calls and spreadsheets.'}
           </h2>
           <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg">
-            Give transportation teams a single, clear place to understand their fleet.
+            {isAr ? 'امنح فرق النقل مكاناً واحداً واضحاً لفهم أسطولها.' : 'Give transportation teams a single, clear place to understand their fleet.'}
           </p>
         </div>
 
@@ -42,8 +63,8 @@ export const ProblemSolutionSection: React.FC = () => {
                 <ShieldAlert className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Without Wasalt</h3>
-                <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">Fragmented transportation operations</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{isAr ? 'بدون وسالت' : 'Without Wasalt'}</h3>
+                <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{isAr ? 'عمليات نقل مبعثرة' : 'Fragmented transportation operations'}</p>
               </div>
             </div>
 
@@ -64,8 +85,8 @@ export const ProblemSolutionSection: React.FC = () => {
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">With Wasalt</h3>
-                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Centralized fleet operations</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{isAr ? 'مع وسالت' : 'With Wasalt'}</h3>
+                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{isAr ? 'عمليات أسطول مركزية' : 'Centralized fleet operations'}</p>
               </div>
             </div>
 

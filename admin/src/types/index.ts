@@ -28,6 +28,12 @@ export interface CompanyRecord {
   domain: string | null;
   busLines: string[];
   buses?: Record<string, BusRouteDefinition>;
+  // Synced from website onboarding (shared RTDB /companies/{id}/)
+  logoUrl?: string;
+  theme?: CompanyThemeLike;
+  ownerId?: string;
+  subscriptionPlanId?: string;
+  subscriptionStatus?: string;
 }
 
 export interface DriverProfile {
@@ -98,6 +104,16 @@ export interface UserRecord {
 }
 
 export type PassengerRecord = UserRecord;
+
+/**
+ * Subset of the website's CompanyTheme persisted in RTDB during onboarding.
+ */
+export interface CompanyThemeLike {
+  colors?: Record<string, string | undefined>;
+  borderRadius?: string;
+  isDark?: boolean;
+  [key: string]: unknown;
+}
 
 export type AdminRole = 'SUPER_ADMIN' | 'COMPANY_ADMIN';
 

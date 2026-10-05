@@ -8,9 +8,35 @@ import { Palette, Check, Sparkles, ShieldCheck, ArrowRight } from 'lucide-react'
 
 interface LiveThemeDemoProps {
   onStartWithTheme?: (primaryColor: string) => void;
+  /** Signed-in users must not see the free-trial CTA. */
+  isAuthenticated?: boolean;
+  onSignIn?: (target?: 'login' | 'dashboard') => void;
 }
 
-export const LiveThemeDemo: React.FC<LiveThemeDemoProps> = ({ onStartWithTheme }) => {
+const presetTranslationsAr: Record<string, { name: string; description: string }> = {
+  'wasalt-sapphire': {
+    name: 'وسالت الياقوت',
+    description: 'أزرق ملكي حاد مصمم للثقة المؤسسية والوضوح التنفيذي.',
+  },
+  'emerald-ops': {
+    name: 'زمرد العمليات',
+    description: 'أخضر غابي نابض مخصص لأسطول النقل والخدمات اللوجستية والميدانية.',
+  },
+  'royal-amethyst': {
+    name: 'العقيق الملكي',
+    description: 'بنفسجي فاخر مثالي لوكالات التكنولوجيا والتعليم والإبداع.',
+  },
+  'obsidian-slate': {
+    name: 'سبج الأردواز',
+    description: 'أسود أحادي عصري بلمسات سماوية نيون لمركزات العمليات.',
+  },
+};
+
+export const LiveThemeDemo: React.FC<LiveThemeDemoProps> = ({
+  onStartWithTheme,
+  isAuthenticated,
+  onSignIn,
+}) => {
   const { t, language } = useLanguageTheme();
   const [selectedPresetId, setSelectedPresetId] = useState(PRESET_THEMES[0].id);
   const [customColor, setCustomColor] = useState('#2563EB');
@@ -61,6 +87,7 @@ export const LiveThemeDemo: React.FC<LiveThemeDemoProps> = ({ onStartWithTheme }
             <div className="space-y-3 mb-6">
               {PRESET_THEMES.map((preset) => {
                 const isSelected = selectedPresetId === preset.id;
+                const arPreset = language === 'ar' ? presetTranslationsAr[preset.id] : undefined;
                 return (
                   <button
                     key={preset.id}
@@ -77,8 +104,8 @@ export const LiveThemeDemo: React.FC<LiveThemeDemoProps> = ({ onStartWithTheme }
                         style={{ backgroundColor: preset.primary }}
                       />
                       <div>
-                        <div className="text-sm font-semibold">{preset.name}</div>
-                        <div className="text-[11px] text-slate-400">{preset.description}</div>
+                        <div className="text-sm font-semibold">{arPreset?.name || preset.name}</div>
+                        <div className="text-[11px] text-slate-400">{arPreset?.description || preset.description}</div>
                       </div>
                     </div>
                     {isSelected && (
@@ -150,7 +177,7 @@ export const LiveThemeDemo: React.FC<LiveThemeDemoProps> = ({ onStartWithTheme }
                   }}
                 >
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>WCAG AA Passed</span>
+                  <span>{language === 'ar' ? 'مطابق لمعيار WCAG AA' : 'WCAG AA Passed'}</span>
                 </div>
               </div>
 
@@ -165,17 +192,17 @@ export const LiveThemeDemo: React.FC<LiveThemeDemoProps> = ({ onStartWithTheme }
                 >
                   <div className="text-xs">
                     <span className="font-bold block" style={{ color: currentTheme.colors.text }}>
-                      Sample Action Card
+                      {language === 'ar' ? 'بطاقة إجراء تجريبية' : 'Sample Action Card'}
                     </span>
                     <span style={{ color: currentTheme.colors.textMuted }}>
-                      Real-time CSS custom property injection
+                      {language === 'ar' ? 'حقن متغيرات CSS لحظياً' : 'Real-time CSS custom property injection'}
                     </span>
                   </div>
                   <button
                     className="px-4 py-2 rounded-lg text-xs font-bold text-white shadow-sm transition-transform active:scale-95"
                     style={{ backgroundColor: currentTheme.colors.primary }}
                   >
-                    Primary Button
+                    {language === 'ar' ? 'زر أساسي' : 'Primary Button'}
                   </button>
                 </div>
               </div>
@@ -184,11 +211,15 @@ export const LiveThemeDemo: React.FC<LiveThemeDemoProps> = ({ onStartWithTheme }
                 <div className="mt-8 pt-4 border-t" style={{ borderColor: currentTheme.colors.border }}>
                   <Button
                     variant="primary"
-                    onClick={() => onStartWithTheme(activeColor)}
+                    onClick={
+                      isAuthenticated
+                        ? () => onSignIn?.('dashboard')
+                        : () => onStartWithTheme(activeColor)
+                    }
                     className="w-full justify-center"
                     icon={<ArrowRight className={`w-4 h-4 ${language === 'ar' ? 'rotate-180' : ''}`} />}
                   >
-                    {t('nav.startTrial')}
+                    {isAuthenticated ? t('nav.dashboard') : t('nav.startTrial')}
                   </Button>
                 </div>
               )}

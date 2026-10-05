@@ -3,45 +3,50 @@ import { PRICING_PLANS } from '@wasalt/config';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { useLanguageTheme } from '../../context/LanguageThemeContext';
+import { usePriceOverrides, applyPriceOverrides } from '../../services/pricingService';
 import { Check, Sparkles } from 'lucide-react';
 
 interface PricingSectionProps {
-  onSelectPlan: (planId: string) => void;
+  onSelectPlan: (planId: string, isAnnual?: boolean) => void;
+  /** Signed-in users must not see free-trial wording on plan CTAs. */
+  isAuthenticated?: boolean;
 }
 
 const planTranslationsAr: Record<string, { name: string; tagline: string; cta: string; features: string[] }> = {
   starter: {
-    name: 'البداية (حتى 5 باصات)',
-    tagline: 'مثالية للمدارس الخاصة الناشئة وشركات النقل الصغيرة.',
+    name: 'البداية',
+    tagline: 'للمدارس الخاصة الناشئة وأساطيل النقل الصغيرة.',
     cta: 'ابدأ تجربة مجانية 14 يوماً',
     features: [
       'مساحة عمل واحدة لمؤسسة النقل',
-      'حتى 5 مركبات وأسطول باصات',
+      'أسطول باصات وخطوط سير غير محدودة',
       'حتى 3 حسابات مشرفين للنقل',
       'خريطة تتبع حي ومتابعة خط السير',
       'استخراج تلقائي للهوية من الشعار',
       'تحليلات قياسية وسجل النشاطات',
       'التبديل بين الشركات (غير متضمن)',
       'مدير حساب مخصص (غير متضمن)',
+      'حزم تطبيقات سطح مكتب ب Electron (.exe / .dmg)',
     ],
   },
   pro: {
-    name: 'المحترف (حتى 25 باص)',
-    tagline: 'للأساطيل المتنامية، والمدارس الكبرى، ونقل موظفي الشركات.',
+    name: 'المحترف',
+    tagline: 'للمدارس الخاصة والجامعات وأساطيل الشركات.',
     cta: 'إطلاق مساحة عمل المحترف',
     features: [
       'حتى 5 مساحات عمل للمؤسسة',
-      'حتى 25 مركبة باص مع تتبع فوري شامل',
+      'أسطول باصات وخطوط سير غير محدودة مع تتبع فوري شامل',
       'حتى 15 مقعد مشرف للمنظومة',
       'تبديل فوري وسريع بين الشركات والفروع',
       'محرك متقدم للألوان وفحص التباين',
       'صلاحيات وصول متقدمة حسب الدور',
       'توجيه السائقين وإدارة الورديات',
       'دعم محلي ذو أولوية (هاتف وواتساب)',
+      'حزم تطبيقات سطح مكتب ب Electron (.exe / .dmg)',
     ],
   },
   enterprise: {
-    name: 'المؤسسات الكبرى (أسطول غير محدود)',
+    name: 'المؤسسات الكبرى',
     tagline: 'لشركات السياحة والنقل الجماعي والجامعات والمجمعات متعددة الفروع.',
     cta: 'تواصل مع فريق المبيعات',
     features: [
@@ -57,9 +62,14 @@ const planTranslationsAr: Record<string, { name: string; tagline: string; cta: s
   },
 };
 
-export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) => {
+export const PricingSection: React.FC<PricingSectionProps> = ({
+  onSelectPlan,
+  isAuthenticated,
+}) => {
   const [isAnnual, setIsAnnual] = useState(true);
   const { t, language } = useLanguageTheme();
+  // Live admin-set prices from the admin dashboard (fallback: PRICING_PLANS defaults).
+  const plans = applyPriceOverrides(PRICING_PLANS, usePriceOverrides());
 
   return (
     <section id="pricing" className="py-24 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 transition-colors">
@@ -107,13 +117,20 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
 
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
-          {PRICING_PLANS.map((plan) => {
+          {plans.map((plan) => {
             const price = isAnnual ? plan.priceAnnual : plan.priceMonthly;
             const isHighlighted = plan.highlighted;
             const arInfo = planTranslationsAr[plan.id];
             const planName = language === 'ar' && arInfo ? arInfo.name : plan.name;
             const planTagline = language === 'ar' && arInfo ? arInfo.tagline : plan.tagline;
-            const ctaText = language === 'ar' && arInfo ? arInfo.cta : plan.ctaText;
+            const ctaText =
+              isAuthenticated && plan.ctaText.toLowerCase().includes('trial')
+                ? language === 'ar'
+                  ? 'اختر الخطة'
+                  : 'Select Plan'
+                : language === 'ar' && arInfo
+                  ? arInfo.cta
+                  : plan.ctaText;
             const currencyLabel = language === 'ar' ? 'ج.م' : 'EGP';
 
             return (
@@ -176,7 +193,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
                 <Button
                   variant={isHighlighted ? 'primary' : 'outline'}
                   size="lg"
-                  onClick={() => onSelectPlan(plan.id)}
+                  onClick={() => onSelectPlan(plan.id, isAnnual)}
                   className={`w-full justify-center ${
                     !isHighlighted ? 'dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700' : ''
                   }`}

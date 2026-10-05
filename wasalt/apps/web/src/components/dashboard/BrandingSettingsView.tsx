@@ -27,6 +27,7 @@ export const BrandingSettingsView: React.FC = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,6 +63,7 @@ export const BrandingSettingsView: React.FC = () => {
   const handleSave = async () => {
     if (!activeCompany) return;
     setIsSaving(true);
+    setSaveError(null);
     try {
       await updateCurrentCompany({
         theme: currentTheme,
@@ -69,6 +71,10 @@ export const BrandingSettingsView: React.FC = () => {
       });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error('[Branding] Save failed:', err);
+      setSaveError('Could not save branding changes. Please check your connection and try again.');
+      setTimeout(() => setSaveError(null), 5000);
     } finally {
       setIsSaving(false);
     }
@@ -88,6 +94,12 @@ export const BrandingSettingsView: React.FC = () => {
         <div className="p-4 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200 flex items-center gap-2">
           <Check className="w-4 h-4 text-emerald-600" />
           <span>Branding saved and applied across the entire portal!</span>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="p-4 rounded-xl bg-red-50 text-red-700 text-xs font-semibold border border-red-200 flex items-center gap-2">
+          <span>{saveError}</span>
         </div>
       )}
 

@@ -15,6 +15,8 @@ interface CompaniesGridViewProps {
   onSelectCompanyForLines: (company: CompanyRecord) => void;
   onDeleteCompany: (companyId: string) => void;
   onOpenAddCompany: () => void;
+  /** Super-admin only: confirm payment and activate subscription. */
+  onConfirmPayment?: (companyId: string) => void;
 }
 
 /**
@@ -29,6 +31,7 @@ export const CompaniesGridView: React.FC<CompaniesGridViewProps> = ({
   onSelectCompanyForLines,
   onDeleteCompany,
   onOpenAddCompany,
+  onConfirmPayment,
 }) => {
   /**
    * Calculates the total buses assigned to a company.
@@ -66,6 +69,7 @@ export const CompaniesGridView: React.FC<CompaniesGridViewProps> = ({
           busesCount={getBusCount(company.id)}
           onManageLines={() => onSelectCompanyForLines(company)}
           onDeleteCompany={onDeleteCompany}
+          onConfirmPayment={onConfirmPayment}
         />
       ))}
     </div>

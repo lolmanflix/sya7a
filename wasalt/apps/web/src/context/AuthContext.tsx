@@ -12,6 +12,8 @@ interface AuthContextType {
   login: (credentials: AdminCredentials) => Promise<void>;
   signUp: (credentials: AdminCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  /** Updates the signed-in admin's profile info and refreshes local state. */
+  updateProfile: (fullName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +58,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAdmin(null);
   };
 
+  const updateProfile = async (fullName: string) => {
+    const updated = await authService.updateAdminProfile(fullName);
+    setAdmin(updated);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -65,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         signUp,
         logout,
+        updateProfile,
       }}
     >
       {children}

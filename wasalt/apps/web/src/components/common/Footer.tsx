@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLanguageTheme } from '../../context/LanguageThemeContext';
-import { Bus, Shield, Globe } from 'lucide-react';
+import { Shield, Globe } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const { t } = useLanguageTheme();
@@ -12,8 +12,12 @@ export const Footer: React.FC = () => {
           {/* Brand info */}
           <div className="md:col-span-2 flex flex-col gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white">
-                <Bus className="w-5 h-5" />
+              <div className="relative w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-700">
+                <img
+                  src="/wasalt-logo.png"
+                  alt="Wasalt"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-[185%] max-w-none"
+                />
               </div>
               <span className="text-xl font-bold text-white tracking-tight">
                 {t('nav.brand')}
@@ -85,10 +89,10 @@ export const Footer: React.FC = () => {
             &copy; 2026 Wasalt Platform. {t('footer.rights')}
           </p>
           <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-slate-400 transition-colors">
+            <a href="#privacy" className="hover:text-slate-400 transition-colors">
               {t('footer.privacy')}
             </a>
-            <a href="#" className="hover:text-slate-400 transition-colors">
+            <a href="#terms" className="hover:text-slate-400 transition-colors">
               {t('footer.terms')}
             </a>
           </div>

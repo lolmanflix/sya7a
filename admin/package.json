@@ -51,6 +51,7 @@
   "build": {
     "appId": "com.wasalt.transit.admin",
     "productName": "Wasalt Transit Command",
+    "icon": "electron/Wasalt Smart Transport Logo.png",
     "directories": {
       "output": "release"
     },

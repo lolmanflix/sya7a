@@ -11,6 +11,8 @@ import { CompanyRecord, BusRouteDefinition } from '../types';
 import {
   removeCompany,
 } from '../services/companiesService';
+import { activateSubscription } from '../services/subscriptionsService';
+import { useAdminAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
 // Modular Presentation Components
@@ -42,6 +44,8 @@ export const CompaniesPage: React.FC<CompaniesPageProps> = ({
   const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
   const [isAddLineOpen, setIsAddLineOpen] = useState(false);
   const { handleRenameLine, handleDeleteLine } = useLineOperations();
+  const { adminSession } = useAdminAuth();
+  const isSuperAdmin = adminSession?.role === 'SUPER_ADMIN';
 
   // 1. Filtered Companies
   const filteredCompanies = useMemo(() => {
@@ -99,6 +103,27 @@ export const CompaniesPage: React.FC<CompaniesPageProps> = ({
         console.error('[CompaniesPage] Failed to delete operator:', err);
         toast.error('Failed to delete operator');
       }
+    }
+  };
+
+  /**
+   * Manually confirms a received payment and activates the subscription.
+   * Super-admin only — mirrors the website's pending_payment flow.
+   */
+  const handleConfirmPayment = async (companyId: string) => {
+    if (
+      !confirm(
+        `Confirm payment received for '${companyId}' and activate its subscription?`
+      )
+    ) {
+      return;
+    }
+    try {
+      await activateSubscription(companyId);
+      toast.success(`Subscription activated for ${companyId}`);
+    } catch (err) {
+      console.error('[CompaniesPage] Failed to activate subscription:', err);
+      toast.error('Failed to activate subscription');
     }
   };
 
@@ -185,6 +210,7 @@ export const CompaniesPage: React.FC<CompaniesPageProps> = ({
           onSelectCompanyForLines={setSelectedCompanyForLines}
           onDeleteCompany={handleDeleteCompany}
           onOpenAddCompany={() => setIsAddCompanyOpen(true)}
+          onConfirmPayment={isSuperAdmin ? handleConfirmPayment : undefined}
         />
       )}
 

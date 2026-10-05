@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PRICING_PLANS } from '@wasalt/config';
+import { usePriceOverrides, applyPriceOverrides } from '../../services/pricingService';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import {
@@ -30,7 +31,8 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAnnual, setIsAnnual] = useState(true);
 
-  const plan = PRICING_PLANS.find((p) => p.id === planId) || PRICING_PLANS[1];
+  const plans = applyPriceOverrides(PRICING_PLANS, usePriceOverrides());
+  const plan = plans.find((p) => p.id === planId) || plans[1];
   const price = isAnnual ? plan.priceAnnual : plan.priceMonthly;
 
   const handlePayment = async () => {

@@ -16,6 +16,8 @@ const fleetRowsAr = [
 ];
 
 const MapPanel = () => {
+  const { language } = useLanguageTheme();
+  const isAr = language === 'ar';
   return (
     <div className="relative min-h-[340px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-sky-50 dark:bg-slate-900 shadow-sm">
       <div
@@ -36,8 +38,12 @@ const MapPanel = () => {
       <MapPin className="absolute left-[11%] bottom-[21%] w-6 h-6 text-slate-600 dark:text-slate-300 fill-white dark:fill-slate-900" />
       <MapPin className="absolute right-[20%] bottom-[18%] w-6 h-6 text-slate-600 dark:text-slate-300 fill-white dark:fill-slate-900" />
       <div className="absolute top-4 left-4 rounded-lg bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm px-3 py-2">
-        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">SELECTED BUS</p>
-        <p className="text-sm font-bold text-slate-900 dark:text-white">Bus 102 · On Route</p>
+        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+          {isAr ? 'الحافلة المحددة' : 'SELECTED BUS'}
+        </p>
+        <p className="text-sm font-bold text-slate-900 dark:text-white">
+          {isAr ? 'حافلة 102 · في الطريق' : 'Bus 102 · On Route'}
+        </p>
       </div>
     </div>
   );
@@ -134,7 +140,10 @@ export const FleetExperience: React.FC = () => {
                 <div className="font-bold text-white flex items-center gap-2 mb-8">
                   <Bus className="w-5 h-5 text-blue-400" /> Wasalt
                 </div>
-                {['Dashboard','Live Fleet','Buses','Drivers','Routes','Stops','Passengers','Analytics','Team','Billing','Settings'].map((item, i) => (
+                {(language === 'ar'
+                  ? ['لوحة التحكم','الأسطول المباشر','الحافلات','السائقون','المسارات','المحطات','الركاب','التحليلات','الفريق','الفوترة','الإعدادات']
+                  : ['Dashboard','Live Fleet','Buses','Drivers','Routes','Stops','Passengers','Analytics','Team','Billing','Settings']
+                ).map((item, i) => (
                   <div className={`text-sm py-2 px-3 rounded-lg mb-1 ${i === 0 ? 'bg-blue-600 text-white' : 'text-slate-400'}`} key={item}>
                     {item}
                   </div>
@@ -170,7 +179,10 @@ export const FleetExperience: React.FC = () => {
                     <h4 className="font-bold text-slate-900 dark:text-white">{t('fleet.routeStatusTitle')}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('fleet.routeStatusSubtitle')}</p>
                     <div className="mt-5 space-y-4">
-                      {['Route A · On Route','Route B · Approaching stop','Route C · On Route'].map((route, i) => (
+                      {(language === 'ar'
+                        ? ['المسار أ · في الطريق','المسار ب · يقترب من المحطة','المسار ج · في الطريق']
+                        : ['Route A · On Route','Route B · Approaching stop','Route C · On Route']
+                      ).map((route, i) => (
                         <div key={route}>
                           <div className="flex justify-between text-xs text-slate-700 dark:text-slate-300">
                             <span className="font-semibold">{route}</span>

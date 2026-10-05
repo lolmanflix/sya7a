@@ -3,14 +3,16 @@ import { useAuth } from '../../context/AuthContext';
 import { useCompany } from '../../context/CompanyContext';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Badge } from '../common/Badge';
-import { Bell, LogOut, User, Shield, ChevronDown } from 'lucide-react';
+import { Bell, LogOut, User, Shield, ChevronDown, Menu } from 'lucide-react';
 
 interface DashboardHeaderProps {
   onCreateNewWorkspace: () => void;
+  onToggleSidebar?: () => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onCreateNewWorkspace,
+  onToggleSidebar,
 }) => {
   const { admin, logout } = useAuth();
   const { activeCompany } = useCompany();
@@ -28,8 +30,19 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between z-30">
-      <div className="flex items-center gap-4">
+    <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between z-30">
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+        {/* Side drawer toggle (mobile/tablet) */}
+        {onToggleSidebar && (
+          <button
+            onClick={onToggleSidebar}
+            title="Toggle navigation"
+            className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shrink-0"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
         <WorkspaceSwitcher onCreateNewWorkspace={onCreateNewWorkspace} />
 
         <div className="hidden lg:flex items-center gap-2">

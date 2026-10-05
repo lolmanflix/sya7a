@@ -7,6 +7,9 @@ const { app, BrowserWindow, ipcMain, Notification, shell } = require('electron')
 const path = require('path');
 const { setupApplicationMenu } = require('./menu.cjs');
 
+// Override the process name so macOS dock shows "Wasalt" instead of "Electron"
+app.setName('Wasalt');
+
 // Enforce single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -31,6 +34,7 @@ function createMainWindow() {
     titleBarStyle: isMac ? 'hiddenInset' : 'default',
     trafficLightPosition: isMac ? { x: 16, y: 16 } : undefined,
     backgroundColor: '#090d16',
+    icon: path.join(__dirname, 'Wasalt Smart Transport Logo.png'),
     show: false, // Prevent white flash before rendering
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -136,6 +140,11 @@ app.on('second-instance', () => {
 });
 
 app.whenReady().then(() => {
+  // Set macOS dock icon explicitly — BrowserWindow's icon option doesn't affect the dock
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(path.join(__dirname, 'Wasalt Smart Transport Logo.png'));
+  }
+
   createMainWindow();
 
   app.on('activate', () => {

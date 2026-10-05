@@ -5,9 +5,16 @@ import { ArrowRight, Bus, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 interface CtaBannerProps {
   onStartOnboarding: () => void;
+  /** Signed-in users must not see the free-trial CTA. */
+  isAuthenticated?: boolean;
+  onSignIn?: (target?: 'login' | 'dashboard') => void;
 }
 
-export const CtaBanner: React.FC<CtaBannerProps> = ({ onStartOnboarding }) => {
+export const CtaBanner: React.FC<CtaBannerProps> = ({
+  onStartOnboarding,
+  isAuthenticated,
+  onSignIn,
+}) => {
   const { t, language } = useLanguageTheme();
 
   return (
@@ -34,18 +41,17 @@ export const CtaBanner: React.FC<CtaBannerProps> = ({ onStartOnboarding }) => {
           <Button
             size="lg"
             variant="secondary"
-            onClick={onStartOnboarding}
+            onClick={
+              isAuthenticated ? () => onSignIn?.('dashboard') : onStartOnboarding
+            }
             icon={<ArrowRight className={`w-5 h-5 text-blue-700 ${language === 'ar' ? 'rotate-180' : ''}`} />}
             className="w-full sm:w-auto bg-white text-blue-700 hover:bg-blue-50 font-bold shadow-xl shadow-blue-900/20"
           >
-            {t('cta.button')}
+            {isAuthenticated ? t('nav.dashboard') : t('cta.button')}
           </Button>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-blue-100 font-medium">
-          <span className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-300" /> {t('cta.benefit1')}
-          </span>
           <span className="flex items-center gap-1.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-300" /> {t('cta.benefit2')}
           </span>

@@ -9,6 +9,7 @@ import { RoutesPage } from './pages/RoutesPage';
 import { DriversPage } from './pages/DriversPage';
 import { PassengersPage } from './pages/PassengersPage';
 import { SecurityPage } from './pages/SecurityPage';
+import { PricingPage } from './pages/PricingPage';
 import { LoginPage } from './pages/LoginPage';
 
 import { subscribeLiveTelemetry } from './services/telemetryService';
@@ -16,6 +17,7 @@ import { subscribeCompanies } from './services/companiesService';
 import { subscribeAllBuses } from './services/busesService';
 import { subscribeDrivers } from './services/driversService';
 import { subscribePassengers } from './services/usersService';
+import { applyCompanyTheme } from './utils/brandTheme';
 
 import { LiveBusLocation, CompanyRecord, BusRouteDefinition, DriverProfile, PassengerRecord } from './types';
 import { DEMO_BUSES, DEMO_COMPANIES, DEMO_DRIVERS, DEMO_LIVE_LOCATIONS, DEMO_PASSENGERS } from './demoData';
@@ -67,6 +69,38 @@ export default function App() {
     };
   }, [adminSession]);
 
+  // ─── Company scoping for COMPANY_ADMIN dispatchers ────────────────────────
+  // Dispatchers only ever see their own organization; SUPER_ADMIN sees all.
+  const scopedCompanyId =
+    adminSession?.role === 'COMPANY_ADMIN' && adminSession.companyId
+      ? adminSession.companyId.toLowerCase()
+      : null;
+
+  const activeCompany = scopedCompanyId
+    ? companies.find((c) => c.id.toLowerCase() === scopedCompanyId) || null
+    : null;
+
+  const visibleCompanies = scopedCompanyId
+    ? companies.filter((c) => c.id.toLowerCase() === scopedCompanyId)
+    : companies;
+  const visibleBuses = scopedCompanyId
+    ? buses.filter((b) => (b.companyId || '').toLowerCase() === scopedCompanyId)
+    : buses;
+  const visibleDrivers = scopedCompanyId
+    ? drivers.filter((d) => (d.companyId || '').toLowerCase() === scopedCompanyId)
+    : drivers;
+  const visibleLocations = scopedCompanyId
+    ? liveLocations.filter((loc) =>
+        visibleBuses.some((b) => b.lineId === loc.lineId) ||
+        visibleDrivers.some((d) => d.uid === loc.driverUid)
+      )
+    : liveLocations;
+
+  // Paint the dispatcher's company theme (brand colors) onto the console.
+  useEffect(() => {
+    applyCompanyTheme(activeCompany?.theme);
+  }, [activeCompany]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -86,8 +120,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar
-        activeVehiclesCount={liveLocations.length}
+        activeVehiclesCount={visibleLocations.length}
         isDemo={isDemo}
+        company={activeCompany}
         onOpenLogin={() => setShowLoginView(true)}
       />
 
@@ -96,11 +131,11 @@ export default function App() {
           currentTab={currentTab}
           onSelectTab={setCurrentTab}
           counts={{
-            liveBuses: liveLocations.length,
-            companies: companies.length,
-            buses: buses.length,
-            routes: companies.reduce((sum, c) => sum + (c.busLines?.length || 0), 0) || buses.length,
-            drivers: drivers.length,
+            liveBuses: visibleLocations.length,
+            companies: visibleCompanies.length,
+            buses: visibleBuses.length,
+            routes: visibleCompanies.reduce((sum, c) => sum + (c.busLines?.length || 0), 0) || visibleBuses.length,
+            drivers: visibleDrivers.length,
             passengers: passengers.length,
           }}
         />
@@ -110,10 +145,10 @@ export default function App() {
           <div className="max-w-7xl mx-auto">
             {currentTab === 'dashboard' && (
               <DashboardPage
-                liveLocations={liveLocations}
-                buses={buses}
-                companies={companies}
-                drivers={drivers}
+                liveLocations={visibleLocations}
+                buses={visibleBuses}
+                companies={visibleCompanies}
+                drivers={visibleDrivers}
                 onSelectBus={(busId) => {
                   console.log('Selected bus:', busId);
                 }}
@@ -122,29 +157,29 @@ export default function App() {
 
             {currentTab === 'companies' && (
               <CompaniesPage
-                companies={companies}
-                buses={buses}
+                companies={visibleCompanies}
+                buses={visibleBuses}
               />
             )}
 
             {currentTab === 'fleet' && (
               <FleetPage
-                buses={buses}
-                companies={companies}
+                buses={visibleBuses}
+                companies={visibleCompanies}
               />
             )}
 
             {currentTab === 'routes' && (
               <RoutesPage
-                buses={buses}
-                companies={companies}
+                buses={visibleBuses}
+                companies={visibleCompanies}
               />
             )}
 
             {currentTab === 'drivers' && (
               <DriversPage
-                drivers={drivers}
-                companies={companies}
+                drivers={visibleDrivers}
+                companies={visibleCompanies}
               />
             )}
 
@@ -156,8 +191,12 @@ export default function App() {
 
             {currentTab === 'security' && (
               <SecurityPage
-                companies={companies}
+                companies={visibleCompanies}
               />
+            )}
+
+            {currentTab === 'pricing' && (
+              <PricingPage />
             )}
           </div>
         </main>

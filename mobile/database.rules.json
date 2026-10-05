@@ -1,22 +1,68 @@
 {
   "rules": {
     ".read": "auth != null",
-    "buses": {
-      ".read": "auth != null",
-      ".write": "auth != null && (auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com')"
+
+    "admins": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid && (!newData.hasChild('email') || !data.exists() || data.child('email').val() === newData.child('email').val())"
+      }
     },
+
     "companies": {
       ".read": "auth != null",
-      ".write": "auth != null && (auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com')"
+      "$companyId": {
+        ".write": "auth != null && (auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com' || auth.token.email === 'admin@wasalt.eg' || auth.token.email === 'admin@sya7a.eg' || (!data.exists() && newData.child('ownerId').val() === auth.uid) || (data.exists() && data.child('ownerId').val() === auth.uid))"
+      }
     },
+
+    "subscriptions": {
+      ".read": "auth != null",
+      "$companyId": {
+        ".write": "auth != null && (auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com' || auth.token.email === 'admin@wasalt.eg' || auth.token.email === 'admin@sya7a.eg' || root.child('companies').child($companyId).child('ownerId').val() === auth.uid)"
+      }
+    },
+
+    "memberships": {
+      ".read": "auth != null",
+      "$companyId": {
+        ".write": "auth != null && (auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com' || auth.token.email === 'admin@wasalt.eg' || auth.token.email === 'admin@sya7a.eg' || root.child('companies').child($companyId).child('ownerId').val() === auth.uid)"
+      }
+    },
+
+    "drivers": {
+      ".read": "auth != null",
+      "$driverUid": {
+        ".write": "auth != null && (auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com' || auth.token.email === 'admin@wasalt.eg' || auth.token.email === 'admin@sya7a.eg' || auth.uid === $driverUid || (data.exists() && data.child('companyId').val() != null && root.child('companies').child(data.child('companyId').val()).child('ownerId').val() === auth.uid) || (newData.child('companyId').val() != null && root.child('companies').child(newData.child('companyId').val()).child('ownerId').val() === auth.uid))"
+      }
+    },
+
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com' || auth.token.email === 'admin@wasalt.eg' || auth.token.email === 'admin@sya7a.eg')"
+      }
+    },
+
+    "buses": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com' || auth.token.email === 'admin@wasalt.eg' || auth.token.email === 'admin@sya7a.eg')"
+    },
+
     "busLocations": {
       ".read": "auth != null",
-      "$line": { "$driver": { ".write": "auth != null && auth.uid === $driver" } }
+      "$line": {
+        "$driver": {
+          ".write": "auth != null && (auth.uid === $driver || auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com' || auth.token.email === 'admin@wasalt.eg' || auth.token.email === 'admin@sya7a.eg')"
+        }
+      }
     },
+
     "driverControls": {
+      ".read": "auth != null",
       "$driver": {
-        ".read": "auth != null && (auth.uid === $driver || auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com')",
-        ".write": "auth != null && (auth.uid === $driver || auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com')"
+        ".read": "auth != null && (auth.uid === $driver || auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com' || auth.token.email === 'admin@wasalt.eg' || auth.token.email === 'admin@sya7a.eg')",
+        ".write": "auth != null && (auth.uid === $driver || auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com' || auth.token.email === 'admin@wasalt.eg' || auth.token.email === 'admin@sya7a.eg')"
       }
     }
   }

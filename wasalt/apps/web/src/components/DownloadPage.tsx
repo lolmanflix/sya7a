@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLanguageTheme } from '../context/LanguageThemeContext';
 import { Button } from './common/Button';
-import { CheckCircle2, Download, Monitor, Laptop, Terminal, ExternalLink, Bus } from 'lucide-react';
+import { CheckCircle2, Download, Monitor, Laptop, Terminal, ExternalLink } from 'lucide-react';
 
 interface DownloadPageProps {
   companyName?: string;
@@ -20,8 +20,12 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ companyName = 'Your 
       {/* Header */}
       <header className="max-w-6xl mx-auto w-full flex items-center justify-between py-4 border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg">
-            <Bus className="w-5 h-5" />
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-white border border-slate-700 shadow-lg">
+            <img
+              src="/wasalt-logo.png"
+              alt="Wasalt"
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-[185%] max-w-none"
+            />
           </div>
           <span className="text-xl font-bold tracking-tight text-white">Wasalt</span>
         </div>

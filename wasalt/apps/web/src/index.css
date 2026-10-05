@@ -65,6 +65,30 @@ body {
   background: #475569;
 }
 
+/* Hamburger dropdown: smooth open AND close (height + fade via grid-template-rows) */
+.nav-dropdown {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    grid-template-rows 300ms ease,
+    opacity 300ms ease,
+    visibility 0s linear 300ms;
+}
+.nav-dropdown.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    grid-template-rows 300ms ease,
+    opacity 300ms ease,
+    visibility 0s linear 0s;
+}
+.nav-dropdown > .nav-dropdown-panel {
+  overflow: hidden;
+  min-height: 0;
+}
+
 /* Glassmorphism utility */
 .glass-panel {
   background: rgba(255, 255, 255, 0.85);

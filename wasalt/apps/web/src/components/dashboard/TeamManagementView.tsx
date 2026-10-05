@@ -76,15 +76,17 @@ export const TeamManagementView: React.FC = () => {
   };
 
   const handleRoleChange = async (memberId: string, role: AdminRole) => {
-    await membershipService.updateMemberRole(memberId, role);
+    if (!activeCompany) return;
+    await membershipService.updateMemberRole(activeCompany.id, memberId, role);
     setMembers((prev) =>
       prev.map((m) => (m.id === memberId ? { ...m, role } : m))
     );
   };
 
   const handleRemove = async (memberId: string) => {
+    if (!activeCompany) return;
     if (confirm('Are you sure you want to remove this member?')) {
-      await membershipService.removeMember(memberId);
+      await membershipService.removeMember(activeCompany.id, memberId);
       setMembers((prev) => prev.filter((m) => m.id !== memberId));
     }
   };
@@ -111,6 +113,31 @@ export const TeamManagementView: React.FC = () => {
 
       {/* Members Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        {isLoading ? (
+          <div className="py-14 flex items-center justify-center gap-3 text-xs text-slate-400 font-medium">
+            <span className="w-4 h-4 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
+            Loading team members...
+          </div>
+        ) : members.length === 0 ? (
+          <div className="py-14 px-6 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+              <Users className="w-6 h-6 text-slate-400" />
+            </div>
+            <h4 className="text-sm font-bold text-slate-800">No team members yet</h4>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              Invite a dispatcher or admin to give them controlled access to{' '}
+              <span className="font-semibold text-slate-700">{activeCompany?.name}</span>.
+            </p>
+            <Button
+              variant="primary"
+              className="mt-4"
+              icon={<UserPlus className="w-4 h-4" />}
+              onClick={() => setInviteModalOpen(true)}
+            >
+              Invite Team Member
+            </Button>
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
@@ -176,6 +203,7 @@ export const TeamManagementView: React.FC = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* Invite Member Modal */}

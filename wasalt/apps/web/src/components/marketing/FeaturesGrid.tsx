@@ -24,30 +24,36 @@ const iconMap: Record<string, LucideIcon> = {
   CalendarClock,
 };
 
-const featureTranslationsAr: Record<string, { title: string; desc: string }> = {
-  'multi-tenant': {
-    title: 'مساحات عمل مؤسسية متعددة',
-    desc: 'حساب مشرف واحد لإدارة عدة مدارس أو شركات أو فروع مع عزل تام للبيانات واستقلالية كاملة.',
+const featureTranslationsAr: Record<string, { title: string; desc: string; badge: string }> = {
+  'live-tracking': {
+    title: 'التتبع المباشر للحافلات',
+    desc: 'راقب الحافلات النشطة وتقدمها في خطوط السير الحالي من عرض نقل مركزي.',
+    badge: 'عرض الأسطول',
   },
-  'dynamic-theme': {
-    title: 'محرك ألوان وهوية ديناميكي',
-    desc: 'استخراج تلقائي لباليت الألوان من شعار المؤسسة مع ضمان معايير التباين والوضوح العالمية.',
+  'fleet-management': {
+    title: 'إدارة الأسطول',
+    desc: 'احتفظ بحافلات مؤسستك منظمة في مكان واحد إلى جانب عمليات النقل.',
+    badge: 'مركزي',
   },
-  'fleet-telemetry': {
-    title: 'تتبع لحظي للأسطول والحافلات',
-    desc: 'مراقبة حية للمسارات، وتوقيت الوصول التقريبي، وحالة كل حافلة على الخريطة مباشرة دون تأخير.',
+  'route-management': {
+    title: 'إدارة الخطوط والمحطات',
+    desc: 'أنشئ وحافظ على خطوط السير ومحطات النقل والمعلومات التي يحتاجها فريقك لتشغيلها.',
+    badge: 'منظّم',
   },
-  'route-optimization': {
-    title: 'إدارة المسارات والمحطات',
-    desc: 'جدولة المحطات ونقاط التجمع الصباحية والمسائية وتنظيم خطوط سير الرحلات بسهولة.',
+  'driver-management': {
+    title: 'إدارة السائقين',
+    desc: 'امنح فريق النقل طريقة واضحة لإدارة السائقين والمركبات والمسارات المخصصة.',
+    badge: 'تعيينات',
   },
-  'driver-dispatch': {
-    title: 'توجيه وتعيين السائقين',
-    desc: 'توزيع الحافلات والمسارات على السائقين مع تحديثات فورية ومشاركة للموقع المباشر أثناء القيادة.',
+  scheduling: {
+    title: 'جدولة النقل',
+    desc: 'نظم جداول النقل وعمليات خطوط السير حول مدرستك أو شركتك.',
+    badge: 'عمليات',
   },
-  'security-compliance': {
-    title: 'أمان وصلاحيات دقيقة للبيانات',
-    desc: 'صلاحيات وصول مبنية على الأدوار تضمن خصوصية السجلات ومطابقة معايير الحماية المؤسسية.',
+  'organization-management': {
+    title: 'إدارة المؤسسات حسب الدور',
+    desc: 'ادعم عدة مشرفين للنقل بمستوى وصول مناسب على مستوى المؤسسة.',
+    badge: 'منصة داعمة',
   },
 };
 
@@ -79,6 +85,10 @@ export const FeaturesGrid: React.FC = () => {
               ? featureTranslationsAr[feature.id].desc
               : feature.description;
 
+            const badgeText = language === 'ar' && featureTranslationsAr[feature.id]
+              ? featureTranslationsAr[feature.id].badge
+              : feature.badge;
+
             return (
               <div
                 key={feature.id}
@@ -89,9 +99,9 @@ export const FeaturesGrid: React.FC = () => {
                     <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
                       <IconComponent className="w-6 h-6" />
                     </div>
-                    {feature.badge && (
+                    {badgeText && (
                       <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                        {feature.badge}
+                        {badgeText}
                       </span>
                     )}
                   </div>

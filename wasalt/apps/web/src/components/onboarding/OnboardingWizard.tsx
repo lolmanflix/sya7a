@@ -3,22 +3,26 @@ import { CompanyTheme } from '@wasalt/types';
 import { getPresetThemeById } from '@wasalt/theme';
 import { useAuth } from '../../context/AuthContext';
 import { useCompany } from '../../context/CompanyContext';
+import { useLanguageTheme } from '../../context/LanguageThemeContext';
 import { StepAdminAccount } from './StepAdminAccount';
 import { StepCompanyDetails } from './StepCompanyDetails';
 import { StepBrandTheme } from './StepBrandTheme';
 import { StepPlanSelection } from './StepPlanSelection';
+import { recordPlanSelection } from '../../services/subscriptionService';
 import { Sparkles, Check, X } from 'lucide-react';
 
 interface OnboardingWizardProps {
   onComplete: (companyName: string) => void;
   onCancel: () => void;
   initialPlanId?: string;
+  billingCycle?: 'monthly' | 'annual';
 }
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   onComplete,
   onCancel,
   initialPlanId = 'pro',
+  billingCycle = 'monthly',
 }) => {
   const { signUp, admin } = useAuth();
   const { createNewCompany } = useCompany();
@@ -46,12 +50,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   const [theme, setTheme] = useState<CompanyTheme>(getPresetThemeById('wasalt-sapphire'));
   const [logoUrl, setLogoUrl] = useState<string | undefined>();
 
-  const stepTitles = [
-    'Admin Account',
-    'Company Details',
-    'Brand & Theme',
-    'Select Plan & Download',
-  ];
+  const { language } = useLanguageTheme();
+  const stepTitles =
+    language === 'ar'
+      ? ['حساب المشرف', 'بيانات المؤسسة', 'الهوية والمظهر', 'اختر الخطة والتنزيل']
+      : ['Admin Account', 'Company Details', 'Brand & Theme', 'Select Plan & Download'];
 
   const handleStep1Next = async (data: {
     fullName: string;
@@ -106,7 +109,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   const handleProceedToPaymentAndDownload = async () => {
     setIsLoading(true);
     try {
-      await createNewCompany({
+      const createdCompany = await createNewCompany({
         name: companyData.name,
         slug: companyData.slug,
         industry: companyData.industry,
@@ -115,6 +118,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         theme,
         logoUrl,
       });
+      // Persist the chosen plan to /subscriptions/{companyId}/ so the
+      // admin dashboard sees it immediately (pending payment confirmation).
+      try {
+        await recordPlanSelection(createdCompany.id, selectedPlanId, billingCycle);
+      } catch (subErr) {
+        console.error('[Onboarding] Failed to record plan selection:', subErr);
+      }
       onComplete(companyData.name);
     } finally {
       setIsLoading(false);
@@ -215,6 +225,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
           {step === 4 && (
             <StepPlanSelection
               selectedPlanId={selectedPlanId}
+              billingCycle={billingCycle}
               onSelectPlan={setSelectedPlanId}
               onProceedToPaymentAndDownload={handleProceedToPaymentAndDownload}
               onBack={() => setStep(3)}

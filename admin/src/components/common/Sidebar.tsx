@@ -1,8 +1,8 @@
 import React from 'react';
-import { LayoutDashboard, Building2, Bus, Route, Users, UserCheck, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Building2, Bus, Route, Users, UserCheck, ShieldAlert, DollarSign } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
-export type NavTab = 'dashboard' | 'companies' | 'fleet' | 'routes' | 'drivers' | 'passengers' | 'users' | 'security';
+export type NavTab = 'dashboard' | 'companies' | 'fleet' | 'routes' | 'drivers' | 'passengers' | 'users' | 'security' | 'pricing';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -29,6 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab, count
     { id: 'drivers' as NavTab, label: 'Drivers', icon: UserCheck, count: counts.drivers },
     { id: 'users' as NavTab, label: 'Users', icon: Users, count: counts.passengers },
     { id: 'security' as NavTab, label: 'Security & Hygiene', icon: ShieldAlert },
+    { id: 'pricing' as NavTab, label: 'Pricing', icon: DollarSign },
   ];
 
   return (

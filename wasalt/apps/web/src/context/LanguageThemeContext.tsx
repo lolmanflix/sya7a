@@ -28,6 +28,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.faq': 'FAQ',
     'nav.startTrial': 'Start Free Trial',
     'nav.signIn': 'Sign In',
+    'nav.dashboard': 'My Dashboard',
+    'nav.profile': 'Profile',
     'nav.toggleLanguage': 'العربية',
 
     // Hero Section
@@ -255,6 +257,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.faq': 'الأسئلة الشائعة',
     'nav.startTrial': 'ابدأ التجربة المجانية',
     'nav.signIn': 'تسجيل الدخول',
+    'nav.dashboard': 'لوحتي',
+    'nav.profile': 'الملف الشخصي',
     'nav.toggleLanguage': 'English',
 
     // Hero Section

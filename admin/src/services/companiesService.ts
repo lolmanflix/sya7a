@@ -22,6 +22,11 @@ export function subscribeCompanies(callback: (companies: CompanyRecord[]) => voi
         domain: data[key].domain || null,
         busLines: Array.isArray(data[key].busLines) ? data[key].busLines : [],
         buses: data[key].buses || {},
+        logoUrl: data[key].logoUrl,
+        theme: data[key].theme,
+        ownerId: data[key].ownerId,
+        subscriptionPlanId: data[key].subscriptionPlanId,
+        subscriptionStatus: data[key].subscriptionStatus,
       }));
       callback(list);
     },

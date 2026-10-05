@@ -4,7 +4,7 @@ import { useLanguageTheme } from '../../context/LanguageThemeContext';
 import { Building, Bus, Route, Radio, BarChart3 } from 'lucide-react';
 
 export const HowItWorksSection: React.FC = () => {
-  const { t } = useLanguageTheme();
+  const { t, language } = useLanguageTheme();
 
   const steps = [
     {
@@ -65,7 +65,7 @@ export const HowItWorksSection: React.FC = () => {
                 </div>
 
                 <div className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 mb-1">
-                  STEP {step.number}
+                  {language === 'ar' ? 'الخطوة' : 'STEP'} {step.number}
                 </div>
 
                 <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
