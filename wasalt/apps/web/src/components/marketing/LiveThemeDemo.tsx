@@ -3,13 +3,41 @@ import { generateThemeFromColor } from '@wasalt/theme';
 import { PRESET_THEMES } from '@wasalt/theme';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
+import { useLanguageTheme } from '../../context/LanguageThemeContext';
 import { Palette, Check, Sparkles, ShieldCheck, ArrowRight } from 'lucide-react';
 
 interface LiveThemeDemoProps {
   onStartWithTheme?: (primaryColor: string) => void;
+  /** Signed-in users must not see the free-trial CTA. */
+  isAuthenticated?: boolean;
+  onSignIn?: (target?: 'login' | 'dashboard') => void;
 }
 
-export const LiveThemeDemo: React.FC<LiveThemeDemoProps> = ({ onStartWithTheme }) => {
+const presetTranslationsAr: Record<string, { name: string; description: string }> = {
+  'wasalt-sapphire': {
+    name: 'وسالت الياقوت',
+    description: 'أزرق ملكي حاد مصمم للثقة المؤسسية والوضوح التنفيذي.',
+  },
+  'emerald-ops': {
+    name: 'زمرد العمليات',
+    description: 'أخضر غابي نابض مخصص لأسطول النقل والخدمات اللوجستية والميدانية.',
+  },
+  'royal-amethyst': {
+    name: 'العقيق الملكي',
+    description: 'بنفسجي فاخر مثالي لوكالات التكنولوجيا والتعليم والإبداع.',
+  },
+  'obsidian-slate': {
+    name: 'سبج الأردواز',
+    description: 'أسود أحادي عصري بلمسات سماوية نيون لمركزات العمليات.',
+  },
+};
+
+export const LiveThemeDemo: React.FC<LiveThemeDemoProps> = ({
+  onStartWithTheme,
+  isAuthenticated,
+  onSignIn,
+}) => {
+  const { t, language } = useLanguageTheme();
   const [selectedPresetId, setSelectedPresetId] = useState(PRESET_THEMES[0].id);
   const [customColor, setCustomColor] = useState('#2563EB');
 
@@ -29,155 +57,172 @@ export const LiveThemeDemo: React.FC<LiveThemeDemoProps> = ({ onStartWithTheme }
   };
 
   return (
-    <section id="theme-demo" className="py-20 bg-slate-900 text-white relative overflow-hidden">
+    <section id="theme-demo" className="py-20 bg-slate-900 dark:bg-black text-white relative overflow-hidden transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-14">
           <Badge variant="primary" size="md" className="bg-blue-900/50 text-blue-300 border-blue-700 mb-4">
             <Sparkles className="w-3.5 h-3.5" />
-            Interactive Brand Synthesizer
+            {t('theme.badge')}
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
-            Experience Instant Brand Synthesis
+            {t('theme.title')}
           </h2>
           <p className="text-slate-400 text-base sm:text-lg">
-            Select a brand preset or pick any custom hex. Watch our engine compute an accessible
-            color palette and re-skin an entire company portal in milliseconds.
+            {t('theme.subtitle')}
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-6xl mx-auto">
           {/* Controls column */}
-          <div className="lg:col-span-5 bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 sm:p-8 backdrop-blur-md">
+          <div className="lg:col-span-5 bg-slate-800/90 dark:bg-slate-900/90 border border-slate-700/80 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl">
             <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
               <Palette className="w-5 h-5 text-blue-400" />
-              1. Choose or Test Brand Color
+              {t('theme.chooseTitle')}
             </h3>
             <p className="text-xs text-slate-400 mb-6">
-              In production, you can simply upload your company PNG/SVG logo and our Canvas
-              engine extracts this automatically.
+              {t('theme.chooseSubtitle')}
             </p>
 
             {/* Presets */}
             <div className="space-y-3 mb-6">
               {PRESET_THEMES.map((preset) => {
                 const isSelected = selectedPresetId === preset.id;
+                const arPreset = language === 'ar' ? presetTranslationsAr[preset.id] : undefined;
                 return (
                   <button
                     key={preset.id}
                     onClick={() => handlePresetSelect(preset.id, preset.primary)}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between ${
+                    className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left rtl:text-right transition-all ${
                       isSelected
-                        ? 'border-blue-500 bg-slate-700/80 shadow-md'
-                        : 'border-slate-700 hover:border-slate-600 bg-slate-800/50'
+                        ? 'border-blue-500 bg-blue-950/40 text-white'
+                        : 'border-slate-700/80 bg-slate-800/50 hover:border-slate-600 text-slate-300'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-7 h-7 rounded-lg shadow-sm flex items-center justify-center text-white"
+                        className="w-7 h-7 rounded-lg shadow-sm border border-white/20 shrink-0"
                         style={{ backgroundColor: preset.primary }}
-                      >
-                        {isSelected && <Check className="w-4 h-4" />}
-                      </div>
+                      />
                       <div>
-                        <div className="text-sm font-semibold text-white">{preset.name}</div>
-                        <div className="text-xs text-slate-400">{preset.description}</div>
+                        <div className="text-sm font-semibold">{arPreset?.name || preset.name}</div>
+                        <div className="text-[11px] text-slate-400">{arPreset?.description || preset.description}</div>
                       </div>
                     </div>
+                    {isSelected && (
+                      <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white shrink-0">
+                        <Check className="w-3 h-3" />
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            {/* Custom color picker input */}
-            <div className="p-3.5 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-300">Custom Brand Hex:</span>
-              <div className="flex items-center gap-2">
+            {/* Custom Color Picker */}
+            <div className="pt-4 border-t border-slate-700/80">
+              <label className="block text-xs font-semibold text-slate-300 mb-2">
+                {t('theme.customColor')}
+              </label>
+              <div className="flex items-center gap-3">
                 <input
                   type="color"
-                  value={customColor}
+                  value={activeColor}
                   onChange={(e) => handleColorChange(e.target.value)}
-                  className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
+                  className="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-0"
                 />
-                <span className="font-mono text-xs uppercase text-slate-300 px-2 py-1 bg-slate-900 rounded">
-                  {customColor}
-                </span>
+                <input
+                  type="text"
+                  value={activeColor}
+                  onChange={(e) => handleColorChange(e.target.value)}
+                  className="flex-1 bg-slate-900/80 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-white"
+                  placeholder="#2563EB"
+                />
               </div>
-            </div>
-
-            {/* WCAG accessibility metric */}
-            <div className="mt-6 pt-5 border-t border-slate-700/80 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs text-slate-300">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>WCAG AA Contrast:</span>
-              </div>
-              <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
-                {currentTheme.contrastRatio}:1 (Compliant)
-              </span>
             </div>
           </div>
 
-          {/* Live Preview Card */}
-          <div className="lg:col-span-7 bg-white text-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
-            {/* Mock Header */}
+          {/* Live Preview Box */}
+          <div className="lg:col-span-7">
             <div
-              className="p-5 text-white flex items-center justify-between transition-colors duration-300"
-              style={{ backgroundColor: currentTheme.colors.primary }}
+              className="rounded-3xl p-6 sm:p-8 shadow-2xl transition-all duration-300 border"
+              style={{
+                backgroundColor: currentTheme.colors.surface,
+                color: currentTheme.colors.text,
+                borderColor: currentTheme.colors.border,
+              }}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center font-bold text-lg">
-                  W
-                </div>
-                <div>
-                  <h4 className="font-bold text-base leading-tight">Your Branded Portal</h4>
-                  <p className="text-xs text-white/80">Active Company Workspace</p>
-                </div>
-              </div>
-              <span className="text-xs px-2.5 py-1 rounded bg-white/20 backdrop-blur-sm font-semibold">
-                Live Dynamic Skin
-              </span>
-            </div>
-
-            {/* Mock Dashboard body */}
-            <div className="p-6 bg-slate-50 space-y-5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-800">Fleet & Team Operations</span>
-                <button
-                  className="text-xs px-3 py-1.5 rounded-lg text-white font-medium transition-colors"
-                  style={{ backgroundColor: currentTheme.colors.primary }}
-                >
-                  + Add New Dispatch
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                  <div className="text-xs text-slate-500 mb-1">Assigned Vehicles</div>
-                  <div className="text-2xl font-bold" style={{ color: currentTheme.colors.primary }}>
-                    42 Active
+              <div className="flex items-center justify-between pb-4 border-b mb-6" style={{ borderColor: currentTheme.colors.border }}>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: currentTheme.colors.primary }}
+                  >
+                    W
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-base" style={{ color: currentTheme.colors.text }}>
+                      {t('theme.previewTitle')}
+                    </h4>
+                    <p className="text-xs" style={{ color: currentTheme.colors.textMuted }}>
+                      {t('theme.previewSubtitle')}
+                    </p>
                   </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                  <div className="text-xs text-slate-500 mb-1">Company Admins</div>
-                  <div className="text-2xl font-bold text-slate-900">8 Members</div>
+
+                <div
+                  className="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1"
+                  style={{
+                    backgroundColor: currentTheme.colors.primaryLight,
+                    color: currentTheme.colors.primary,
+                  }}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>{language === 'ar' ? 'مطابق لمعيار WCAG AA' : 'WCAG AA Passed'}</span>
                 </div>
               </div>
 
-              {/* Progress Bar with theme secondary/accent */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div className="flex justify-between text-xs text-slate-600 mb-2 font-medium">
-                  <span>Workspace Capacity</span>
-                  <span>78% utilized</span>
-                </div>
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: '78%',
-                      backgroundColor: currentTheme.colors.primary,
-                    }}
-                  ></div>
+              {/* Sample components */}
+              <div className="space-y-4">
+                <div
+                  className="p-4 rounded-xl border flex items-center justify-between"
+                  style={{
+                    backgroundColor: currentTheme.colors.background,
+                    borderColor: currentTheme.colors.border,
+                  }}
+                >
+                  <div className="text-xs">
+                    <span className="font-bold block" style={{ color: currentTheme.colors.text }}>
+                      {language === 'ar' ? 'بطاقة إجراء تجريبية' : 'Sample Action Card'}
+                    </span>
+                    <span style={{ color: currentTheme.colors.textMuted }}>
+                      {language === 'ar' ? 'حقن متغيرات CSS لحظياً' : 'Real-time CSS custom property injection'}
+                    </span>
+                  </div>
+                  <button
+                    className="px-4 py-2 rounded-lg text-xs font-bold text-white shadow-sm transition-transform active:scale-95"
+                    style={{ backgroundColor: currentTheme.colors.primary }}
+                  >
+                    {language === 'ar' ? 'زر أساسي' : 'Primary Button'}
+                  </button>
                 </div>
               </div>
+
+              {onStartWithTheme && (
+                <div className="mt-8 pt-4 border-t" style={{ borderColor: currentTheme.colors.border }}>
+                  <Button
+                    variant="primary"
+                    onClick={
+                      isAuthenticated
+                        ? () => onSignIn?.('dashboard')
+                        : () => onStartWithTheme(activeColor)
+                    }
+                    className="w-full justify-center"
+                    icon={<ArrowRight className={`w-4 h-4 ${language === 'ar' ? 'rotate-180' : ''}`} />}
+                  >
+                    {isAuthenticated ? t('nav.dashboard') : t('nav.startTrial')}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>

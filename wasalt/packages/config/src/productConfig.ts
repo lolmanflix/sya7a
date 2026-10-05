@@ -8,19 +8,18 @@ export const PRODUCT_CONFIG = {
   legalName: 'Wasalt Technologies Inc.',
   shortName: 'Wasalt',
   domain: 'wasalt.io',
-  tagline: 'The Multi-Tenant Operations Platform for Modern Enterprises',
+  tagline: 'Transportation management with real-time bus visibility',
   subheadline:
-    'One master account. Infinite branded company workspaces. Unified team governance, live operations, and custom branded portals in seconds.',
+    'Manage buses, drivers, routes, and transportation operations from one centralized platform with a clear view of every active vehicle.',
   description:
-    'Wasalt empowers businesses, institutions, and fleet operators to deploy fully isolated, dynamically branded company portals with zero DevOps overhead.',
+    'Wasalt is a B2B transportation management platform for schools, companies, and organizations managing buses, drivers, routes, and fleet operations.',
   keywords: [
-    'SaaS',
-    'Multi-Tenant Platform',
-    'Company Workspace',
-    'Custom Branding',
-    'Operations Dashboard',
-    'Team Governance',
-    'White-label SaaS',
+    'bus tracking software',
+    'school transportation management',
+    'employee transportation management',
+    'fleet tracking',
+    'bus fleet management',
+    'real-time bus tracking',
   ],
   supportEmail: 'support@wasalt.io',
   salesEmail: 'sales@wasalt.io',
@@ -38,9 +37,9 @@ export const PRODUCT_CONFIG = {
 
   // Open Graph & SEO
   openGraph: {
-    title: 'Wasalt — Multi-Tenant Enterprise Operations Platform',
+    title: 'Wasalt — Transportation Management & Bus Visibility',
     description:
-      'Manage multiple companies, deploy instant branded client portals, and orchestrate global team operations.',
+      'Manage buses, drivers, routes, and transportation operations with real-time fleet visibility.',
     type: 'website',
     url: 'https://wasalt.io',
     siteName: 'Wasalt',

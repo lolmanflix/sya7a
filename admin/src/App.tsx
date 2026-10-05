@@ -9,6 +9,7 @@ import { RoutesPage } from './pages/RoutesPage';
 import { DriversPage } from './pages/DriversPage';
 import { PassengersPage } from './pages/PassengersPage';
 import { SecurityPage } from './pages/SecurityPage';
+import { PricingPage } from './pages/PricingPage';
 import { LoginPage } from './pages/LoginPage';
 
 import { subscribeLiveTelemetry } from './services/telemetryService';
@@ -16,8 +17,12 @@ import { subscribeCompanies } from './services/companiesService';
 import { subscribeAllBuses } from './services/busesService';
 import { subscribeDrivers } from './services/driversService';
 import { subscribePassengers } from './services/usersService';
+import { applyCompanyTheme } from './utils/brandTheme';
 
 import { LiveBusLocation, CompanyRecord, BusRouteDefinition, DriverProfile, PassengerRecord } from './types';
+import { DEMO_BUSES, DEMO_COMPANIES, DEMO_DRIVERS, DEMO_LIVE_LOCATIONS, DEMO_PASSENGERS } from './demoData';
+
+const isPublicDemo = new URLSearchParams(window.location.search).has('demo');
 
 /**
  * Root React Native application entry point component.
@@ -25,17 +30,30 @@ import { LiveBusLocation, CompanyRecord, BusRouteDefinition, DriverProfile, Pass
 export default function App() {
   const { adminSession, loading } = useAdminAuth();
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
+  const [showLoginView, setShowLoginView] = useState<boolean>(false);
 
-  const [liveLocations, setLiveLocations] = useState<LiveBusLocation[]>([]);
-  const [companies, setCompanies] = useState<CompanyRecord[]>([]);
-  const [buses, setBuses] = useState<BusRouteDefinition[]>([]);
-  const [drivers, setDrivers] = useState<DriverProfile[]>([]);
-  const [passengers, setPassengers] = useState<PassengerRecord[]>([]);
+  // If no authenticated adminSession, run in safe demo mode with MOCK DATA
+  const isDemo = !adminSession;
 
-  // Real-time Data Listeners
+  const [liveLocations, setLiveLocations] = useState<LiveBusLocation[]>(DEMO_LIVE_LOCATIONS);
+  const [companies, setCompanies] = useState<CompanyRecord[]>(DEMO_COMPANIES);
+  const [buses, setBuses] = useState<BusRouteDefinition[]>(DEMO_BUSES);
+  const [drivers, setDrivers] = useState<DriverProfile[]>(DEMO_DRIVERS);
+  const [passengers, setPassengers] = useState<PassengerRecord[]>(DEMO_PASSENGERS);
+
+  // Real-time Data Listeners - only subscribe when logged in with a real admin session
   useEffect(() => {
-    if (!adminSession) return;
+    if (!adminSession) {
+      // Use clean mock data when not logged in
+      setLiveLocations(DEMO_LIVE_LOCATIONS);
+      setCompanies(DEMO_COMPANIES);
+      setBuses(DEMO_BUSES);
+      setDrivers(DEMO_DRIVERS);
+      setPassengers(DEMO_PASSENGERS);
+      return;
+    }
 
+    // Authenticated admin: subscribe to live Firebase data
     const unsubTelemetry = subscribeLiveTelemetry(setLiveLocations);
     const unsubCompanies = subscribeCompanies(setCompanies);
     const unsubBuses = subscribeAllBuses(setBuses);
@@ -51,6 +69,38 @@ export default function App() {
     };
   }, [adminSession]);
 
+  // ─── Company scoping for COMPANY_ADMIN dispatchers ────────────────────────
+  // Dispatchers only ever see their own organization; SUPER_ADMIN sees all.
+  const scopedCompanyId =
+    adminSession?.role === 'COMPANY_ADMIN' && adminSession.companyId
+      ? adminSession.companyId.toLowerCase()
+      : null;
+
+  const activeCompany = scopedCompanyId
+    ? companies.find((c) => c.id.toLowerCase() === scopedCompanyId) || null
+    : null;
+
+  const visibleCompanies = scopedCompanyId
+    ? companies.filter((c) => c.id.toLowerCase() === scopedCompanyId)
+    : companies;
+  const visibleBuses = scopedCompanyId
+    ? buses.filter((b) => (b.companyId || '').toLowerCase() === scopedCompanyId)
+    : buses;
+  const visibleDrivers = scopedCompanyId
+    ? drivers.filter((d) => (d.companyId || '').toLowerCase() === scopedCompanyId)
+    : drivers;
+  const visibleLocations = scopedCompanyId
+    ? liveLocations.filter((loc) =>
+        visibleBuses.some((b) => b.lineId === loc.lineId) ||
+        visibleDrivers.some((d) => d.uid === loc.driverUid)
+      )
+    : liveLocations;
+
+  // Paint the dispatcher's company theme (brand colors) onto the console.
+  useEffect(() => {
+    applyCompanyTheme(activeCompany?.theme);
+  }, [activeCompany]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -62,24 +112,30 @@ export default function App() {
     );
   }
 
-  if (!adminSession) {
-    return <LoginPage />;
+  // Only show login page if user explicitly requested to sign in as admin
+  if (showLoginView && !adminSession) {
+    return <LoginPage onBackToDashboard={() => setShowLoginView(false)} />;
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Navbar activeVehiclesCount={liveLocations.length} />
+      <Navbar
+        activeVehiclesCount={visibleLocations.length}
+        isDemo={isDemo}
+        company={activeCompany}
+        onOpenLogin={() => setShowLoginView(true)}
+      />
 
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
           currentTab={currentTab}
           onSelectTab={setCurrentTab}
           counts={{
-            liveBuses: liveLocations.length,
-            companies: companies.length,
-            buses: buses.length,
-            routes: companies.reduce((sum, c) => sum + (c.busLines?.length || 0), 0) || buses.length,
-            drivers: drivers.length,
+            liveBuses: visibleLocations.length,
+            companies: visibleCompanies.length,
+            buses: visibleBuses.length,
+            routes: visibleCompanies.reduce((sum, c) => sum + (c.busLines?.length || 0), 0) || visibleBuses.length,
+            drivers: visibleDrivers.length,
             passengers: passengers.length,
           }}
         />
@@ -89,10 +145,10 @@ export default function App() {
           <div className="max-w-7xl mx-auto">
             {currentTab === 'dashboard' && (
               <DashboardPage
-                liveLocations={liveLocations}
-                buses={buses}
-                companies={companies}
-                drivers={drivers}
+                liveLocations={visibleLocations}
+                buses={visibleBuses}
+                companies={visibleCompanies}
+                drivers={visibleDrivers}
                 onSelectBus={(busId) => {
                   console.log('Selected bus:', busId);
                 }}
@@ -101,29 +157,29 @@ export default function App() {
 
             {currentTab === 'companies' && (
               <CompaniesPage
-                companies={companies}
-                buses={buses}
+                companies={visibleCompanies}
+                buses={visibleBuses}
               />
             )}
 
             {currentTab === 'fleet' && (
               <FleetPage
-                buses={buses}
-                companies={companies}
+                buses={visibleBuses}
+                companies={visibleCompanies}
               />
             )}
 
             {currentTab === 'routes' && (
               <RoutesPage
-                buses={buses}
-                companies={companies}
+                buses={visibleBuses}
+                companies={visibleCompanies}
               />
             )}
 
             {currentTab === 'drivers' && (
               <DriversPage
-                drivers={drivers}
-                companies={companies}
+                drivers={visibleDrivers}
+                companies={visibleCompanies}
               />
             )}
 
@@ -135,8 +191,12 @@ export default function App() {
 
             {currentTab === 'security' && (
               <SecurityPage
-                companies={companies}
+                companies={visibleCompanies}
               />
+            )}
+
+            {currentTab === 'pricing' && (
+              <PricingPage />
             )}
           </div>
         </main>

@@ -14,63 +14,63 @@ export interface FeatureCard {
 
 export const PLATFORM_FEATURES: FeatureCard[] = [
   {
-    id: 'multi-tenant',
-    category: 'Architecture',
-    title: 'Multi-Tenant Workspace Engine',
+    id: 'live-tracking',
+    category: 'Live visibility',
+    title: 'Live Bus Tracking',
     description:
-      'Manage multiple subsidiaries, client brands, or municipal regions from a single master login. Each company receives complete cryptographic and logical data isolation.',
-    badge: 'Zero Bleed',
-    icon: 'Layers',
-    metrics: '100% Tenant Isolation',
+      'Monitor active buses and their current route progress from a centralized transportation view.',
+    badge: 'Fleet view',
+    icon: 'MapPinned',
+    metrics: 'Active vehicle visibility',
   },
   {
-    id: 'dynamic-theming',
-    category: 'Branding',
-    title: 'Instant Brand & Theme Synthesis',
+    id: 'fleet-management',
+    category: 'Fleet operations',
+    title: 'Fleet Management',
     description:
-      'Upload a brand logo and watch our engine automatically extract dominant tones, construct an accessible color palette, and apply it seamlessly across the entire workspace.',
-    badge: 'WCAG AA Compliant',
-    icon: 'Palette',
-    metrics: '0.2s Theme Generation',
+      'Keep your organization’s buses organized in one place alongside transportation operations.',
+    badge: 'Centralized',
+    icon: 'Bus',
+    metrics: 'Buses and operations',
   },
   {
-    id: 'rbac-governance',
-    category: 'Security',
-    title: 'Granular Role-Based Access Control',
+    id: 'route-management',
+    category: 'Route planning',
+    title: 'Route & Stop Management',
     description:
-      'Assign distinct roles (Owner, Admin, Manager) per company. An administrator can be an Owner in Company A and a restricted Manager in Company B without friction.',
-    badge: 'RBAC Matrix',
+      'Create and maintain routes, transportation stops, and the information your team needs to run them.',
+    badge: 'Organized',
+    icon: 'Route',
+    metrics: 'Routes and stops',
+  },
+  {
+    id: 'driver-management',
+    category: 'Driver operations',
+    title: 'Driver Management',
+    description:
+      'Give transportation staff a clear way to manage drivers and assigned vehicles and routes.',
+    badge: 'Assignments',
+    icon: 'Users',
+    metrics: 'Drivers and routes',
+  },
+  {
+    id: 'scheduling',
+    category: 'Scheduling',
+    title: 'Transportation Scheduling',
+    description:
+      'Organize transportation schedules and route operations around your school or company.',
+    badge: 'Operations',
+    icon: 'CalendarClock',
+    metrics: 'Schedules in one place',
+  },
+  {
+    id: 'organization-management',
+    category: 'Organization',
+    title: 'Role-Based Organization Management',
+    description:
+      'Support multiple transportation administrators with appropriate organization-level access.',
+    badge: 'Supporting platform',
     icon: 'ShieldCheck',
-    metrics: '3 Default Roles',
-  },
-  {
-    id: 'desktop-ready',
-    category: 'Cross-Platform',
-    title: 'Web & Desktop Sync',
-    description:
-      'Access the full platform through any modern web browser or deploy our native Electron desktop application for hardware-accelerated workstation performance.',
-    badge: 'Electron Shell',
-    icon: 'Monitor',
-    metrics: 'Mac, Windows, Linux',
-  },
-  {
-    id: 'realtime-telemetry',
-    category: 'Operations',
-    title: 'Live Operational Telemetry',
-    description:
-      'Gain immediate visibility into active members, fleet status, dispatches, and audit trails. Real-time synchronizations ensure your team never operates on stale data.',
-    badge: 'Sub-second Sync',
-    icon: 'Zap',
-    metrics: 'Live Activity Stream',
-  },
-  {
-    id: 'developer-apis',
-    category: 'Integrations',
-    title: 'Extensible REST & Webhook APIs',
-    description:
-      'Export operational reports, integrate with existing ERP systems, or trigger custom webhook automation upon key membership or status mutations.',
-    badge: 'Open Ecosystem',
-    icon: 'Code2',
-    metrics: 'Webhook Subscriptions',
+    metrics: 'Multi-organization ready',
   },
 ];

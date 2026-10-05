@@ -16,6 +16,8 @@ interface DashboardSidebarProps {
   currentTab: string;
   onSelectTab: (tabId: string) => void;
   onExitToWebsite: () => void;
+  /** Mobile drawer visibility (animated open/close). */
+  isOpen?: boolean;
 }
 
 const iconMap = {
@@ -30,12 +32,17 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   currentTab,
   onSelectTab,
   onExitToWebsite,
+  isOpen = false,
 }) => {
   const { activeCompany } = useCompany();
   const primaryColor = activeCompany?.theme?.colors?.primary || '#2563EB';
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 min-h-screen">
+    <aside
+      className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 min-h-screen transition-transform duration-300 ease-out will-change-transform lg:translate-x-0 ${
+        isOpen ? 'translate-x-0 shadow-2xl lg:shadow-none' : '-translate-x-full'
+      }`}
+    >
       <div>
         {/* Brand Banner */}
         <div className="p-5 border-b border-slate-200">

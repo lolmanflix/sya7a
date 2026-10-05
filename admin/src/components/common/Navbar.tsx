@@ -1,15 +1,25 @@
 import React from 'react';
-import { Bus, ShieldCheck, LogOut, Radio } from 'lucide-react';
+import { Bus, ShieldCheck, LogOut, Radio, Building2 } from 'lucide-react';
 import { useAdminAuth } from '../../contexts/AuthContext';
+import { CompanyRecord } from '../../types';
 
 interface NavbarProps {
   activeVehiclesCount: number;
+  onOpenLogin?: () => void;
+  isDemo?: boolean;
+  /** Active company (dispatcher) — shown instead of the Wasalt brand. */
+  company?: CompanyRecord | null;
 }
 
 /**
  * Top navigation bar for Admin Web Portal.
  */
-export const Navbar: React.FC<NavbarProps> = ({ activeVehiclesCount }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  activeVehiclesCount,
+  onOpenLogin,
+  isDemo = false,
+  company = null,
+}) => {
   const { adminSession, logout } = useAdminAuth();
 
   return (
@@ -17,17 +27,37 @@ export const Navbar: React.FC<NavbarProps> = ({ activeVehiclesCount }) => {
       {/* Brand & Live status */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-sky-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
-            <Bus className="w-5 h-5 text-white" />
-          </div>
+          {company?.logoUrl ? (
+            <img
+              src={company.logoUrl}
+              alt={`${company.name} logo`}
+              className="w-10 h-10 rounded-xl object-contain bg-white border border-slate-700 shadow-lg"
+            />
+          ) : company ? (
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-sky-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+              <Bus className="w-5 h-5 text-white" />
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold tracking-tight text-white text-lg">Wasalt</span>
+              <span className="font-bold tracking-tight text-white text-lg">
+                {company ? company.name : 'Wasalt'}
+              </span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                OPS
+                {company ? 'DISPATCH' : 'OPS'}
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">Transit Fleet Command Center</p>
+            <p className="text-[11px] text-slate-400">
+              {company
+                ? company.domain
+                  ? `@${company.domain} · Company Operations Console`
+                  : 'Company Operations Console'
+                : 'Transit Fleet Command Center'}
+            </p>
           </div>
         </div>
 
@@ -46,25 +76,46 @@ export const Navbar: React.FC<NavbarProps> = ({ activeVehiclesCount }) => {
 
       {/* Admin Profile & Actions */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2.5 bg-slate-800/60 border border-slate-700/60 rounded-xl px-3 py-1.5">
-          <ShieldCheck className="w-4 h-4 text-brand-400" />
-          <div className="text-left">
-            <p className="text-xs font-medium text-slate-200 truncate max-w-[140px] sm:max-w-[200px]">
-              {adminSession?.email || 'Super Administrator'}
-            </p>
-            <span className="text-[10px] uppercase tracking-wider text-brand-400 font-semibold">
-              {adminSession?.role === 'SUPER_ADMIN' ? 'Super Admin' : `Dispatcher: ${adminSession?.companyId?.toUpperCase()}`}
+        {isDemo ? (
+          <div className="flex items-center gap-3">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">
+              Mock Data Mode
             </span>
+            {onOpenLogin && (
+              <button
+                onClick={onOpenLogin}
+                className="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin Sign In</span>
+              </button>
+            )}
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2.5 bg-slate-800/60 border border-slate-700/60 rounded-xl px-3 py-1.5">
+              <ShieldCheck className="w-4 h-4 text-brand-400" />
+              <div className="text-left">
+                <p className="text-xs font-medium text-slate-200 truncate max-w-[140px] sm:max-w-[200px]">
+                  {adminSession?.email || 'Super Administrator'}
+                </p>
+                <span className="text-[10px] uppercase tracking-wider text-brand-400 font-semibold">
+                  {adminSession?.role === 'SUPER_ADMIN'
+                    ? 'Super Admin'
+                    : `Dispatcher: ${(company?.name || adminSession?.companyId || '').toUpperCase()}`}
+                </span>
+              </div>
+            </div>
 
-        <button
-          onClick={() => logout()}
-          title="Sign Out"
-          className="p-2 rounded-xl bg-slate-800/40 hover:bg-rose-500/10 hover:text-rose-400 border border-slate-700/50 hover:border-rose-500/30 text-slate-400 transition-all"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+            <button
+              onClick={() => logout()}
+              title="Sign Out"
+              className="p-2 rounded-xl bg-slate-800/40 hover:bg-rose-500/10 hover:text-rose-400 border border-slate-700/50 hover:border-rose-500/30 text-slate-400 transition-all"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </>
+        )}
       </div>
     </header>
   );

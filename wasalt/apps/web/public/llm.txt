@@ -1,0 +1,22 @@
+# Wasalt — Multi-Tenant SaaS Platform for Bus & Fleet Operations
+
+> Wasalt is an enterprise-grade SaaS platform empowering transportation, trip management, bus, and fleet operators with multi-tenant company isolation, dynamic brand theme extraction, real-time trip dispatching, driver app synchronization, and desktop/web dashboard experiences.
+
+## Core Capabilities
+- **Multi-Tenant Architecture**: One admin can create and manage multiple company workspaces; each company maintains isolated branding, team roles, and telemetry.
+- **Dynamic Brand Engine**: Automatic color palette extraction from company logos, accessibility contrast scoring (WCAG AA), and custom CSS property injection.
+- **Fleet & Driver Dispatch**: Real-time vehicle telemetry, driver allocation, seat availability tracking, and passenger check-ins.
+- **Cross-Platform Access**: Available as a high-performance Web App and native Desktop Application (built on Electron).
+
+## Target Audience
+- Tourism & Intercity Bus Companies
+- Corporate Shuttle & Transport Services
+- School Bus & Private Transport Fleets
+- Logistics & Passenger Carrier Networks
+
+## Pricing & Tiers (Egyptian Pound - EGP)
+- **Starter Plan (1,450 EGP/mo)**: Ideal for small operators and schools with up to 5 buses. Includes 3 admin seats, live telemetry map, and logo theme engine.
+- **Professional Plan (3,850 EGP/mo)**: Designed for growing fleets up to 25 buses, multi-company switching, advanced driver dispatching, and priority local WhatsApp/phone support.
+- **Enterprise Plan (8,900 EGP/mo)**: Unlimited fleet buses, unlimited admin seats, full white-labeling, custom domain, Electron desktop builds, and dedicated 24/7 success lead.
+
+Website: https://wasalt.app

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCompany } from '../../context/CompanyContext';
 import { Badge } from '../common/Badge';
 import {
@@ -10,7 +10,13 @@ import {
   Clock,
   Sparkles,
   ArrowUpRight,
+  Radio,
 } from 'lucide-react';
+import {
+  HeroTelemetryMap,
+  HERO_MOCK_VEHICLES,
+  VehicleTelemetry,
+} from '../marketing/HeroTelemetryMap';
 
 interface OverviewViewProps {
   onNavigateTab: (tabId: string) => void;
@@ -19,6 +25,7 @@ interface OverviewViewProps {
 export const OverviewView: React.FC<OverviewViewProps> = ({ onNavigateTab }) => {
   const { activeCompany } = useCompany();
   const primaryColor = activeCompany?.theme?.colors?.primary || '#2563EB';
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleTelemetry>(HERO_MOCK_VEHICLES[0]);
 
   const stats = [
     {
@@ -141,6 +148,29 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onNavigateTab }) => 
             </div>
           );
         })}
+      </div>
+
+      {/* Live Telemetry Map (Cairo & Intercity) Section */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <Radio className="w-4 h-4 text-emerald-500 animate-pulse" />
+            <h3 className="text-base font-bold text-slate-900">
+              Live Telemetry Map (Cairo & Intercity)
+            </h3>
+            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Zero-API Active
+            </span>
+          </div>
+          <span className="text-xs text-slate-500 font-medium">
+            3 Active Transit Corridors • 24 Live GPS Beacons Streaming
+          </span>
+        </div>
+
+        <HeroTelemetryMap
+          selectedVehicleId={selectedVehicle.id}
+          onSelectVehicle={setSelectedVehicle}
+        />
       </div>
 
       {/* Two Column Section: Activity Feed & Quick Actions */}
