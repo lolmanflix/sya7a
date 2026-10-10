@@ -54,7 +54,8 @@
           "microphonePermission": "This app needs access to the microphone for audio safety checks and monitoring during trips.",
           "recordAudioAndroid": true
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {
