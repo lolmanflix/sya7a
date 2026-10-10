@@ -53,6 +53,12 @@
           "recordAudioAndroid": true
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5a79e4fa-2d89-40f3-8f62-914c017bbc8f"
+      }
+    },
+    "owner": "kareemdiyaa12"
   }
 }

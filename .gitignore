@@ -54,3 +54,7 @@ Thumbs.db
 
 # Freebuff local workspace metadata
 .freebuff/
+
+# Mobile build artifacts
+*.apk
+*.aab
