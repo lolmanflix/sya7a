@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  StyleProp,
   Pressable,
 } from 'react-native';
 import Animated, {
@@ -13,6 +14,7 @@ import Animated, {
   withTiming,
   withSpring,
 } from 'react-native-reanimated';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export interface ButtonProps {
   title: string;
@@ -44,6 +46,8 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const { theme } = useTheme();
+  const { primary, danger, searchBg, textPrimary } = theme.colors;
 
   /**
    * Triggers button press-in spring scale animation.
@@ -68,30 +72,38 @@ export const Button: React.FC<ButtonProps> = ({
 
   /**
    * Resolves container background and border styles based on button variant.
+   * Tenant brand primary/danger tokens are applied over the static base styles.
    */
-  const getVariantStyles = () => {
+  const getVariantStyles = (): StyleProp<ViewStyle> => {
     switch (variant) {
       case 'secondary':
-        return styles.secondary;
+        return { backgroundColor: searchBg };
       case 'outline':
-        return styles.outline;
+        return { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: primary };
       case 'danger':
-        return styles.danger;
+        return { backgroundColor: danger };
       case 'primary':
       default:
-        return styles.primary;
+        return {
+          backgroundColor: primary,
+          shadowColor: primary,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 4,
+        };
     }
   };
 
   /**
    * Resolves typography color styles based on button variant.
    */
-  const getTextStyles = () => {
+  const getTextStyles = (): StyleProp<TextStyle> => {
     switch (variant) {
       case 'secondary':
-        return styles.secondaryText;
+        return { color: textPrimary };
       case 'outline':
-        return styles.outlineText;
+        return { color: primary };
       case 'danger':
         return styles.dangerText;
       case 'primary':
@@ -124,7 +136,9 @@ export const Button: React.FC<ButtonProps> = ({
       style={[styles.base, getVariantStyles(), getSizeStyles(), animatedStyle, style]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' ? '#007AFF' : '#FFFFFF'} />
+        <ActivityIndicator
+          color={variant === 'primary' || variant === 'danger' ? '#FFFFFF' : primary}
+        />
       ) : (
         <>
           {icon && icon}
@@ -144,26 +158,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
   },
-  primary: {
-    backgroundColor: '#007AFF', // Premium blue
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  secondary: {
-    backgroundColor: '#F2F2F7',
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: '#007AFF',
-  },
-  danger: {
-    backgroundColor: '#FF3B30',
-  },
-  
+
   small: {
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -184,12 +179,6 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     color: '#FFFFFF',
-  },
-  secondaryText: {
-    color: '#1C1C1E',
-  },
-  outlineText: {
-    color: '#007AFF',
   },
   dangerText: {
     color: '#FFFFFF',

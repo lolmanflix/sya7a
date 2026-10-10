@@ -28,13 +28,17 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+    minWidth: 0,
   },
   headerButton: {
-    padding: 8,
-    marginHorizontal: -8,
+    padding: 10,
+    marginHorizontal: -10,
   },
   headerTitleContainer: {
     flexDirection: 'column',
+    flex: 1,
+    minWidth: 0,
   },
   headerTitle: {
     fontSize: 18,
@@ -102,7 +106,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   favoriteButton: {
-    paddingHorizontal: 8,
+    padding: 12,
   },
   distanceBadge: {
     paddingHorizontal: 8,
@@ -187,8 +191,8 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
   },
   closeButton: {
-    padding: 6,
-    borderRadius: 16,
+    padding: 11,
+    borderRadius: 22,
   },
   bottomSheetSubtitle: {
     fontSize: 14,

@@ -6,11 +6,12 @@
  */
 
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView } from "expo-camera";
 import { WebView } from "react-native-webview";
 import { styles } from "../../styles/driverSafetyStyles";
+import { TenantBranding } from "../../config/tenantConfig";
 
 export interface DriverSafetyOverlayProps {
   cameraPermissionGranted: boolean;
@@ -23,6 +24,7 @@ export interface DriverSafetyOverlayProps {
   webViewRef: React.RefObject<any>;
   isRTL: boolean;
   isDark: boolean;
+  branding: TenantBranding;
   onFlipCamera: () => void;
   onTogglePreview: () => void;
   onRequestPermissions: () => void;
@@ -45,6 +47,7 @@ export const DriverSafetyOverlay: React.FC<DriverSafetyOverlayProps> = ({
   webViewRef,
   isRTL,
   isDark,
+  branding,
   onFlipCamera,
   onTogglePreview,
   onRequestPermissions,
@@ -140,7 +143,13 @@ export const DriverSafetyOverlay: React.FC<DriverSafetyOverlayProps> = ({
               : "Enable cabin safety inspection and emergency live streaming for passenger safety."}
           </Text>
           <TouchableOpacity
-            style={styles.grantBtn}
+            style={[
+              styles.grantBtn,
+              {
+                backgroundColor: branding.primaryColor,
+                shadowColor: branding.primaryColor,
+              },
+            ]}
             onPress={onRequestPermissions}
             activeOpacity={0.8}
           >
@@ -161,7 +170,9 @@ export const DriverSafetyOverlay: React.FC<DriverSafetyOverlayProps> = ({
                 ref={cameraRef}
                 style={styles.camView}
                 facing={cameraFacing}
-              >
+              />
+              {/* CameraView rejects children — HUD renders as absolute sibling */}
+              <View style={StyleSheet.absoluteFill}>
                 {/* HUD Top Bar */}
                 <View style={styles.camTopHUD}>
                   <View style={styles.recBadge}>
@@ -199,7 +210,7 @@ export const DriverSafetyOverlay: React.FC<DriverSafetyOverlayProps> = ({
                     <View style={[styles.wave, { height: 6 }]} />
                   </View>
                 </View>
-              </CameraView>
+              </View>
             </View>
           ) : (
             <View
@@ -247,12 +258,12 @@ export const DriverSafetyOverlay: React.FC<DriverSafetyOverlayProps> = ({
         </View>
       )}
 
-      {/* Hidden WebView Bridge for WebRTC P2P Handshake */}
+      {/* Hidden WebView Bridge for WebRTC P2P Handshake (1x1 so the WebView is laid out and can capture media) */}
       {webrtcHtml ? (
-        <View style={{ width: 0, height: 0, opacity: 0, position: "absolute" }}>
+        <View style={{ width: 1, height: 1, opacity: 0, position: "absolute", bottom: 0, right: 0 }}>
           <WebView
             ref={webViewRef}
-            source={{ html: webrtcHtml }}
+            source={{ html: webrtcHtml, baseUrl: "https://localhost" }}
             onMessage={onWebViewMessage}
             javaScriptEnabled
             domStorageEnabled

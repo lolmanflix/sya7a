@@ -6,12 +6,12 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { ref, set, onValue, off, remove } from 'firebase/database';
+import { ref, set, onValue, remove } from 'firebase/database';
 import { database } from '../config/firebase';
 import { getWebRtcBroadcasterHtml } from './webrtcBroadcasterHtml';
 
 export type MediaRequestKind = 'audio' | 'video' | 'both';
-export type MediaRequestStatus = 'pending' | 'accepted' | 'declined' | 'closed';
+export type MediaRequestStatus = 'pending' | 'accepted' | 'declined' | 'failed' | 'closed';
 
 export interface DriverMediaRequestData {
   kind: MediaRequestKind;
@@ -20,7 +20,15 @@ export interface DriverMediaRequestData {
   requestedBy: string;
   respondedAt?: string;
   driverUid?: string;
+  error?: string;
 }
+
+/**
+ * Delay after session acceptance before the WebView broadcaster touches the
+ * camera sensor, giving the native expo-camera preview time to release the
+ * exclusive Android Camera HAL handle.
+ */
+const BROADCASTER_START_DELAY_MS = 500;
 
 export interface UseDriverSafetyStreamOptions {
   user: { uid: string; email?: string | null; displayName?: string | null } | null;
@@ -61,7 +69,40 @@ export function useDriverSafetyStream({
 
   const webViewRef = useRef<any>(null);
   const lastRequestedAtRef = useRef<string>('');
+  const pendingRequestRef = useRef<DriverMediaRequestData | null>(null);
+  const activeSessionRef = useRef<DriverMediaRequestData | null>(null);
+  const activeSessionKeyRef = useRef<string>('');
+  const wasStreamingRef = useRef(false);
+  const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const webrtcHtml = getWebRtcBroadcasterHtml();
+
+  // Mirror pending/active requests into refs so async handlers never capture stale state.
+  useEffect(() => {
+    pendingRequestRef.current = pendingRequest;
+  }, [pendingRequest]);
+  useEffect(() => {
+    activeSessionRef.current = activeSession;
+  }, [activeSession]);
+
+  /** Posts a control command to the hidden WebRTC broadcaster WebView. */
+  const postToBroadcaster = useCallback((payload: Record<string, unknown>) => {
+    try {
+      if (webViewRef.current) {
+        webViewRef.current.postMessage(JSON.stringify(payload));
+      }
+    } catch (err) {
+      console.warn('[SafeTrip] Broadcaster postMessage failed:', err);
+    }
+  }, []);
+
+  /** Requests the WebView engine to acquire camera/mic and start the P2P offer. */
+  const startBroadcaster = useCallback(() => {
+    if (startTimerRef.current) clearTimeout(startTimerRef.current);
+    startTimerRef.current = setTimeout(() => {
+      startTimerRef.current = null;
+      postToBroadcaster({ type: 'start' });
+    }, BROADCASTER_START_DELAY_MS);
+  }, [postToBroadcaster]);
 
   // 1. Realtime listener for incoming admin safety inspection requests
   useEffect(() => {
@@ -78,6 +119,12 @@ export function useDriverSafetyStream({
 
       if (!data) {
         setPendingRequest(null);
+        activeSessionKeyRef.current = '';
+        if (wasStreamingRef.current) {
+          wasStreamingRef.current = false;
+          postToBroadcaster({ type: 'stop' });
+          if (onSessionEnd) onSessionEnd();
+        }
         setActiveSession(null);
         return;
       }
@@ -88,12 +135,17 @@ export function useDriverSafetyStream({
           lastRequestedAtRef.current = data.requestedAt;
           setPendingRequest(data);
 
-          const kind = data.kind === 'video' ? (isRTL ? 'فيديو' : 'video') : isRTL ? 'صوتي' : 'audio';
+          const kindLabel =
+            data.kind === 'video'
+              ? isRTL ? 'مرئي' : 'video'
+              : data.kind === 'audio'
+              ? isRTL ? 'صوتي' : 'audio'
+              : isRTL ? 'مرئي وصوتي' : 'audio/video';
           Alert.alert(
             isRTL ? 'طلب فحص أمان مرئي ومسموع' : 'Safety Check Requested',
             isRTL
-              ? `طلب المشرف فحص ${kind} مباشر بتقنية P2P. هل توافق على بدء الفحص؟`
-              : `An administrator requested a live ${kind} inspection (30 FPS WebRTC). Do you agree to connect?`,
+              ? `طلب المشرف فحص ${kindLabel} مباشر. هل توافق على بدء الفحص؟`
+              : `An administrator requested a live ${kindLabel} inspection. Do you agree to connect?`,
             [
               {
                 text: isRTL ? 'رفض' : 'Decline',
@@ -109,17 +161,33 @@ export function useDriverSafetyStream({
         }
       } else if (data.status === 'accepted') {
         setPendingRequest(null);
+        const sessionKey = `${data.requestedAt || ''}:${data.respondedAt || ''}`;
+        const isNewSession = sessionKey !== activeSessionKeyRef.current;
+        activeSessionKeyRef.current = sessionKey;
         setActiveSession(data);
-        if (onSessionStart) onSessionStart();
+        if (isNewSession) {
+          if (onSessionStart) onSessionStart();
+          wasStreamingRef.current = true;
+          startBroadcaster();
+        }
       } else {
         setPendingRequest(null);
+        activeSessionKeyRef.current = '';
+        if (wasStreamingRef.current) {
+          wasStreamingRef.current = false;
+          postToBroadcaster({ type: 'stop' });
+          if (onSessionEnd) onSessionEnd();
+        }
         setActiveSession(null);
-        if (onSessionEnd) onSessionEnd();
       }
     });
 
     return () => {
-      off(controlRef, 'value', unsubscribe);
+      if (startTimerRef.current) {
+        clearTimeout(startTimerRef.current);
+        startTimerRef.current = null;
+      }
+      unsubscribe();
     };
   }, [user?.uid, isRTL]);
 
@@ -127,29 +195,38 @@ export function useDriverSafetyStream({
   const acceptRequest = useCallback(async () => {
     if (!user?.uid) return;
     try {
+      const request = pendingRequestRef.current;
       const controlRef = ref(database, `driverControls/${user.uid}/mediaRequest`);
       const webrtcRef = ref(database, `driverControls/${user.uid}/webrtc`);
+      // Clear any stale signaling state from a previous session before accepting.
       await remove(webrtcRef).catch(() => {});
 
       await set(controlRef, {
-        ...(pendingRequest || { kind: 'both' }),
+        ...(request || { kind: 'both' }),
         status: 'accepted',
         respondedAt: new Date().toISOString(),
         driverUid: user.uid,
       });
       setPendingRequest(null);
     } catch (err) {
-      console.log('[SafeTrip] Accept error:', err);
+      console.warn('[SafeTrip] Accept error:', err);
+      Alert.alert(
+        isRTL ? 'تعذر قبول الطلب' : 'Could Not Accept Request',
+        isRTL
+          ? 'تعذر تحديث حالة الطلب. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.'
+          : 'Failed to update the request status. Check your connection and try again.'
+      );
     }
-  }, [user?.uid, pendingRequest]);
+  }, [user?.uid, isRTL]);
 
   // 3. Decline incoming request
   const declineRequest = useCallback(async () => {
     if (!user?.uid) return;
     try {
+      const request = pendingRequestRef.current;
       const controlRef = ref(database, `driverControls/${user.uid}/mediaRequest`);
       await set(controlRef, {
-        ...(pendingRequest || { kind: 'both' }),
+        ...(request || { kind: 'both' }),
         status: 'declined',
         respondedAt: new Date().toISOString(),
         driverUid: user.uid,
@@ -157,9 +234,15 @@ export function useDriverSafetyStream({
       setPendingRequest(null);
       setActiveSession(null);
     } catch (err) {
-      console.log('[SafeTrip] Decline error:', err);
+      console.warn('[SafeTrip] Decline error:', err);
+      Alert.alert(
+        isRTL ? 'تعذر رفض الطلب' : 'Could Not Decline Request',
+        isRTL
+          ? 'تعذر تحديث حالة الطلب. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.'
+          : 'Failed to update the request status. Check your connection and try again.'
+      );
     }
-  }, [user?.uid, pendingRequest]);
+  }, [user?.uid, isRTL]);
 
   // 4. End active stream session
   const endStream = useCallback(async () => {
@@ -169,9 +252,9 @@ export function useDriverSafetyStream({
       const webrtcRef = ref(database, `driverControls/${user.uid}/webrtc`);
       const streamRef = ref(database, `driverControls/${user.uid}/mediaStream`);
 
-      if (webViewRef.current) {
-        webViewRef.current.postMessage(JSON.stringify({ type: 'stop' }));
-      }
+      postToBroadcaster({ type: 'stop' });
+      wasStreamingRef.current = false;
+      activeSessionKeyRef.current = '';
 
       await remove(controlRef).catch(() => {});
       await remove(webrtcRef).catch(() => {});
@@ -179,9 +262,9 @@ export function useDriverSafetyStream({
       setActiveSession(null);
       if (onSessionEnd) onSessionEnd();
     } catch (err) {
-      console.log('[SafeTrip] End stream error:', err);
+      console.warn('[SafeTrip] End stream error:', err);
     }
-  }, [user?.uid]);
+  }, [user?.uid, postToBroadcaster, onSessionEnd]);
 
   // 5. Handle messages posted from WebRTC Broadcaster WebView
   const onWebViewMessage = useCallback(async (event: any) => {
@@ -205,15 +288,32 @@ export function useDriverSafetyStream({
         await set(ref(database, `${webrtcPath}/driverCandidates/${candId}`), data.candidate);
       } else if (data.type === 'error') {
         console.warn('[SafeTrip] WebRTC Broadcaster error:', data.message);
+        postToBroadcaster({ type: 'stop' });
+        // Surface the hardware failure to the admin console instead of
+        // leaving the request stuck in "accepted" with no stream.
+        if (wasStreamingRef.current) {
+          const session = activeSessionRef.current;
+          await set(ref(database, `driverControls/${user.uid}/mediaRequest`), {
+            ...(session || { kind: 'both' }),
+            status: 'failed',
+            respondedAt: new Date().toISOString(),
+            driverUid: user.uid,
+            error: String(data.message || 'Camera/microphone unavailable on handset.'),
+          }).catch(() => {});
+        }
+        wasStreamingRef.current = false;
+        activeSessionKeyRef.current = '';
+        setActiveSession(null);
+        if (onSessionEnd) onSessionEnd();
         Alert.alert(
           isRTL ? 'خطأ في بث الكاميرا' : 'Camera Stream Error',
           data.message || 'Unable to access camera or microphone hardware.'
         );
       }
     } catch (err) {
-      console.log('[SafeTrip] WebView message parse error:', err);
+      console.warn('[SafeTrip] WebView message parse error:', err);
     }
-  }, [user?.uid, driverName, isRTL]);
+  }, [user?.uid, driverName, isRTL, postToBroadcaster, onSessionEnd]);
 
   // 6. Real-time listener for Admin WebRTC Answer and Admin ICE Candidates
   useEffect(() => {
@@ -251,8 +351,8 @@ export function useDriverSafetyStream({
     });
 
     return () => {
-      off(answerRef, 'value', unsubAnswer);
-      off(adminCandidatesRef, 'value', unsubCandidates);
+      unsubAnswer();
+      unsubCandidates();
       processedCandidates.clear();
     };
   }, [user?.uid, isStreaming]);

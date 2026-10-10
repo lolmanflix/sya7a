@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { Building2 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { saveCompany } from '../../services/companiesService';
+import { useTranslation } from '../../i18n/useTranslation';
 import { toast } from 'sonner';
 
 interface AddCompanyModalProps {
@@ -27,6 +28,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { t } = useTranslation();
   const [newCompId, setNewCompId] = useState('');
   const [newCompName, setNewCompName] = useState('');
   const [newCompDomain, setNewCompDomain] = useState('');
@@ -41,7 +43,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
     const cleanName = newCompName.trim();
 
     if (!cleanId || !cleanName) {
-      toast.error('Company ID and Name are required.');
+      toast.error(t('companies.idNameRequired'));
       return;
     }
 
@@ -52,7 +54,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
         domain: newCompDomain.trim() || null,
         busLines: [],
       });
-      toast.success(`Operator ${cleanName} created.`);
+      toast.success(t('companies.operatorCreated', { name: cleanName }));
       if (onSuccess) onSuccess(cleanId, cleanName);
       onClose();
       setNewCompId('');
@@ -60,7 +62,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
       setNewCompDomain('');
     } catch (err) {
       console.error('[AddCompanyModal] Failed to create operator:', err);
-      toast.error('Failed to create company.');
+      toast.error(t('companies.createError'));
     } finally {
       setSaving(false);
     }
@@ -70,13 +72,13 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Add Transit Operator"
-      subtitle="Register a new public transport authority, university shuttle, or private carrier."
+      title={t('companies.addOperatorModal')}
+      subtitle={t('companies.addOperatorSubtitle')}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-medium text-slate-400 mb-1">
-            Company Slug / ID
+            {t('companies.slugLabel')}
           </label>
           <input
             type="text"
@@ -84,7 +86,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
             onChange={(e) =>
               setNewCompId(e.target.value.toLowerCase().replace(/\s+/g, '-'))
             }
-            placeholder="e.g. ecu-shuttle, cta, or super-jet"
+            placeholder={t('companies.slugPlaceholder')}
             className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
             required
           />
@@ -92,13 +94,13 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
 
         <div>
           <label className="block text-xs font-medium text-slate-400 mb-1">
-            Display Name
+            {t('companies.displayName')}
           </label>
           <input
             type="text"
             value={newCompName}
             onChange={(e) => setNewCompName(e.target.value)}
-            placeholder="e.g. ECU Transit Shuttles"
+            placeholder={t('companies.displayNamePlaceholder')}
             className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
             required
           />
@@ -106,7 +108,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
 
         <div>
           <label className="block text-xs font-medium text-slate-400 mb-1">
-            Staff Email Domain (Optional)
+            {t('companies.domainLabel')}
           </label>
           <input
             type="text"
@@ -114,11 +116,11 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
             onChange={(e) =>
               setNewCompDomain(e.target.value.toLowerCase().replace('@', ''))
             }
-            placeholder="e.g. ecu.edu.eg or cta.eg"
+            placeholder={t('companies.domainPlaceholder')}
             className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
           />
           <p className="text-[11px] text-slate-500 mt-1">
-            Drivers or admins signing up with this domain will be linked automatically.
+            {t('companies.domainHint')}
           </p>
         </div>
 
@@ -128,7 +130,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-xl transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -136,7 +138,7 @@ export const AddCompanyModal: React.FC<AddCompanyModalProps> = ({
             className="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-brand-600/20 transition-all disabled:opacity-50 flex items-center gap-1.5"
           >
             <Building2 className="w-4 h-4" />
-            {saving ? 'Creating...' : 'Create Operator'}
+            {saving ? t('common.creating') : t('companies.createOperator')}
           </button>
         </div>
       </form>

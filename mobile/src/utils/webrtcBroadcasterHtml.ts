@@ -40,6 +40,8 @@ export function getWebRtcBroadcasterHtml(): string {
     (function() {
       let pc = null;
       let localStream = null;
+      let engineReady = false;
+      let startRequested = false;
       const statusBadge = document.getElementById('statusBadge');
       const statusText = document.getElementById('statusText');
       const localVideo = document.getElementById('localVideo');
@@ -76,45 +78,70 @@ export function getWebRtcBroadcasterHtml(): string {
       }
 
       /**
+       * Stops any live local stream and peer connection.
+       */
+      function teardown() {
+        if (localStream) {
+          localStream.getTracks().forEach(function(t) { t.stop(); });
+          localStream = null;
+        }
+        if (localVideo) {
+          localVideo.srcObject = null;
+        }
+        if (pc) {
+          try { pc.close(); } catch (e) { /* already closed */ }
+          pc = null;
+        }
+      }
+
+      /**
+       * Acquires camera/mic with progressively looser constraints so a busy
+       * camera sensor or missing mic degrades gracefully instead of failing
+       * the whole inspection (final fallback: audio-only).
+       */
+      async function acquireMedia() {
+        const attempts = [
+          {
+            label: 'ideal AV',
+            constraints: {
+              video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
+              audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+            }
+          },
+          { label: 'flexible AV', constraints: { video: true, audio: true } },
+          { label: 'video-only', constraints: { video: true } },
+          { label: 'audio-only', constraints: { audio: true } }
+        ];
+        let lastErr = null;
+        for (let i = 0; i < attempts.length; i++) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia(attempts[i].constraints);
+            console.warn('[WebRTC] Using media profile:', attempts[i].label);
+            return stream;
+          } catch (err) {
+            lastErr = err;
+            console.warn('[WebRTC] Media profile failed:', attempts[i].label, err);
+          }
+        }
+        throw lastErr || new Error('Camera and microphone access failed.');
+      }
+
+      /**
        * Initializes WebRTC peer connection and media stream acquisition.
        */
       async function initWebRtc() {
         try {
+          teardown();
           updateStatus('REQUESTING CAMERA & MIC...', '#f59e0b', false);
 
           if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             throw new Error('navigator.mediaDevices is unavailable. Ensure WebView has secure origin and camera permissions.');
           }
 
-          let stream = null;
-          try {
-            // First attempt: Ideal 30fps 600kbps video + Opus audio
-            stream = await navigator.mediaDevices.getUserMedia({
-              video: {
-                facingMode: 'user',
-                width: { ideal: 640 },
-                height: { ideal: 480 },
-                frameRate: { ideal: 30 }
-              },
-              audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true
-              }
-            });
-          } catch (firstErr) {
-            console.warn('[WebRTC] First constraints failed, retrying flexible video/audio:', firstErr);
-            try {
-              stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            } catch (secondErr) {
-              console.warn('[WebRTC] Audio+video failed, falling back to video-only:', secondErr);
-              stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            }
-          }
-
+          const stream = await acquireMedia();
           localStream = stream;
           localVideo.srcObject = localStream;
-          updateStatus('HARDWARE READY • NEGOTIATING P2P...', '#38bdf8', false);
+          updateStatus('HARDWARE READY - NEGOTIATING P2P...', '#38bdf8', false);
 
           pc = new RTCPeerConnection(config);
 
@@ -138,8 +165,8 @@ export function getWebRtcBroadcasterHtml(): string {
           pc.oniceconnectionstatechange = () => {
             sendToNative({ type: 'connectionState', state: pc.iceConnectionState });
             if (pc.iceConnectionState === 'connected') {
-              updateStatus('● P2P 30FPS LIVE TO DISPATCH', '#34d399', false);
-            } else if (pc.iceConnectionState === 'disconnected') {
+              updateStatus('P2P LIVE TO DISPATCH', '#34d399', false);
+            } else if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
               updateStatus('P2P DISCONNECTED', '#ef4444', true);
             }
           };
@@ -154,7 +181,7 @@ export function getWebRtcBroadcasterHtml(): string {
             type: 'offer',
             sdp: offer.sdp
           });
-          updateStatus('OFFER DISPATCHED • AWAITING ADMIN', '#60a5fa', false);
+          updateStatus('OFFER DISPATCHED - AWAITING ADMIN', '#60a5fa', false);
         } catch (err) {
           const errMsg = (err.name ? err.name + ': ' : '') + (err.message || 'Camera access failed');
           updateStatus('ERROR: ' + errMsg, '#f87171', true);
@@ -163,27 +190,36 @@ export function getWebRtcBroadcasterHtml(): string {
       }
 
       /**
-       * Processes incoming signaling data messages from dispatch admin.
+       * Starts broadcasting once the engine is ready (or immediately if it is).
+       */
+      function requestStart() {
+        startRequested = true;
+        if (engineReady) {
+          initWebRtc();
+        }
+        // Otherwise initWebRtc runs from the load handler below.
+      }
+
+      /**
+       * Processes incoming signaling data messages from dispatch admin
+       * and native session lifecycle commands (start/stop).
        */
       async function handleAdminMessage(event) {
         try {
           const raw = typeof event.data === 'string' ? event.data : JSON.stringify(event.data);
           const msg = JSON.parse(raw);
 
-          if (msg.type === 'answer' && pc) {
+          if (msg.type === 'start') {
+            requestStart();
+          } else if (msg.type === 'stop') {
+            startRequested = false;
+            teardown();
+            updateStatus('STREAM ENDED', '#94a3b8', false);
+          } else if (msg.type === 'answer' && pc) {
             updateStatus('CONNECTING TO DISPATCH...', '#a78bfa', false);
             await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: msg.sdp }));
           } else if (msg.type === 'adminCandidate' && pc && msg.candidate) {
             await pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
-          } else if (msg.type === 'stop') {
-            if (localStream) {
-              localStream.getTracks().forEach(t => t.stop());
-            }
-            if (pc) {
-              pc.close();
-              pc = null;
-            }
-            updateStatus('STREAM ENDED', '#94a3b8', false);
           }
         } catch (err) {
           sendToNative({ type: 'error', message: 'Signaling error: ' + (err.message || err) });
@@ -193,9 +229,16 @@ export function getWebRtcBroadcasterHtml(): string {
       window.addEventListener('message', handleAdminMessage);
       document.addEventListener('message', handleAdminMessage);
 
-      // Delay 700ms to ensure Android Camera2 HAL releases camera sensor from expo-camera
+      // Engine boots idle: camera/mic are only acquired when the native layer
+      // posts {type:'start'} after the driver accepts an admin inspection
+      // request (and the native camera preview has released the sensor).
       window.onload = () => {
-        setTimeout(initWebRtc, 700);
+        engineReady = true;
+        updateStatus('P2P ENGINE STANDBY', '#60a5fa', false);
+        sendToNative({ type: 'ready' });
+        if (startRequested) {
+          setTimeout(initWebRtc, 300);
+        }
       };
     })();
   </script>

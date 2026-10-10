@@ -141,7 +141,7 @@ export const DriverTripCard: React.FC<DriverTripCardProps> = ({
           <Text
             style={[
               styles.routeVal,
-              { color: isDark ? "#60A5FA" : branding.primaryColor },
+              { color: branding.primaryColor },
             ]}
             numberOfLines={1}
           >
@@ -174,7 +174,10 @@ export const DriverTripCard: React.FC<DriverTripCardProps> = ({
         <TouchableOpacity
           style={[
             styles.startBtn,
-            { backgroundColor: branding.primaryColor || "#2563EB" },
+            {
+              backgroundColor: branding.primaryColor || "#2563EB",
+              shadowColor: branding.primaryColor || "#2563EB",
+            },
           ]}
           onPress={onStartSharing}
           activeOpacity={0.85}

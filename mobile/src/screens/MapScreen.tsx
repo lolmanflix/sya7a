@@ -5,7 +5,7 @@
  * multi-stop route geometry polylines, vehicle selection, and bookmarking.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { View, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -17,7 +17,6 @@ import { saveToHistory } from '../utils/historyUtils';
 
 // Modular Presentation & State Layers
 import { getMapHTML } from '../components/map/passengerMapHtml';
-import { getLocalTileServerUrl } from '../config/mapConfig';
 import BusDetailsSheet, { BusLocation } from '../components/map/BusDetailsSheet';
 import SettingsModal from '../components/SettingsModal';
 import { MapFloatingHeader } from '../components/map/MapFloatingHeader';
@@ -27,6 +26,7 @@ import {
   injectUserLocation,
   injectUserToBusRoute,
   injectFullRouteWithStops,
+  injectMapStyle,
 } from '../utils/mapBridgeUtils';
 import { styles } from '../styles/mapStyles';
 
@@ -48,6 +48,11 @@ export default function MapScreen() {
   const [savingRoute, setSavingRoute] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const webViewRef = useRef<WebView>(null);
+
+  // Basemap HTML is built once from the mount-time theme; later theme changes are
+  // pushed into the page through the window.__setMapStyle bridge (no reload).
+  const initialMapDark = useRef(mode === 'dark').current;
+  const mapHtml = useMemo(() => getMapHTML(initialMapDark), [initialMapDark]);
 
   const userCoords = location?.coords
     ? {
@@ -73,6 +78,11 @@ export default function MapScreen() {
       getCurrentLocation().catch(() => {});
     }
   }, [location, getCurrentLocation]);
+
+  // Keep the OpenFreeMap basemap style in sync with the live theme mode
+  useEffect(() => {
+    injectMapStyle(webViewRef, mode);
+  }, [mode]);
 
   // Synchronize live vehicle locations with Leaflet WebView
   useEffect(() => {
@@ -132,12 +142,23 @@ export default function MapScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <WebView
         ref={webViewRef}
-        source={{ html: getMapHTML(mode === 'dark', getLocalTileServerUrl()) }}
+        source={{ html: mapHtml }}
         style={styles.map}
         javaScriptEnabled={true}
         domStorageEnabled={true}
+        onError={(event) => {
+          console.error('[MapScreen] WebView error:', event.nativeEvent);
+        }}
+        onHttpError={(event) => {
+          console.error(
+            '[MapScreen] WebView HTTP error:',
+            event.nativeEvent.statusCode,
+            event.nativeEvent.description
+          );
+        }}
         onLoad={() => {
           setTimeout(() => {
+            injectMapStyle(webViewRef, mode);
             if (routeDefinition) {
               injectFullRouteWithStops(
                 webViewRef,
@@ -169,6 +190,8 @@ export default function MapScreen() {
             const data = JSON.parse(event.nativeEvent.data);
             if (data && data.type === 'selectBus' && data.payload) {
               setSelectedBus(data.payload as BusLocation);
+            } else if (data && data.type === 'mapError') {
+              console.warn('[MapScreen] Map page error:', data.payload);
             }
           } catch (err) {
             console.error('[MapScreen] WebView message parsing failed:', err);

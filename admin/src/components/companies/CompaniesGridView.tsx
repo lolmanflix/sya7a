@@ -8,6 +8,7 @@ import React from 'react';
 import { Building2, Plus } from 'lucide-react';
 import { CompanyCard } from './CompanyCard';
 import { CompanyRecord, BusRouteDefinition } from '../../types';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface CompaniesGridViewProps {
   companies: CompanyRecord[];
@@ -33,6 +34,8 @@ export const CompaniesGridView: React.FC<CompaniesGridViewProps> = ({
   onOpenAddCompany,
   onConfirmPayment,
 }) => {
+  const { t } = useTranslation();
+
   /**
    * Calculates the total buses assigned to a company.
    */
@@ -46,15 +49,15 @@ export const CompaniesGridView: React.FC<CompaniesGridViewProps> = ({
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
         <Building2 className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-        <h3 className="text-base font-semibold text-white">No operators found</h3>
+        <h3 className="text-base font-semibold text-white">{t('companies.noOperators')}</h3>
         <p className="text-xs text-slate-400 mt-1 mb-4">
-          Try refining your search query or add a new transit authority.
+          {t('companies.noOperatorsHint')}
         </p>
         <button
           onClick={onOpenAddCompany}
           className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 transition-colors"
         >
-          <Plus className="w-4 h-4" /> Add Transit Operator
+          <Plus className="w-4 h-4" /> {t('companies.addOperator')}
         </button>
       </div>
     );

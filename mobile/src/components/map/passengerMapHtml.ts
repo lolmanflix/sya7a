@@ -1,26 +1,38 @@
 /**
  * @file passengerMapHtml.ts
- * @description Commuter passenger Leaflet WebView HTML template.
- * Renders 100% local vector MBTiles base map (water, roads, buildings),
- * 3-layer navigation polyline corridor, numbered stop pins, and live driver beacons.
- * Zero CartoDB dependencies, zero synthetic spline shortcuts.
+ * @description Commuter passenger WebView map HTML template.
+ * Basemap = OpenFreeMap vector styles (light: liberty, dark: dark) rendered
+ * through @maplibre/maplibre-gl-leaflet, so every React Native bridge function
+ * keeps operating on a real Leaflet instance (markers, polylines, fitBounds).
+ * Overlay geometry comes from the local offline routing engine; tiles never do.
  */
 
-export const getMapHTML = (isDark: boolean, tileServerUrl: string = 'http://localhost:5173') => `
+import { MAP_ATTRIBUTION, MAP_CDN, OFM_STYLES } from '../../config/mapConfig';
+
+/**
+ * Builds the passenger map HTML document.
+ *
+ * @param isDark - Initial theme mode (true = OpenFreeMap dark style).
+ * @returns Self-contained HTML string for react-native-webview.
+ */
+export const getMapHTML = (isDark: boolean): string => `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bus Tracker Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/dist/leaflet-maplibre-gl.js"></script>
+    <link rel="stylesheet" href="${MAP_CDN.leafletCss}" />
+    <link rel="stylesheet" href="${MAP_CDN.maplibreGlCss}" />
+    <script src="${MAP_CDN.leafletJs}"></script>
+    <script src="${MAP_CDN.maplibreGlJs}"></script>
+    <script src="${MAP_CDN.maplibreGlLeafletJs}"></script>
     <style>
         body { margin: 0; padding: 0; background: ${isDark ? '#090d16' : '#f8fafc'}; overflow: hidden; }
         #map { width: 100%; height: 100vh; background: ${isDark ? '#090d16' : '#f8fafc'}; }
+        #map-fallback { display: none; position: fixed; left: 12px; right: 12px; bottom: 42px;
+            padding: 10px 14px; border-radius: 8px; background: rgba(15, 23, 42, 0.92);
+            color: #f8fafc; font: 13px/1.4 -apple-system, Roboto, sans-serif; text-align: center; z-index: 1000; }
         .bus-icon-wrapper { width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; }
         .bus-icon-shadow { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); }
         .leaflet-marker-icon { transition: none; }
@@ -30,12 +42,53 @@ export const getMapHTML = (isDark: boolean, tileServerUrl: string = 'http://loca
 </head>
 <body>
     <div id="map"></div>
+    <div id="map-fallback" role="status"></div>
 
     <script>
-        const isDark = ${isDark};
-        const tileHost = "${tileServerUrl}";
+    (function () {
+        'use strict';
 
-        const map = L.map('map', {
+        var STYLE_URLS = { light: '${OFM_STYLES.light}', dark: '${OFM_STYLES.dark}' };
+        var MAP_ATTRIBUTION_TEXT = '${MAP_ATTRIBUTION}';
+        var PAGE_BG = { light: '#f8fafc', dark: '#090d16' };
+        var FALLBACK_MSG = 'Map preview unavailable - check your network connection.';
+        var currentMode = ${JSON.stringify(isDark ? 'dark' : 'light')};
+        var glLayer = null;
+
+        function showFallback(message) {
+            var el = document.getElementById('map-fallback');
+            if (!el) return;
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        function hideFallback() {
+            var el = document.getElementById('map-fallback');
+            if (el) el.style.display = 'none';
+        }
+
+        function applyPageBackground(mode) {
+            var bg = PAGE_BG[mode] || PAGE_BG.light;
+            document.body.style.backgroundColor = bg;
+            var mapEl = document.getElementById('map');
+            if (mapEl) mapEl.style.backgroundColor = bg;
+        }
+
+        function reportToNative(payload) {
+            if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+                try { window.ReactNativeWebView.postMessage(JSON.stringify(payload)); } catch (e) {}
+            }
+        }
+
+        if (typeof L === 'undefined' || typeof maplibregl === 'undefined') {
+            showFallback('Map libraries failed to load. Check your connection.');
+            reportToNative({ type: 'mapError', payload: { reason: 'cdn_load_failed' } });
+            return;
+        }
+
+        applyPageBackground(currentMode);
+
+        var map = L.map('map', {
           zoomControl: false,
           maxBounds: [[180, -Infinity], [-180, Infinity]],
           maxBoundsViscosity: 1,
@@ -47,54 +100,82 @@ export const getMapHTML = (isDark: boolean, tileServerUrl: string = 'http://loca
           try { map._createAnimProxy(); } catch (e) {}
         }
 
-        // Configure self-hosted worker if available
-        if (typeof maplibregl !== 'undefined' && typeof maplibregl.setWorkerUrl === 'function') {
-          maplibregl.setWorkerUrl(tileHost + '/maplibre-gl-worker.mjs');
+        if (map.attributionControl) {
+            map.attributionControl.setPrefix(false);
+            map.attributionControl.addAttribution(MAP_ATTRIBUTION_TEXT);
         }
 
-        // 100% Local Vector Style from MBTiles
-        const localVectorStyle = {
-          version: 8,
-          name: 'Mobile Local Vector',
-          sources: {
-            openmaptiles: {
-              type: 'vector',
-              tiles: [tileHost + '/local-tiles/{z}/{x}/{y}'],
-              minzoom: 0,
-              maxzoom: 14
-            }
-          },
-          layers: [
-            { id: 'bg', type: 'background', paint: { 'background-color': isDark ? '#090d16' : '#f8fafc' } },
-            { id: 'landcover', type: 'fill', source: 'openmaptiles', 'source-layer': 'landcover', paint: { 'fill-color': isDark ? '#0d1527' : '#f1f5f9', 'fill-opacity': 0.7 } },
-            { id: 'landuse', type: 'fill', source: 'openmaptiles', 'source-layer': 'landuse', paint: { 'fill-color': isDark ? '#0d1527' : '#f1f5f9', 'fill-opacity': 0.5 } },
-            { id: 'water', type: 'fill', source: 'openmaptiles', 'source-layer': 'water', paint: { 'fill-color': isDark ? '#0284c7' : '#38bdf8', 'fill-opacity': isDark ? 0.85 : 0.75 } },
-            { id: 'waterway', type: 'line', source: 'openmaptiles', 'source-layer': 'waterway', paint: { 'line-color': '#0284c7', 'line-width': 1.5 } },
-            { id: 'buildings', type: 'fill', source: 'openmaptiles', 'source-layer': 'building', minzoom: 12, paint: { 'fill-color': isDark ? '#172033' : '#e2e8f0', 'fill-outline-color': isDark ? '#1e293b' : '#cbd5e1' } },
-            { id: 'roads-minor', type: 'line', source: 'openmaptiles', 'source-layer': 'transportation', filter: ['in', 'class', 'minor', 'service', 'residential', 'unclassified', 'tertiary'], minzoom: 10, paint: { 'line-color': isDark ? '#334155' : '#cbd5e1', 'line-width': 1.2 } },
-            { id: 'roads-primary', type: 'line', source: 'openmaptiles', 'source-layer': 'transportation', filter: ['in', 'class', 'primary', 'secondary'], minzoom: 6, paint: { 'line-color': isDark ? '#94a3b8' : '#64748b', 'line-width': 2.0 } },
-            { id: 'roads-hw-casing', type: 'line', source: 'openmaptiles', 'source-layer': 'transportation', filter: ['in', 'class', 'motorway', 'trunk'], minzoom: 4, paint: { 'line-color': isDark ? '#78350f' : '#9a3412', 'line-width': 4.0 } },
-            { id: 'roads-hw-core', type: 'line', source: 'openmaptiles', 'source-layer': 'transportation', filter: ['in', 'class', 'motorway', 'trunk'], minzoom: 4, paint: { 'line-color': isDark ? '#f59e0b' : '#ea580c', 'line-width': 2.5 } }
-          ]
-        };
+        function createGlLayer(styleUrl) {
+            return L.maplibreGL({
+                style: styleUrl,
+                interactive: false,
+                attributionControl: { customAttribution: MAP_ATTRIBUTION_TEXT }
+            }).addTo(map);
+        }
+
+        function bindGlEvents(layer) {
+            if (!layer || typeof layer.getMaplibreMap !== 'function') return;
+            var glMap = layer.getMaplibreMap();
+            if (!glMap || typeof glMap.on !== 'function') return;
+            glMap.on('style.load', hideFallback);
+            glMap.on('error', function (ev) {
+                var msg = ev && ev.error && ev.error.message ? String(ev.error.message) : 'unknown';
+                console.warn('[PassengerMap] MapLibre error:', msg);
+                // Per-tile errors are transient; style/worker failures block the basemap.
+                if (!ev || !ev.sourceId) {
+                    showFallback(FALLBACK_MSG);
+                    reportToNative({ type: 'mapError', payload: { reason: 'style_load_failed', message: msg } });
+                }
+            });
+        }
 
         try {
-          L.maplibreGL({ style: localVectorStyle, interactive: false }).addTo(map);
+            glLayer = createGlLayer(STYLE_URLS[currentMode]);
+            bindGlEvents(glLayer);
         } catch (glErr) {
-          console.warn('[PassengerMap] Local vector layer fallback:', glErr);
+            console.warn('[PassengerMap] vector layer fallback:', glErr);
+            showFallback(FALLBACK_MSG);
         }
 
-        const busMarkers = {};
-        const stopsLayer = L.layerGroup().addTo(map);
-        let activeRouteLayers = [];
+        /**
+         * RN bridge: switch OpenFreeMap style (light <-> dark) without reloading.
+         * @param {'light'|'dark'} mode - Target map theme mode.
+         * @returns {boolean} True when a style swap was attempted successfully.
+         */
+        window.__setMapStyle = function (mode) {
+            var next = mode === 'dark' ? 'dark' : 'light';
+            currentMode = next;
+            applyPageBackground(next);
+            try {
+                if (glLayer && typeof glLayer.getMaplibreMap === 'function') {
+                    var glMap = glLayer.getMaplibreMap();
+                    if (glMap && typeof glMap.setStyle === 'function') {
+                        glMap.setStyle(STYLE_URLS[next]);
+                        hideFallback();
+                        return true;
+                    }
+                }
+                if (glLayer) {
+                    try { map.removeLayer(glLayer); } catch (e) {}
+                    glLayer = null;
+                }
+                glLayer = createGlLayer(STYLE_URLS[next]);
+                bindGlEvents(glLayer);
+                hideFallback();
+                return true;
+            } catch (err) {
+                console.warn('[PassengerMap] style switch failed:', err);
+                showFallback('Map style could not be switched.');
+                return false;
+            }
+        };
 
-        function calcDistKm(lat1, lon1, lat2, lon2) {
-          const R = 6371;
-          const dLat = (lat2 - lat1) * Math.PI / 180;
-          const dLon = (lon2 - lon1) * Math.PI / 180;
-          const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        }
+        /** RN bridge: current map theme mode. */
+        window.__getMapStyle = function () { return currentMode; };
+
+        var busMarkers = {};
+        var stopsLayer = L.layerGroup().addTo(map);
+        var activeRouteLayers = [];
 
         // Draw Authentic Multi-Stop Road Corridor
         window.drawFullRouteWithStops = function(routeDef, activeBus) {
@@ -118,7 +199,9 @@ export const getMapHTML = (isDark: boolean, tileServerUrl: string = 'http://loca
               });
             });
           } else {
-            let startLat = null, startLng = null, startName = '';
+            let startLat = null;
+            let startLng = null;
+            let startName = '';
             if (activeBus && activeBus.latitude && activeBus.longitude) {
               startLat = Number(activeBus.latitude);
               startLng = Number(activeBus.longitude);
@@ -172,6 +255,7 @@ export const getMapHTML = (isDark: boolean, tileServerUrl: string = 'http://loca
 
         // Live Bus Vehicle Markers
         function updateBusMarkers(busLocations) {
+          if (!Array.isArray(busLocations)) return;
           busLocations.forEach(bus => {
             const newLatLng = L.latLng(bus.latitude, bus.longitude);
 
@@ -185,9 +269,7 @@ export const getMapHTML = (isDark: boolean, tileServerUrl: string = 'http://loca
               }).addTo(map);
 
               marker.on('click', function () {
-                if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-                  try { window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'selectBus', payload: bus })); } catch (e) {}
-                }
+                reportToNative({ type: 'selectBus', payload: bus });
               });
 
               busMarkers[bus.id] = marker;
@@ -242,6 +324,7 @@ export const getMapHTML = (isDark: boolean, tileServerUrl: string = 'http://loca
             dashArray: '8, 8'
           }).addTo(map);
         };
+    })();
     </script>
 </body>
 </html>

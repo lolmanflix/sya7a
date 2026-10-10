@@ -3,138 +3,75 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bus Tracker Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <title>Bus Tracker Map (archived demo)</title>
+    <!--
+      ARCHIVED BY EDIT - 2026-10-09 OpenFreeMap migration.
+
+      This file is NOT referenced by any React Native module (verified by grep:
+      no imports/loads of "OpenStreetMap.html" anywhere in mobile/src).
+      It previously rendered OSM raster tiles through L.tileLayer, which is
+      forbidden by the OpenFreeMap migration directive.
+
+      It is kept as a minimal OpenFreeMap vector loader for manual debugging.
+      The canonical map implementation is:
+        mobile/src/components/map/passengerMapHtml.ts
+        mobile/src/config/mapConfig.ts   <-- single source of truth for every
+                                             map URL (tiles, styles, CDN assets).
+      The CDN/style URLs below are duplicated here only because a static .html
+      file cannot import TypeScript config; keep them in sync with mapConfig.ts.
+    -->
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
-        #map {
-            width: 100%;
-            height: 100vh;
-        }
-        .bus-marker {
-            background-color: #007AFF;
-            border: 3px solid #FFFFFF;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        .bus-popup {
-            text-align: center;
-            font-family: Arial, sans-serif;
-        }
-        .bus-popup h3 {
-            margin: 0 0 5px 0;
-            color: #007AFF;
-        }
-        .bus-popup p {
-            margin: 2px 0;
-            font-size: 12px;
-            color: #666;
-        }
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f8fafc; }
+        #map { width: 100%; height: 100vh; }
+        #map-fallback { display: none; position: fixed; left: 12px; right: 12px; bottom: 42px;
+            padding: 10px 14px; border-radius: 8px; background: rgba(15, 23, 42, 0.92);
+            color: #f8fafc; font-size: 13px; text-align: center; z-index: 1000; }
     </style>
 </head>
 <body>
     <div id="map"></div>
-    
+    <div id="map-fallback" role="status">Map preview unavailable - check your network connection.</div>
+
     <script>
-        // Initialize the map centered on Cairo, Egypt
-        const map = L.map('map').setView([30.0444, 31.2357], 13);
-        
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-        
-        // Store bus markers
-        const busMarkers = {};
-        
-        // Function to add or update bus markers
-        function updateBusMarkers(busLocations) {
-            // Clear existing markers
-            Object.values(busMarkers).forEach(marker => {
-                map.removeLayer(marker);
-            });
-            Object.keys(busMarkers).forEach(key => {
-                delete busMarkers[key];
-            });
-            
-            // Add new markers
-            busLocations.forEach(bus => {
-                const marker = L.marker([bus.latitude, bus.longitude], {
-                    icon: L.divIcon({
-                        className: 'bus-marker',
-                        html: `<div class="bus-marker">${bus.id}</div>`,
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    })
-                }).addTo(map);
-                
-                // Add popup with bus information
-                const popupContent = `
-                    <div class="bus-popup">
-                        <h3>Bus ${bus.id}</h3>
-                        <p>Last updated: ${new Date(bus.lastUpdated).toLocaleTimeString()}</p>
-                        ${bus.eta ? `<p>ETA: ${bus.eta}</p>` : ''}
-                    </div>
-                `;
-                marker.bindPopup(popupContent);
-                
-                busMarkers[bus.id] = marker;
-            });
-            
-            // Fit map to show all markers if there are any
-            if (busLocations.length > 0) {
-                const group = new L.featureGroup(Object.values(busMarkers));
-                map.fitBounds(group.getBounds().pad(0.1));
-            }
+        // OpenFreeMap styles (see mobile/src/config/mapConfig.ts):
+        // light = official default style, dark = dark mode option.
+        var STYLE_URLS = {
+            light: 'https://tiles.openfreemap.org/styles/liberty',
+            dark: 'https://tiles.openfreemap.org/styles/dark'
+        };
+        var currentMode = 'light';
+
+        function setFallback(visible) {
+            var el = document.getElementById('map-fallback');
+            if (el) el.style.display = visible ? 'block' : 'none';
         }
-        
-        // Listen for messages from React Native
-        window.addEventListener('message', function(event) {
-            try {
-                const data = JSON.parse(event.data);
-                if (data.type === 'updateBusLocations') {
-                    updateBusMarkers(data.busLocations);
-                }
-            } catch (e) {
-                console.error('Error parsing message:', e);
-            }
-        });
-        
-        // Expose function to React Native
-        window.updateBusLocations = updateBusMarkers;
-        
-        // Add user location if available
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-                
-                L.marker([userLat, userLng], {
-                    icon: L.divIcon({
-                        className: 'user-marker',
-                        html: '<div style="background-color: #34C759; border: 2px solid #FFFFFF; border-radius: 50%; width: 20px; height: 20px;"></div>',
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
-                }).addTo(map).bindPopup('Your Location');
+
+        if (typeof maplibregl === 'undefined') {
+            setFallback(true);
+        } else {
+            // Attribution ("(c) OpenMapTiles (c) OpenStreetMap contributors") is
+            // added automatically by MapLibre from the OpenFreeMap style sources.
+            var map = new maplibregl.Map({
+                container: 'map',
+                style: STYLE_URLS[currentMode],
+                center: [31.2357, 30.0444],
+                zoom: 13
             });
+
+            map.on('style.load', function () { setFallback(false); });
+            map.on('error', function (ev) {
+                console.warn('[OpenStreetMap.html] MapLibre error:', ev && ev.error);
+                if (!ev || !ev.sourceId) setFallback(true);
+            });
+
+            window.__setMapStyle = function (mode) {
+                currentMode = mode === 'dark' ? 'dark' : 'light';
+                document.body.style.backgroundColor = currentMode === 'dark' ? '#090d16' : '#f8fafc';
+                try { map.setStyle(STYLE_URLS[currentMode]); } catch (err) { setFallback(true); }
+            };
         }
     </script>
 </body>
 </html>
-
-
-

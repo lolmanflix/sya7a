@@ -12,8 +12,8 @@ import {
   FlatList,
   Alert,
   RefreshControl,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from '../contexts/LocationContext';
@@ -24,7 +24,6 @@ import { useI18n } from '../contexts/I18nContext';
 import { useHomeBuses, Bus, ActiveBus } from '../hooks/useHomeBuses';
 import { HomeHeader } from '../components/home/HomeHeader';
 import { BusCardItem } from '../components/home/BusCardItem';
-import { ActiveBusCardItem } from '../components/home/ActiveBusCardItem';
 import { ActiveBusModal } from '../components/home/ActiveBusModal';
 import SidebarMenu from '../components/SidebarMenu';
 import SettingsModal from '../components/SettingsModal';
@@ -72,12 +71,21 @@ export default function HomeScreen() {
   });
 
   /**
-   * Navigates to MapScreen if line has active vehicles, or displays alert if none.
+   * Opens the trip card for a line with live vehicles — cards stay hidden
+   * until the associated line is tapped (falls back to the map view when the
+   * trip row has no position yet).
    */
   const handleBusPress = async (bus: Bus) => {
     if (bus.activeBusCount > 0) {
       await handleSaveToHistory(bus.lineName, bus.companyName);
-      (navigation.navigate as any)('Map', { busLine: bus.lineName });
+      const trip = activeBuses.find(
+        (a) => a.lineName.toLowerCase() === bus.lineName.toLowerCase()
+      );
+      if (trip) {
+        setSelectedActiveBus(trip);
+      } else {
+        (navigation.navigate as any)('Map', { busLine: bus.lineName });
+      }
     } else {
       Alert.alert(
         isRTL ? 'لا حافلات نشطة' : 'No Active Buses',
@@ -117,6 +125,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView
+      edges={['top', 'bottom']}
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
       {/* Institutional White-Label Navigation Bar */}
@@ -136,38 +145,8 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/* Live Fleet Section */}
-      {activeBuses.length > 0 && (
-        <View style={[styles.sectionHeader, isRTL && styles.rowReverse]}>
-          <Text
-            style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}
-          >
-            {t('activeBuses')}
-          </Text>
-          <View
-            style={[styles.badge, { backgroundColor: theme.colors.primary }]}
-          >
-            <Text style={styles.badgeText}>{activeBuses.length}</Text>
-          </View>
-        </View>
-      )}
-
-      {activeBuses.length > 0 && (
-        <FlatList
-          data={activeBuses}
-          renderItem={({ item, index }) => (
-            <ActiveBusCardItem
-              item={item}
-              index={index}
-              onSelect={setSelectedActiveBus}
-            />
-          )}
-          keyExtractor={(item) => item.id}
-          style={styles.busList}
-          contentContainerStyle={styles.busListContent}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      {/* Active trip cards render only after tapping their line — see
+          handleBusPress → ActiveBusModal. No always-on live card feed. */}
 
       {/* Catalog Route Lines Section */}
       <View style={[styles.sectionHeader, isRTL && styles.rowReverse]}>

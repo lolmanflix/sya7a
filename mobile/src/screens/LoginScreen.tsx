@@ -14,12 +14,14 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useI18n } from "../contexts/I18nContext";
 import { useTheme } from "../contexts/ThemeContext";
-import { getTenantBranding, getTenantVocabulary, ACTIVE_TENANT } from "../config/tenantConfig";
+import { getTenantBranding, getTenantVocabulary } from "../config/tenantConfig";
+import { useTenantArchetype } from "../hooks/useTenantArchetype";
 
 // Modular Hook & Components
 import { useAuthForm } from "../hooks/useAuthForm";
@@ -27,6 +29,7 @@ import { AuthHeader } from "../components/auth/AuthHeader";
 import { UserTypeToggle } from "../components/auth/UserTypeToggle";
 import { DriverCompanyPicker } from "../components/auth/DriverCompanyPickerModal";
 import { ForgotPasswordModal } from "../components/auth/ForgotPasswordModal";
+import SignedInAccountsChooser from "../components/auth/SignedInAccountsChooser";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 
@@ -40,10 +43,12 @@ export default function LoginScreen() {
   const { isRTL } = useI18n();
   const { theme } = useTheme();
   const isDark = theme.mode === "dark";
+  const insets = useSafeAreaInsets();
 
   // Data-driven white-label institutional vocabulary & branding
-  const vocabulary = getTenantVocabulary(isRTL, ACTIVE_TENANT);
-  const branding = getTenantBranding(ACTIVE_TENANT);
+  const archetype = useTenantArchetype();
+  const vocabulary = getTenantVocabulary(isRTL, archetype);
+  const branding = getTenantBranding(archetype);
 
   // Authentication Form Custom Hook
   const {
@@ -77,18 +82,21 @@ export default function LoginScreen() {
         styles.container,
         isDark && { backgroundColor: "#0A0E1A" },
       ]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[
+          styles.scrollContainer,
+          { paddingTop: 40 + insets.top, paddingBottom: 40 + insets.bottom },
+        ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* 1. Dynamic Branding Header */}
         <AuthHeader
           isSignUp={isSignUp}
           isRTL={isRTL}
           branding={branding}
-          vocabulary={vocabulary}
         />
 
         {/* 2. Persona Role Selector Toggle (Passenger vs Driver) */}
@@ -99,7 +107,10 @@ export default function LoginScreen() {
           onSelectUserType={(type) => setUserType(type)}
         />
 
-        {/* 3. Credentials & Registration Form */}
+        {/* 3. Previously added accounts — silent switch (no password re-entry) */}
+        <SignedInAccountsChooser />
+
+        {/* 4. Credentials & Registration Form */}
         <Animated.View
           entering={FadeInDown.delay(200).duration(600).springify()}
           style={styles.form}
@@ -161,6 +172,7 @@ export default function LoginScreen() {
               style={styles.forgotPasswordButton}
               onPress={() => setShowForgotPassword(true)}
               activeOpacity={0.7}
+              hitSlop={{ top: 14, bottom: 14, left: 0, right: 0 }}
             >
               <Text
                 style={[
@@ -201,6 +213,7 @@ export default function LoginScreen() {
               setUsername("");
             }}
             activeOpacity={0.7}
+            hitSlop={{ top: 14, bottom: 14, left: 0, right: 0 }}
           >
             <Text style={styles.toggleTextPrimary}>
               {isSignUp
@@ -240,25 +253,32 @@ export default function LoginScreen() {
                 title={isRTL ? "تسجيل الدخول عبر Apple" : "Sign in with Apple"}
                 onPress={handleAppleSignIn}
                 variant="secondary"
-                icon={<Ionicons name="logo-apple" size={20} color="#1C1C1E" />}
+                icon={
+                  <Ionicons
+                    name="logo-apple"
+                    size={20}
+                    color={theme.colors.textPrimary}
+                  />
+                }
                 disabled={loading}
                 size="large"
               />
             </>
           )}
         </Animated.View>
-
-        {/* 4. Password Recovery Dialog Modal */}
-        <ForgotPasswordModal
-          visible={showForgotPassword}
-          email={email}
-          loading={loading}
-          isRTL={isRTL}
-          onChangeEmail={setEmail}
-          onClose={() => setShowForgotPassword(false)}
-          onSubmit={handlePasswordReset}
-        />
       </ScrollView>
+
+      {/* 5. Password Recovery Dialog Modal (outside the scroll area so the
+          keyboard-avoiding viewport keeps it clear of the keyboard) */}
+      <ForgotPasswordModal
+        visible={showForgotPassword}
+        email={email}
+        loading={loading}
+        isRTL={isRTL}
+        onChangeEmail={setEmail}
+        onClose={() => setShowForgotPassword(false)}
+        onSubmit={handlePasswordReset}
+      />
     </KeyboardAvoidingView>
   );
 }

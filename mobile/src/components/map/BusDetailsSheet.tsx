@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { Card } from '../ui/Card';
@@ -53,12 +54,14 @@ export default function BusDetailsSheet({
   savingRoute,
   onSaveRoute,
 }: BusDetailsSheetProps) {
+  const insets = useSafeAreaInsets();
+
   if (selectedBus) {
     return (
       <Animated.View
         entering={FadeInDown.springify()}
         exiting={FadeOutDown.duration(200)}
-        style={styles.floatingBottom}
+        style={[styles.floatingBottom, { bottom: insets.bottom + 20 }]}
       >
         <Card style={styles.detailsCard}>
           <View style={[styles.detailsHeader, isRTL && styles.rowReverse]}>
@@ -148,7 +151,7 @@ export default function BusDetailsSheet({
   if (routeDefinition) {
     const stopsCount = Array.isArray(routeDefinition.stops) ? routeDefinition.stops.length : 0;
     return (
-      <Animated.View entering={FadeInDown.springify()} style={styles.floatingBottom}>
+      <Animated.View entering={FadeInDown.springify()} style={[styles.floatingBottom, { bottom: insets.bottom + 20 }]}>
         <Card style={styles.detailsCard}>
           <View style={[styles.detailsHeader, isRTL && styles.rowReverse]}>
             <View style={[styles.detailsHeaderLeft, isRTL && styles.rowReverse]}>
@@ -200,7 +203,6 @@ export default function BusDetailsSheet({
 const styles = StyleSheet.create({
   floatingBottom: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 30 : 20,
     left: 20,
     right: 20,
   },
@@ -222,7 +224,7 @@ const styles = StyleSheet.create({
   },
   busTitle: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
   busSubtitle: { fontSize: 12 },
-  closeBtn: { padding: 8, borderRadius: 20 },
+  closeBtn: { padding: 12, borderRadius: 22 },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',

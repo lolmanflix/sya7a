@@ -4,25 +4,26 @@ A React Native mobile application built with Expo for tracking buses in real-tim
 
 ## Features
 
-- **Authentication**: Email/password and Google Sign-In
-- **Real-time Bus Tracking**: Live bus locations on Google Maps
+- **Authentication**: Email/password and Apple Sign-In
+- **Real-time Bus Tracking**: Live bus locations on OpenFreeMap vector tiles
 - **Search Functionality**: Search buses by line name or code
 - **Company Directory**: Browse buses by company
 - **Search History**: Keep track of recently viewed buses
 - **Clean UI/UX**: Minimal design with white background and blue accents
-- **Admin dashboard**: Add fleet records and routes, inspect live driver locations, and request consent-based safety check-ins.
 
 ## Admin testing
 
-From the role picker, choose **Admin dashboard** and sign in with `essamhamza@gmail.com` / `essam1234`. On its first use, the app provisions this development account in Firebase Authentication, then signs in normally. Replace it with a real Firebase Auth admin account before release.
+No credentials are documented or bundled with this app (dev_rules #3). Provision
+admin/test accounts in the Firebase Console (Authentication → Users) or through
+the app's own sign-up flow, then sign in normally.
 
-Deploy [database.rules.json](database.rules.json) to Firebase Realtime Database before production. The included rules restrict bus and route editing to the test admin and allow a driver to write only their own live location and respond only to their own safety requests. Production audio/video requires a secure, consent-aware calling provider; this repository intentionally does not activate a driver's microphone or camera remotely.
+Deploy [database.rules.json](database.rules.json) to Firebase Realtime Database before production. The included rules restrict bus and route editing to allowlisted admin accounts and allow a driver to write only their own live location and respond only to their own safety requests. Production audio/video requires a secure, consent-aware calling provider; this repository intentionally does not activate a driver's microphone or camera remotely.
 
 ## Tech Stack
 
 - **Framework**: Expo (React Native)
 - **Backend**: Firebase (Authentication, Realtime Database, Cloud Functions)
-- **Maps**: Google Maps SDK + Google Directions API
+- **Maps**: OpenFreeMap vector tiles (MapLibre GL inside a WebView)
 - **Navigation**: React Navigation
 - **State Management**: React Context API
 
@@ -33,7 +34,6 @@ Deploy [database.rules.json](database.rules.json) to Firebase Realtime Database 
 - Node.js (v16 or higher)
 - Expo CLI (`npm install -g @expo/cli`)
 - Firebase project
-- Google Maps API key
 
 ### 1. Install Dependencies
 
@@ -44,65 +44,35 @@ npm install
 ### 2. Firebase Configuration
 
 1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable Authentication (Email/Password and Google Sign-In)
+2. Enable Authentication (Email/Password and Apple Sign-In)
 3. Create a Realtime Database
-4. Update `src/config/firebase.ts` with your Firebase configuration:
+4. Copy the template and fill in your project's values:
 
-```typescript
-const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id"
-};
+```bash
+cp .env.example .env
 ```
 
-### 3. Google Maps Configuration
-
-1. Get a Google Maps API key from [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable the following APIs:
-   - Maps SDK for Android
-   - Maps SDK for iOS
-   - Directions API
-3. Update `app.json` with your API key:
-
-```json
-{
-  "expo": {
-    "ios": {
-      "config": {
-        "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
-      }
-    },
-    "android": {
-      "config": {
-        "googleMaps": {
-          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
-        }
-      }
-    }
-  }
-}
+```dotenv
+EXPO_PUBLIC_FIREBASE_API_KEY=your-web-api-key
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_DATABASE_URL=https://your-project-default-rtdb.firebaseio.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+EXPO_PUBLIC_FIREBASE_APP_ID=your-app-id
+EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=G-XXXXXXX
 ```
 
-### 4. Google Sign-In Configuration
+`.env` is gitignored. Restart Metro with `npx expo start -c` after changes; the
+app fails fast with a clear error listing any missing keys.
 
-1. In Firebase Console, enable Google Sign-In
-2. Download the configuration files:
-   - For iOS: `GoogleService-Info.plist`
-   - For Android: `google-services.json`
-3. Update the web client ID in `src/contexts/AuthContext.tsx`:
+### 3. Google Sign-In (disabled)
 
-```typescript
-GoogleSignin.configure({
-  webClientId: 'your-web-client-id', // From Firebase Console
-});
-```
+Google Sign-In is currently disabled for Expo Go compatibility and no client IDs
+are bundled. If re-enabled later, provide the web client ID through an
+`EXPO_PUBLIC_*` env var — never hardcode it in `src/contexts/AuthContext.tsx`.
 
-### 5. Firebase Database Structure
+### 4. Firebase Database Structure
 
 Set up the following structure in your Firebase Realtime Database:
 
@@ -136,7 +106,7 @@ Set up the following structure in your Firebase Realtime Database:
 }
 ```
 
-### 6. Run the App
+### 5. Run the App
 
 ```bash
 # Start the development server
@@ -182,7 +152,7 @@ src/
 - Pull-to-refresh functionality
 
 ### Map Screen
-- Google Maps integration
+- OpenFreeMap vector map (light/dark themes)
 - Real-time bus markers
 - Bus details on marker tap
 - Save bus functionality

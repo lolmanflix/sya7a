@@ -18,6 +18,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useI18n } from '../contexts/I18nContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import SubscriptionModal from './SubscriptionModal';
+import SidebarAccountsSection from './SidebarAccountsSection';
 
 interface SidebarMenuProps {
   visible: boolean;
@@ -254,6 +255,11 @@ export default function SidebarMenu({ visible, onClose }: SidebarMenuProps) {
                 <Ionicons name={isRTL ? 'chevron-back' : 'chevron-forward'} size={16} color={theme.colors.muted} />
               </TouchableOpacity>
             </View>
+
+            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+
+            {/* Accounts: silent switch between added accounts + add a new login */}
+            <SidebarAccountsSection onClose={onClose} />
 
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 

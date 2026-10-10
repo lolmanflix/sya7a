@@ -14,6 +14,8 @@ export interface DriverHeaderProps {
   driverInitials: string;
   driverName: string;
   companyId: string | null;
+  /** Resolved display name of the assigned company (falls back to the raw id). */
+  companyName?: string | null;
   sharing: boolean;
   isRTL: boolean;
   isDark: boolean;
@@ -33,6 +35,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
   driverInitials,
   driverName,
   companyId,
+  companyName,
   sharing,
   isRTL,
   isDark,
@@ -58,22 +61,21 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
               {
                 borderColor: sharing
                   ? "#10B981"
-                  : isDark
-                  ? "#374151"
-                  : branding.primaryColor || "#3B82F6",
+                  : branding.primaryColor || "#374151",
               },
             ]}
           >
             <View
               style={[
                 styles.driverAvatar,
+                !isDark && { backgroundColor: branding.accentColor || "#EFF6FF" },
                 isDark && { backgroundColor: "#1E293B" },
               ]}
             >
               <Text
                 style={[
                   styles.avatarInitials,
-                  { color: isDark ? "#60A5FA" : branding.primaryColor },
+                  { color: branding.primaryColor },
                 ]}
               >
                 {driverInitials}
@@ -108,26 +110,32 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
               activeOpacity={0.7}
               style={[
                 styles.companyBadge,
+                !isDark && {
+                  backgroundColor: branding.accentColor || "#EFF6FF",
+                  borderColor: `${branding.primaryColor || "#2563EB"}4D`,
+                },
                 isDark && { backgroundColor: "#1E293B", borderColor: "#334155" },
               ]}
             >
               <Ionicons
                 name="business"
                 size={11}
-                color={isDark ? "#60A5FA" : branding.primaryColor}
+                color={branding.primaryColor}
               />
               <Text
                 style={[
                   styles.companyBadgeText,
-                  { color: isDark ? "#60A5FA" : branding.primaryColor },
+                  { color: branding.primaryColor },
                 ]}
+                numberOfLines={1}
               >
-                {companyId ? companyId.toUpperCase() : vocabulary.terminalLabel}
+                {companyName ||
+                  (companyId ? companyId.toUpperCase() : vocabulary.terminalLabel)}
               </Text>
               <Ionicons
                 name="chevron-down"
                 size={10}
-                color={isDark ? "#60A5FA" : branding.primaryColor}
+                color={branding.primaryColor}
               />
             </TouchableOpacity>
 

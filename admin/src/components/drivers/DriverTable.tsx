@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Shield, Route, Settings2, Trash2, Copy, Check, Video } from 'lucide-react';
 import { DriverProfile } from '../../types';
+import { useTranslation } from '../../i18n/useTranslation';
 import { toast } from 'sonner';
 
 interface DriverTableProps {
@@ -21,6 +22,7 @@ export const DriverTable: React.FC<DriverTableProps> = ({
   onSafetyCheck,
   selectedCompanyFilter,
 }) => {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
 
@@ -30,7 +32,7 @@ export const DriverTable: React.FC<DriverTableProps> = ({
   const handleCopy = (uid: string) => {
     navigator.clipboard.writeText(uid);
     setCopiedUid(uid);
-    toast.success('Driver UID copied');
+    toast.success(t('drivers.uidCopied'));
     setTimeout(() => setCopiedUid(null), 2000);
   };
 
@@ -55,36 +57,36 @@ export const DriverTable: React.FC<DriverTableProps> = ({
       {/* Search Header */}
       <div className="p-4 border-b border-slate-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search driver by name, email, line, or UID..."
-            className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl pl-9 pr-3.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
+            placeholder={t('drivers.searchPlaceholder')}
+            className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl ps-9 pe-3.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
           />
         </div>
         <span className="text-xs text-slate-400">
-          Showing: <strong className="text-white">{filtered.length}</strong> of {drivers.length} drivers
+          {t('drivers.showingLabel')} <strong className="text-white">{filtered.length}</strong> {t('drivers.ofTotalDrivers', { total: drivers.length })}
         </span>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
+        <table className={`w-full text-start text-xs ${filtered.length > 0 ? 'min-w-[720px]' : ''}`}>
           <thead className="bg-slate-800/40 text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-800">
             <tr>
-              <th className="py-3 px-4">Driver</th>
-              <th className="py-3 px-4">Company</th>
-              <th className="py-3 px-4">Assigned Lines</th>
-              <th className="py-3 px-4 text-right">Actions</th>
+              <th className="py-3 px-4">{t('drivers.colDriver')}</th>
+              <th className="py-3 px-4">{t('drivers.colCompany')}</th>
+              <th className="py-3 px-4">{t('drivers.colAssignedLines')}</th>
+              <th className="py-3 px-4 text-end">{t('drivers.colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={4} className="py-8 text-center text-slate-500">
-                  No drivers found.
+                  {t('drivers.noDrivers')}
                 </td>
               </tr>
             ) : (
@@ -103,9 +105,9 @@ export const DriverTable: React.FC<DriverTableProps> = ({
                           <span className="font-mono text-[10px] text-slate-500">{driver.uid.substring(0, 8)}...</span>
                           <button
                             onClick={() => handleCopy(driver.uid)}
-                            className="text-slate-500 hover:text-slate-300 transition-colors"
-                            title="Copy Driver UID"
-                          >
+                          className="text-slate-500 hover:text-slate-300 transition-colors"
+                          title={t('drivers.copyUidTitle')}
+                        >
                             {copiedUid === driver.uid ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                           </button>
                         </div>
@@ -121,7 +123,7 @@ export const DriverTable: React.FC<DriverTableProps> = ({
                   <td className="py-3 px-4">
                     <div className="flex flex-wrap gap-1.5 max-w-sm">
                       {driver.lines.length === 0 ? (
-                        <span className="text-slate-500 italic text-[11px]">No lines assigned</span>
+                        <span className="text-slate-500 italic text-[11px]">{t('drivers.noLinesAssigned')}</span>
                       ) : (
                         driver.lines.map((l) => (
                           <span
@@ -135,16 +137,16 @@ export const DriverTable: React.FC<DriverTableProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-right">
+                  <td className="py-3 px-4 text-end">
                     <div className="flex items-center justify-end gap-2">
                       {onSafetyCheck && (
                         <button
                           onClick={() => onSafetyCheck(driver)}
                           className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 text-xs font-semibold inline-flex items-center gap-1 transition-colors border border-slate-700/60"
-                          title="SafeTrip Camera & Mic Access"
+                          title={t('drivers.safetyTitle')}
                         >
                           <Video className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="hidden sm:inline">Safety</span>
+                          <span className="hidden sm:inline">{t('drivers.safety')}</span>
                         </button>
                       )}
                       <button
@@ -152,12 +154,12 @@ export const DriverTable: React.FC<DriverTableProps> = ({
                         className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-brand-600 hover:text-white text-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-sm"
                       >
                         <Settings2 className="w-3.5 h-3.5" />
-                        Edit Lines
+                        {t('drivers.editLines')}
                       </button>
                       <button
                         onClick={() => onDeleteDriver(driver.uid, driver.displayName)}
                         className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                        title="Delete Driver Profile"
+                        title={t('drivers.deleteTitle')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

@@ -8,6 +8,7 @@ import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { styles } from "../../styles/loginStyles";
+import { useTheme } from "../../contexts/ThemeContext";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 
@@ -35,13 +36,15 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const { theme } = useTheme();
+
   if (!visible) return null;
 
   return (
     <View style={styles.modalOverlay}>
       <Animated.View entering={FadeInUp.springify()} style={styles.modalContent}>
-        <View style={styles.modalIconWrapper}>
-          <Ionicons name="key-outline" size={32} color="#2563EB" />
+        <View style={[styles.modalIconWrapper, { backgroundColor: `${theme.colors.primary}1F` }]}>
+          <Ionicons name="key-outline" size={32} color={theme.colors.primary} />
         </View>
         <Text style={styles.modalTitle}>
           {isRTL ? "استعادة كلمة المرور" : "Reset Password"}

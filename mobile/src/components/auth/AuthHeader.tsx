@@ -5,17 +5,15 @@
  */
 
 import React from "react";
-import { View, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Image } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { styles } from "../../styles/loginStyles";
-import { TenantBranding, TenantVocabulary } from "../../config/tenantConfig";
+import { TenantBranding } from "../../config/tenantConfig";
 
 export interface AuthHeaderProps {
   isSignUp: boolean;
   isRTL: boolean;
   branding: TenantBranding;
-  vocabulary: TenantVocabulary;
 }
 
 /**
@@ -27,7 +25,6 @@ export const AuthHeader: React.FC<AuthHeaderProps> = ({
   isSignUp,
   isRTL,
   branding,
-  vocabulary,
 }) => {
   return (
     <Animated.View entering={FadeInUp.duration(600).springify()} style={styles.header}>
@@ -37,11 +34,19 @@ export const AuthHeader: React.FC<AuthHeaderProps> = ({
           { backgroundColor: branding.accentColor || "rgba(37, 99, 235, 0.1)" },
         ]}
       >
-        <Ionicons
-          name="bus"
-          size={40}
-          color={branding.primaryColor || "#2563EB"}
-        />
+        {branding.logoUrl ? (
+          <Image
+            source={{ uri: branding.logoUrl }}
+            style={styles.logoImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Image
+            source={require("../../../assets/logo.png")}
+            style={styles.logoImage}
+            resizeMode="cover"
+          />
+        )}
       </View>
       <Text style={styles.title}>
         {isRTL ? branding.appNameAr : branding.appName.toUpperCase()}

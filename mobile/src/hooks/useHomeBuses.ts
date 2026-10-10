@@ -5,7 +5,7 @@
  * and user bookmarks.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { database } from '../config/firebase';
 import { ref, onValue, off } from 'firebase/database';
 import { saveToHistory } from '../utils/historyUtils';
@@ -63,9 +63,9 @@ interface UseHomeBusesProps {
  */
 export function useHomeBuses({ userId, userCoords, isRTL }: UseHomeBusesProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [buses, setBuses] = useState<Bus[]>([]);
-  const [filteredBuses, setFilteredBuses] = useState<Bus[]>([]);
-  const [activeBuses, setActiveBuses] = useState<ActiveBus[]>([]);
+  // Raw RTDB snapshots — listeners write these once per server event.
+  const [rawBuses, setRawBuses] = useState<Bus[]>([]);
+  const [rawActive, setRawActive] = useState<ActiveBus[]>([]);
   const [activeCounts, setActiveCounts] = useState<Record<string, number>>({});
   const [favoriteLines, setFavoriteLines] = useState<Set<string>>(new Set());
   const [selectedActiveBus, setSelectedActiveBus] = useState<ActiveBus | null>(null);
@@ -86,11 +86,13 @@ export function useHomeBuses({ userId, userCoords, isRTL }: UseHomeBusesProps) {
   }, [userId]);
 
   /**
-   * Subscribes to the catalog buses node in RTDB.
+   * Subscribes to the canonical company catalog (companies/{id}/buses).
+   * The legacy root `buses` node no longer exists in RTDB — it used to return
+   * permission_denied and left the home screen with a single demo row.
    */
   useEffect(() => {
     let isMounted = true;
-    const busesRef = ref(database, 'buses');
+    const busesRef = ref(database, 'companies');
 
     const unsubscribe = onValue(
       busesRef,
@@ -100,23 +102,46 @@ export function useHomeBuses({ userId, userCoords, isRTL }: UseHomeBusesProps) {
         let busesList: Bus[] = [];
 
         if (data && typeof data === 'object') {
-          busesList = Object.keys(data).map((key) => ({
-            id: key,
-            ...data[key],
-          }));
+          Object.keys(data).forEach((companyId) => {
+            const company = data[companyId];
+            if (!company || typeof company !== 'object') return;
+            const companyBuses = company.buses;
+            if (!companyBuses || typeof companyBuses !== 'object') return;
+            Object.keys(companyBuses).forEach((busKey) => {
+              const busRec = companyBuses[busKey];
+              if (!busRec || typeof busRec !== 'object' || !busRec.lineId) return;
+              busesList.push({
+                id: `${companyId}-${busKey}`,
+                lineName: busRec.lineId,
+                companyName:
+                  typeof company.name === 'string' ? company.name : companyId,
+                activeBusCount: 0,
+                latitude:
+                  typeof busRec.startLat === 'number' && busRec.startLat !== 0
+                    ? busRec.startLat
+                    : undefined,
+                longitude:
+                  typeof busRec.startLng === 'number' && busRec.startLng !== 0
+                    ? busRec.startLng
+                    : undefined,
+              });
+            });
+          });
         }
 
-        // Demo fallback line
-        const mockBus: Bus = {
-          id: 'mock-bus',
-          lineName: 'Demo Line',
-          companyName: 'Demo Company',
-          activeBusCount: activeCounts['Demo Line'] || 0,
-          eta: '5 min',
-          latitude: 30.0444,
-          longitude: 31.2357,
-        };
-        busesList.push(mockBus);
+        // Demo fallback only when the catalog is genuinely empty
+        if (busesList.length === 0) {
+          const mockBus: Bus = {
+            id: 'mock-bus',
+            lineName: 'Demo Line',
+            companyName: 'Demo Company',
+            activeBusCount: 0,
+            eta: '5 min',
+            latitude: 30.0444,
+            longitude: 31.2357,
+          };
+          busesList.push(mockBus);
+        }
 
         // Prepend bookmarked favorites if not already present
         favoriteLines.forEach((fav) => {
@@ -126,48 +151,14 @@ export function useHomeBuses({ userId, userCoords, isRTL }: UseHomeBusesProps) {
               id: `fav-${fav}`,
               lineName: fav,
               companyName: 'Favorite',
-              activeBusCount: activeCounts[fav] || 0,
+              activeBusCount: 0,
             });
           }
         });
 
-        // Compute location proximity and bearing if GPS is accessible
-        if (userCoords) {
-          const busesWithLocation = busesList.map((bus) => {
-            const count = activeCounts[bus.lineName] ?? bus.activeBusCount ?? 0;
-            if (bus.latitude && bus.longitude) {
-              const distance = calculateDistanceKm(
-                userCoords.latitude,
-                userCoords.longitude,
-                bus.latitude,
-                bus.longitude
-              );
-              const bearing = calculateBearing(
-                userCoords.latitude,
-                userCoords.longitude,
-                bus.latitude,
-                bus.longitude
-              );
-              const direction = getDirectionName(bearing);
-              const timeToArrival = calculateTimeToArrival(distance, isRTL);
-              return {
-                ...bus,
-                activeBusCount: count,
-                distance,
-                direction,
-                timeToArrival,
-              };
-            }
-            return { ...bus, activeBusCount: count };
-          });
-          setBuses(busesWithLocation);
-        } else {
-          const merged = busesList.map((b) => ({
-            ...b,
-            activeBusCount: activeCounts[b.lineName] ?? b.activeBusCount ?? 0,
-          }));
-          setBuses(merged);
-        }
+        // Raw catalog only: geo + live-count enrichment runs in useMemo so this
+        // listener is no longer torn down and re-subscribed on every GPS tick.
+        setRawBuses(busesList);
       },
       (error) => {
         console.error('[useHomeBuses] Buses RTDB listener failed:', error);
@@ -178,7 +169,7 @@ export function useHomeBuses({ userId, userCoords, isRTL }: UseHomeBusesProps) {
       isMounted = false;
       off(busesRef, 'value', unsubscribe);
     };
-  }, [userCoords, activeCounts, favoriteLines, isRTL]);
+  }, [favoriteLines]);
 
   /**
    * Subscribes to live driver telemetry and vehicle locations in RTDB.
@@ -216,25 +207,7 @@ export function useHomeBuses({ userId, userCoords, isRTL }: UseHomeBusesProps) {
                     lastUpdated: d.lastUpdated || new Date().toISOString(),
                     driverName: d.driverName || undefined,
                   };
-                  if (userCoords) {
-                    const distance = calculateDistanceKm(
-                      userCoords.latitude,
-                      userCoords.longitude,
-                      base.latitude,
-                      base.longitude
-                    );
-                    const bearing = calculateBearing(
-                      userCoords.latitude,
-                      userCoords.longitude,
-                      base.latitude,
-                      base.longitude
-                    );
-                    const direction = getDirectionName(bearing);
-                    const timeToArrival = calculateTimeToArrival(distance, isRTL);
-                    collected.push({ ...base, distance, direction, timeToArrival });
-                  } else {
-                    collected.push(base);
-                  }
+                  collected.push(base);
                 }
               });
             }
@@ -242,10 +215,10 @@ export function useHomeBuses({ userId, userCoords, isRTL }: UseHomeBusesProps) {
         }
 
         setActiveCounts(counts);
-        const sorted = [...collected].sort(
-          (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity)
-        );
-        setActiveBuses(sorted);
+        // Raw trips only: distance/ETA sorting runs in the activeBuses memo so
+        // this listener attaches exactly once (it previously re-subscribed on
+        // every GPS coordinate change).
+        setRawActive(collected);
       },
       (error) => {
         console.error('[useHomeBuses] BusLocations RTDB listener failed:', error);
@@ -256,23 +229,84 @@ export function useHomeBuses({ userId, userCoords, isRTL }: UseHomeBusesProps) {
       isMounted = false;
       off(busLocationsRef, 'value', unsub);
     };
-  }, [userCoords, isRTL]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setState setters are stable; geo props are intentionally excluded
+  }, []);
+
+  /**
+   * Derived catalog: merges live counts + proximity without touching RTDB.
+   */
+  const buses = useMemo<Bus[]>(() => {
+    return rawBuses.map((bus) => {
+      const count = activeCounts[bus.lineName] ?? bus.activeBusCount ?? 0;
+      if (userCoords && bus.latitude && bus.longitude) {
+        const distance = calculateDistanceKm(
+          userCoords.latitude,
+          userCoords.longitude,
+          bus.latitude,
+          bus.longitude
+        );
+        const bearing = calculateBearing(
+          userCoords.latitude,
+          userCoords.longitude,
+          bus.latitude,
+          bus.longitude
+        );
+        return {
+          ...bus,
+          activeBusCount: count,
+          distance,
+          direction: getDirectionName(bearing),
+          timeToArrival: calculateTimeToArrival(distance, isRTL),
+        };
+      }
+      return { ...bus, activeBusCount: count };
+    });
+  }, [rawBuses, activeCounts, userCoords, isRTL]);
+
+  /**
+   * Derived active trips: distance/ETA computed per render batch, sorted by
+   * proximity — replaces the per-tick listener rebuild.
+   */
+  const activeBuses = useMemo<ActiveBus[]>(() => {
+    const withGeo = rawActive.map((trip) => {
+      if (userCoords) {
+        const distance = calculateDistanceKm(
+          userCoords.latitude,
+          userCoords.longitude,
+          trip.latitude,
+          trip.longitude
+        );
+        const bearing = calculateBearing(
+          userCoords.latitude,
+          userCoords.longitude,
+          trip.latitude,
+          trip.longitude
+        );
+        return {
+          ...trip,
+          distance,
+          direction: getDirectionName(bearing),
+          timeToArrival: calculateTimeToArrival(distance, isRTL),
+        };
+      }
+      return trip;
+    });
+    return [...withGeo].sort(
+      (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity)
+    );
+  }, [rawActive, userCoords, isRTL]);
 
   /**
    * Filters the catalog list by user search query.
    */
-  useEffect(() => {
+  const filteredBuses = useMemo<Bus[]>(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) {
-      setFilteredBuses(buses);
-    } else {
-      const filtered = buses.filter(
-        (bus) =>
-          bus.lineName.toLowerCase().includes(query) ||
-          bus.companyName.toLowerCase().includes(query)
-      );
-      setFilteredBuses(filtered);
-    }
+    if (!query) return buses;
+    return buses.filter(
+      (bus) =>
+        bus.lineName.toLowerCase().includes(query) ||
+        bus.companyName.toLowerCase().includes(query)
+    );
   }, [searchQuery, buses]);
 
   /**

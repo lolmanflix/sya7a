@@ -6,6 +6,7 @@
 
 import React from "react";
 import { View, Text, TouchableOpacity, Modal, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "../../styles/loginStyles";
 import { CompanyItem } from "../../hooks/useAuthForm";
@@ -41,6 +42,8 @@ export const DriverCompanyPicker: React.FC<DriverCompanyPickerProps> = ({
   onCloseModal,
   onSelectCompany,
 }) => {
+  const insets = useSafeAreaInsets();
+
   return (
     <>
       {/* Dropdown Field Trigger */}
@@ -82,7 +85,12 @@ export const DriverCompanyPicker: React.FC<DriverCompanyPickerProps> = ({
         onRequestClose={onCloseModal}
       >
         <View style={styles.companyModalOverlay}>
-          <View style={styles.companyModalContent}>
+          <View
+            style={[
+              styles.companyModalContent,
+              { paddingBottom: insets.bottom + 24 },
+            ]}
+          >
             {/* Modal Header */}
             <View style={styles.companyModalHeader}>
               <View style={styles.companyModalTitleRow}>
@@ -120,7 +128,11 @@ export const DriverCompanyPicker: React.FC<DriverCompanyPickerProps> = ({
                     key={c.id}
                     style={[
                       styles.companyOptionRow,
-                      isSelected && styles.companyOptionRowSelected,
+                      isSelected && {
+                        backgroundColor:
+                          branding.accentColor || "rgba(37, 99, 235, 0.1)",
+                        borderColor: branding.primaryColor || "#2563EB",
+                      },
                     ]}
                     onPress={() => {
                       onSelectCompany(c.id);
@@ -132,10 +144,14 @@ export const DriverCompanyPicker: React.FC<DriverCompanyPickerProps> = ({
                       <View
                         style={[
                           styles.companyOptionBullet,
-                          isSelected && [
-                            styles.companyOptionBulletSelected,
-                            { backgroundColor: branding.primaryColor || "#2563EB" },
-                          ],
+                          !isSelected && {
+                            backgroundColor:
+                              branding.accentColor || "rgba(37, 99, 235, 0.1)",
+                          },
+                          isSelected && {
+                            backgroundColor:
+                              branding.primaryColor || "#2563EB",
+                          },
                         ]}
                       >
                         <Ionicons

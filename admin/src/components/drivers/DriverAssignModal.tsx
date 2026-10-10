@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { DriverProfile, CompanyRecord } from '../../types';
 import { Route } from 'lucide-react';
+import { useTranslation } from '../../i18n/useTranslation';
 import { toast } from 'sonner';
 
 interface DriverAssignModalProps {
@@ -22,6 +23,8 @@ export const DriverAssignModal: React.FC<DriverAssignModalProps> = ({
   companies,
   onSaveAssignments,
 }) => {
+  const { t } = useTranslation();
+
   if (!driver) return null;
 
   const [companyId, setCompanyId] = useState<string>(driver.companyId);
@@ -49,10 +52,10 @@ export const DriverAssignModal: React.FC<DriverAssignModalProps> = ({
     setSaving(true);
     try {
       await onSaveAssignments(driver.uid, companyId, selectedLines);
-      toast.success(`Updated line assignments for ${driver.displayName}`);
+      toast.success(t('drivers.assignmentsUpdated', { name: driver.displayName }));
       onClose();
     } catch {
-      toast.error('Failed to update driver assignments');
+      toast.error(t('drivers.assignmentsError'));
     } finally {
       setSaving(false);
     }
@@ -62,13 +65,13 @@ export const DriverAssignModal: React.FC<DriverAssignModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Dispatch Settings - ${driver.displayName}`}
-      subtitle={`Configure company operator and authorized bus lines for ${driver.email}`}
+      title={t('drivers.dispatchSettings', { name: driver.displayName })}
+      subtitle={t('drivers.dispatchSubtitle', { email: driver.email })}
     >
       <div className="space-y-4">
         {/* Company Selector */}
         <div>
-          <label className="block text-xs font-medium text-slate-400 mb-1">Operating Transit Company</label>
+          <label className="block text-xs font-medium text-slate-400 mb-1">{t('drivers.companyLabel')}</label>
           <select
             value={companyId}
             onChange={(e) => {
@@ -88,15 +91,15 @@ export const DriverAssignModal: React.FC<DriverAssignModalProps> = ({
         {/* Lines Checklist */}
         <div>
           <label className="block text-xs font-medium text-slate-400 mb-2">
-            Authorized Routes ({availableLines.length} available in {activeCompany?.name})
+            {t('drivers.authorizedRoutes', { count: availableLines.length, company: activeCompany?.name ?? '' })}
           </label>
 
           {availableLines.length === 0 ? (
             <p className="text-xs text-slate-500 italic p-3 bg-slate-800/40 rounded-xl">
-              No lines registered under this company yet.
+              {t('drivers.noLinesYet')}
             </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pe-1">
               {availableLines.map((line) => {
                 const checked = selectedLines.includes(line);
                 return (
@@ -131,7 +134,7 @@ export const DriverAssignModal: React.FC<DriverAssignModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-xl transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -139,7 +142,7 @@ export const DriverAssignModal: React.FC<DriverAssignModalProps> = ({
             disabled={saving}
             className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-brand-600/20 transition-all disabled:opacity-50"
           >
-            {saving ? 'Saving...' : 'Save Assignments'}
+            {saving ? t('common.saving') : t('drivers.saveAssignments')}
           </button>
         </div>
       </div>

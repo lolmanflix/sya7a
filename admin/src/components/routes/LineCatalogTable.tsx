@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Route, Edit3, Trash2, ExternalLink } from 'lucide-react';
 import { CompanyRecord } from '../../types';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export interface LineCatalogItem {
   companyId: string;
@@ -27,6 +28,7 @@ export const LineCatalogTable: React.FC<LineCatalogTableProps> = ({
   onDeleteLine,
   onOpenCompanyLineManager,
 }) => {
+  const { t } = useTranslation();
   const [editingLineKey, setEditingLineKey] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
@@ -46,20 +48,20 @@ export const LineCatalogTable: React.FC<LineCatalogTableProps> = ({
   return (
     <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden backdrop-blur-sm shadow-xl">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
+        <table className={`w-full text-start text-xs ${lines.length > 0 ? 'min-w-[640px]' : ''}`}>
           <thead className="bg-slate-800/40 text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-800">
             <tr>
-              <th className="py-3 px-4">Line Name</th>
-              <th className="py-3 px-4">Carrier Operator</th>
-              <th className="py-3 px-4">Assigned Vehicles</th>
-              <th className="py-3 px-4 text-right">Line Actions</th>
+              <th className="py-3 px-4">{t('routes.colLineName')}</th>
+              <th className="py-3 px-4">{t('routes.colCarrierOperator')}</th>
+              <th className="py-3 px-4">{t('routes.colAssignedVehicles')}</th>
+              <th className="py-3 px-4 text-end">{t('routes.colLineActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
             {lines.length === 0 ? (
               <tr>
                 <td colSpan={4} className="py-8 text-center text-slate-500">
-                  No bus lines found. Click &quot;Add Line Code&quot; to register a line.
+                  {t('routes.emptyCatalog')}
                 </td>
               </tr>
             ) : (
@@ -84,19 +86,19 @@ export const LineCatalogTable: React.FC<LineCatalogTableProps> = ({
                             onClick={() => handleSaveRename(item.companyId, item.lineName)}
                             className="px-2 py-1 bg-brand-600 hover:bg-brand-500 text-white rounded text-[10px] font-semibold"
                           >
-                            Save
+                            {t('common.save')}
                           </button>
                           <button
                             onClick={() => setEditingLineKey(null)}
                             className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[10px]"
                           >
-                            Cancel
+                            {t('common.cancel')}
                           </button>
                         </div>
                       ) : (
                         <span className="flex items-center gap-2">
                           <Route className="w-3.5 h-3.5 text-brand-400" />
-                          Line {item.lineName}
+                          {t('routes.linePrefix', { name: item.lineName })}
                         </span>
                       )}
                     </td>
@@ -106,9 +108,9 @@ export const LineCatalogTable: React.FC<LineCatalogTableProps> = ({
                       </span>
                     </td>
                     <td className="py-3 px-4 text-slate-300">
-                      <span className="font-semibold text-white">{item.busesCount}</span> assigned vehicles
+                      <span className="font-semibold text-white">{item.busesCount}</span> {t('routes.assignedVehicles')}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-end">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => {
@@ -116,7 +118,7 @@ export const LineCatalogTable: React.FC<LineCatalogTableProps> = ({
                             setRenameValue(item.lineName);
                           }}
                           className="p-1.5 bg-slate-800 hover:bg-brand-600 text-slate-300 hover:text-white rounded-lg transition-colors"
-                          title="Rename Line Code"
+                          title={t('routes.renameLineTitle')}
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
@@ -124,7 +126,7 @@ export const LineCatalogTable: React.FC<LineCatalogTableProps> = ({
                           <button
                             onClick={() => onOpenCompanyLineManager(comp)}
                             className="p-1.5 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white rounded-lg transition-colors"
-                            title="Open Carrier Line Manager"
+                            title={t('routes.openLineManagerTitle')}
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </button>
@@ -132,7 +134,7 @@ export const LineCatalogTable: React.FC<LineCatalogTableProps> = ({
                         <button
                           onClick={() => onDeleteLine(item.companyId, item.lineName)}
                           className="p-1.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg transition-colors"
-                          title="Delete Line Code"
+                          title={t('routes.deleteLineTitle')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

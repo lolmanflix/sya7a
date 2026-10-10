@@ -21,7 +21,8 @@ import { useI18n } from "../contexts/I18nContext";
 import { useAuth } from "../contexts/AuthContext";
 import { clearDriverSession } from "../utils/driverStorage";
 import { useDriverSafetyStream } from "../utils/driverSafetyStream";
-import { getTenantBranding, getTenantVocabulary, ACTIVE_TENANT } from "../config/tenantConfig";
+import { getTenantBranding, getTenantVocabulary } from "../config/tenantConfig";
+import { useTenantArchetype } from "../hooks/useTenantArchetype";
 
 // Modular Hooks
 import { useDriverProfile } from "../hooks/useDriverProfile";
@@ -48,8 +49,9 @@ export default function DriverHomeScreen() {
   const isDark = theme.mode === "dark";
 
   // Data-driven white-label institutional vocabulary & branding
-  const vocabulary = getTenantVocabulary(isRTL, ACTIVE_TENANT);
-  const branding = getTenantBranding(ACTIVE_TENANT);
+  const archetype = useTenantArchetype();
+  const vocabulary = getTenantVocabulary(isRTL, archetype);
+  const branding = getTenantBranding(archetype);
 
   // Camera & Mic hardware permissions
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -73,6 +75,11 @@ export default function DriverHomeScreen() {
     setCompanyPickerVisible,
     handleSelectCompany,
   } = useDriverProfile(user);
+
+  // Display name for the assigned company (badge falls back to the raw id).
+  const companyName = companyId
+    ? availableCompanies.find((c) => c.id.toLowerCase() === companyId.toLowerCase())?.name ?? null
+    : null;
 
   /** Checks and requests camera & mic permissions */
   const ensureSafetyPermissions = async (): Promise<boolean> => {
@@ -104,7 +111,10 @@ export default function DriverHomeScreen() {
     driverName,
     cameraRef,
     isRTL,
-    onSessionStart: () => setCameraPreviewOpen(true),
+    // Release the native CameraView sensor while the WebView broadcaster owns
+    // the camera/mic; Android's Camera HAL allows only one active client.
+    onSessionStart: () => setCameraPreviewOpen(false),
+    onSessionEnd: () => setCameraPreviewOpen(true),
   });
 
   // Driver Live Telemetry & GPS Tracking State Hook
@@ -165,6 +175,7 @@ export default function DriverHomeScreen() {
             driverInitials={driverInitials}
             driverName={driverName}
             companyId={companyId}
+            companyName={companyName}
             sharing={sharing}
             isRTL={isRTL}
             isDark={isDark}
@@ -204,6 +215,7 @@ export default function DriverHomeScreen() {
             webViewRef={webViewRef}
             isRTL={isRTL}
             isDark={isDark}
+            branding={branding}
             onFlipCamera={() => setCameraFacing((prev) => (prev === "front" ? "back" : "front"))}
             onTogglePreview={() => setCameraPreviewOpen((prev) => !prev)}
             onRequestPermissions={ensureSafetyPermissions}
@@ -232,7 +244,6 @@ export default function DriverHomeScreen() {
         currentCompanyId={companyId}
         isRTL={isRTL}
         isDark={isDark}
-        vocabulary={vocabulary}
         branding={branding}
         onClose={() => setCompanyPickerVisible(false)}
         onSelectCompany={handleSelectCompany}
@@ -242,6 +253,7 @@ export default function DriverHomeScreen() {
       <SettingsModal
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
+        onLogout={handleLogout}
       />
     </SafeAreaView>
   );

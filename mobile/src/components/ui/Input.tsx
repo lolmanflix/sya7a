@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   eyeIcon: {
-    padding: 8,
+    padding: 12,
   },
   errorText: {
     color: '#FF3B30',

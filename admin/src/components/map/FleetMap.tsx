@@ -1,16 +1,21 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import L from "leaflet";
 import { LiveBusLocation, BusRouteDefinition } from "../../types";
 import { Eye, Filter, Crosshair, Maximize2 } from "lucide-react";
 import { FleetMapLegend } from "./FleetMapLegend";
-import { fetchRoadRoute } from "../../services/routingService";
-import { attachMapBaseTheme, MapTheme } from "./mapLayerManager";
+import { attachMapBaseStyle } from "./mapLayerManager";
 import { MapThemeSelector } from "./MapThemeSelector";
 import {
-  createTerminalMarker,
-  createCatalogBusMarker,
-  createLiveBeaconMarker,
-} from "./fleetMapHelpers";
+  filterVisibleCatalog,
+  splitOrphanBeacons,
+  orphanBeaconKey,
+  drawCatalogRoutes,
+  drawBeaconCorridors,
+  drawLiveVehicles,
+} from "./mapDrawLayers";
+import { useTranslation } from "../../i18n/useTranslation";
+import { getLineColor } from "../../utils/lineColors";
+import { LineFilterPopover, LineFilterOption } from "./LineFilterPopover";
 
 interface FleetMapProps {
   liveLocations: LiveBusLocation[];
@@ -28,17 +33,19 @@ export const FleetMap: React.FC<FleetMapProps> = ({
   selectedBusId,
   onSelectBus,
 }) => {
+  const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const staticLayerRef = useRef<L.LayerGroup | null>(null);
   const linesLayerRef = useRef<L.LayerGroup | null>(null);
   const initialFitDoneRef = useRef<boolean>(false);
   const latestBoundsRef = useRef<L.LatLngBounds | null>(null);
 
-  // Map Filter & Theme Controls
-  const [mapTheme, setMapTheme] = useState<MapTheme>("dark");
+  // Map Filter Controls
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [showActiveOnly, setShowActiveOnly] = useState<boolean>(true);
+  const [hiddenLines, setHiddenLines] = useState<Set<string>>(new Set());
 
   // Extract unique companies present in the catalog
   const companiesList = useMemo(() => {
@@ -48,6 +55,50 @@ export const FleetMap: React.FC<FleetMapProps> = ({
     });
     return Array.from(set);
   }, [catalogBuses]);
+
+  // Unique line ids (case-insensitive) for the line filter, with stable colors
+  const lineOptions = useMemo<LineFilterOption[]>(() => {
+    const seen = new Map<string, LineFilterOption>();
+    catalogBuses.forEach((b) => {
+      const id = b.lineId;
+      if (!id) return;
+      const key = id.toLowerCase();
+      if (!seen.has(key)) seen.set(key, { lineId: id, color: getLineColor(id) });
+    });
+    return Array.from(seen.values()).sort((a, b) =>
+      a.lineId.localeCompare(b.lineId, undefined, { numeric: true })
+    );
+  }, [catalogBuses]);
+
+  const isLineVisible = useCallback(
+    (lineId: string) => !hiddenLines.has((lineId || "").toLowerCase()),
+    [hiddenLines]
+  );
+
+  // Stable select wrapper: parent callbacks may be re-created each render, but
+  // layer effects must not re-run because of it (reads the latest via ref).
+  const onSelectBusRef = useRef(onSelectBus);
+  useEffect(() => {
+    onSelectBusRef.current = onSelectBus;
+  });
+  const handleSelectBus = useCallback((busId: string) => {
+    onSelectBusRef.current?.(busId);
+  }, []);
+
+  // Orphan beacons (live lines missing from the catalog) + a coarse identity
+  // key so corridor geometry redraws only on trip endpoint changes.
+  const orphanBeacons = useMemo(
+    () => splitOrphanBeacons(liveLocations, catalogBuses),
+    [liveLocations, catalogBuses]
+  );
+  const beaconCorridorKey = useMemo(
+    () => orphanBeaconKey(orphanBeacons),
+    [orphanBeacons]
+  );
+  const orphanBeaconsRef = useRef(orphanBeacons);
+  useEffect(() => {
+    orphanBeaconsRef.current = orphanBeacons;
+  });
 
   // Initialize Leaflet Map
   useEffect(() => {
@@ -62,193 +113,63 @@ export const FleetMap: React.FC<FleetMapProps> = ({
     L.control.zoom({ position: "topright" }).addTo(map);
 
     linesLayerRef.current = L.layerGroup().addTo(map);
+    staticLayerRef.current = L.layerGroup().addTo(map);
     markersLayerRef.current = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
 
+    // OpenFreeMap vector base layer (light/dark via MapThemeSelector -> setMapStyle)
+    const detachBaseStyle = attachMapBaseStyle(map);
+
     return () => {
-      map.remove();
+      detachBaseStyle();
+      try {
+        map.remove();
+      } catch (err) {
+        console.warn("[FleetMap] Map teardown warning:", err);
+      }
       mapInstanceRef.current = null;
     };
   }, []);
 
-  // Synchronize Map Base Theme (Carto Dark, Clean Voyager, or Offline)
+  // ── Static geometry pass: polylines, terminals, stop pins, beacon corridors.
+  // Keyed by beaconCorridorKey (not raw GPS) so telemetry ticks never rebuild
+  // routes or re-trigger road-snapping fetches — the previous single-effect
+  // design cleared every layer on each tick and caused significant lag.
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
-    const cleanup = attachMapBaseTheme(mapInstanceRef.current, mapTheme);
-    return () => cleanup();
-  }, [mapTheme]);
-
-  // Recalculate & Render Markers and Route Polylines
-  useEffect(() => {
-    if (!mapInstanceRef.current || !markersLayerRef.current || !linesLayerRef.current) return;
+    if (!mapInstanceRef.current || !staticLayerRef.current || !linesLayerRef.current) return;
     const map = mapInstanceRef.current;
-    const markersLayer = markersLayerRef.current;
     const linesLayer = linesLayerRef.current;
+    const staticLayer = staticLayerRef.current;
 
-    markersLayer.clearLayers();
     linesLayer.clearLayers();
+    staticLayer.clearLayers();
 
-    const boundsPoints: L.LatLngExpression[] = [];
+    const visibleBuses = filterVisibleCatalog(
+      catalogBuses,
+      selectedCompany,
+      showActiveOnly,
+      isLineVisible
+    );
+    const visibleOrphans = orphanBeaconsRef.current.filter((l) =>
+      isLineVisible(l.lineId)
+    );
 
-    // Filter catalog buses based on company & active toggles
-    const visibleCatalogBuses = catalogBuses.filter((b) => {
-      const matchCompany = selectedCompany === "all" || b.companyId.toLowerCase() === selectedCompany.toLowerCase();
-      const matchActive = !showActiveOnly || b.isActive;
-      return matchCompany && matchActive;
-    });
-
-    // 1. Draw Catalog Bus Route Polylines
-    visibleCatalogBuses.forEach((bus) => {
-      const hasValidStart = typeof bus.startLat === "number" && typeof bus.startLng === "number" && bus.startLat !== 0;
-      const hasValidEnd = typeof bus.endLat === "number" && typeof bus.endLng === "number" && bus.endLat !== 0;
-
-      if (hasValidStart && hasValidEnd) {
-        const startLatLng: [number, number] = [bus.startLat, bus.startLng];
-        const endLatLng: [number, number] = [bus.endLat, bus.endLng];
-        boundsPoints.push(startLatLng, endLatLng);
-
-        const isSelected = selectedBusId === bus.busId;
-        const lineColor = bus.isActive ? (isSelected ? "#F59E0B" : "#10B981") : "#64748B";
-
-        let glowLine: L.Polyline | null = null;
-        if (bus.isActive) {
-          glowLine = L.polyline([startLatLng, endLatLng], {
-            color: lineColor,
-            weight: 8,
-            opacity: 0.25,
-            lineCap: "round",
-          });
-          linesLayer.addLayer(glowLine);
-        }
-
-        const polyline = L.polyline([startLatLng, endLatLng], {
-          color: lineColor,
-          weight: bus.isActive ? 4 : 2,
-          opacity: bus.isActive ? 0.9 : 0.45,
-          dashArray: bus.isActive ? undefined : "6, 6",
-          lineCap: "round",
-        });
-
-        const waypoints = bus.stops && bus.stops.length >= 2 ? bus.stops : [
-          { lat: bus.startLat, lng: bus.startLng },
-          { lat: bus.endLat, lng: bus.endLng },
-        ];
-
-        fetchRoadRoute(waypoints).then((res) => {
-          if (!mapInstanceRef.current) return;
-          polyline.setLatLngs(res.coordinates);
-          if (glowLine) glowLine.setLatLngs(res.coordinates);
-        });
-
-        // Intermediate stop pins
-        if (bus.stops && bus.stops.length > 2) {
-          bus.stops.slice(1, -1).forEach((stop, sIdx) => {
-            const stopIcon = L.divIcon({
-              className: "intermediate-stop-pin",
-              html: `<div class="w-3.5 h-3.5 rounded-full bg-emerald-500 border border-white shadow-sm flex items-center justify-center text-[7px] font-bold text-white">${sIdx + 2}</div>`,
-              iconSize: [14, 14],
-              iconAnchor: [7, 7],
-            });
-            const mStop = L.marker([stop.lat, stop.lng], { icon: stopIcon });
-            mStop.bindPopup(`<div class="text-xs text-slate-900"><strong>Stop ${sIdx + 2} (${bus.lineId}):</strong><br>${stop.name}</div>`);
-            markersLayer.addLayer(mStop);
-          });
-        }
-
-        polyline.bindPopup(`
-          <div class="p-1 min-w-[200px] text-slate-900 text-xs">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-1 mb-1.5">
-              <span class="font-bold text-sm text-slate-900">${bus.lineId}</span>
-              <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${bus.isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}">
-                ${bus.isActive ? "Active Route" : "Idle Route"}
-              </span>
-            </div>
-            <p class="text-slate-600 font-medium">Operator: <strong class="text-slate-900 uppercase">${bus.companyId}</strong></p>
-            <p class="text-slate-700 mt-1"><strong>A:</strong> ${bus.startPoint}</p>
-            <p class="text-slate-700"><strong>B:</strong> ${bus.endPoint}</p>
-          </div>
-        `);
-
-        polyline.on("click", () => {
-          if (onSelectBus) onSelectBus(bus.busId);
-        });
-
-        linesLayer.addLayer(polyline);
-        markersLayer.addLayer(createTerminalMarker(startLatLng, "A", bus.lineId, bus.startPoint));
-        markersLayer.addLayer(createTerminalMarker(endLatLng, "B", bus.lineId, bus.endPoint));
-
-        // Vehicle Marker
-        const liveMatch = liveLocations.find((loc) => loc.lineId.toLowerCase() === bus.lineId.toLowerCase());
-        const busPos: [number, number] = liveMatch
-          ? [liveMatch.latitude, liveMatch.longitude]
-          : [(bus.startLat + bus.endLat) / 2, (bus.startLng + bus.endLng) / 2];
-
-        boundsPoints.push(busPos);
-        const isBusSelected = selectedBusId === bus.busId;
-        markersLayer.addLayer(createCatalogBusMarker(busPos, bus, isBusSelected, liveMatch, onSelectBus));
-      }
-    });
-
-    // 2. Plot Active Live Driver Beacons (not in catalog) with Road Route & Terminals
-    liveLocations.forEach((loc) => {
-      const alreadyPlotted = visibleCatalogBuses.some((b) => b.lineId.toLowerCase() === loc.lineId.toLowerCase());
-      if (!alreadyPlotted) {
-        const livePos: [number, number] = [loc.latitude, loc.longitude];
-        boundsPoints.push(livePos);
-
-        // If beacon has destination coordinates, draw authentic road corridor & both terminals
-        if (typeof loc.endLat === "number" && typeof loc.endLng === "number" && loc.endLat !== 0) {
-          const originLat = typeof loc.startLat === "number" && loc.startLat !== 0 ? loc.startLat : loc.latitude;
-          const originLng = typeof loc.startLng === "number" && loc.startLng !== 0 ? loc.startLng : loc.longitude;
-          const originPt: [number, number] = [originLat, originLng];
-          const destPt: [number, number] = [loc.endLat, loc.endLng];
-          boundsPoints.push(originPt, destPt);
-
-          const liveRouteHalo = L.polyline([originPt, destPt], {
-            color: "#06b6d4",
-            weight: 9,
-            opacity: 0.3,
-            lineCap: "round",
-            lineJoin: "round",
-          });
-          linesLayer.addLayer(liveRouteHalo);
-
-          const liveRouteCasing = L.polyline([originPt, destPt], {
-            color: "#083344",
-            weight: 5.5,
-            opacity: 0.9,
-            lineCap: "round",
-            lineJoin: "round",
-          });
-          linesLayer.addLayer(liveRouteCasing);
-
-          const liveRouteLine = L.polyline([originPt, destPt], {
-            color: "#22d3ee",
-            weight: 3.5,
-            opacity: 1.0,
-            lineCap: "round",
-            lineJoin: "round",
-          });
-          linesLayer.addLayer(liveRouteLine);
-
-          fetchRoadRoute([
-            { lat: originLat, lng: originLng },
-            { lat: destPt[0], lng: destPt[1] },
-          ]).then((res) => {
-            if (mapInstanceRef.current && res.coordinates.length > 0) {
-              liveRouteLine.setLatLngs(res.coordinates);
-              liveRouteCasing.setLatLngs(res.coordinates);
-              liveRouteHalo.setLatLngs(res.coordinates);
-            }
-          });
-
-          markersLayer.addLayer(createTerminalMarker(originPt, "A", loc.lineId, loc.startPoint || "Start Terminal"));
-          markersLayer.addLayer(createTerminalMarker(destPt, "B", loc.lineId, loc.endPoint || "Destination"));
-        }
-
-        markersLayer.addLayer(createLiveBeaconMarker(livePos, loc));
-      }
-    });
+    const boundsPoints: L.LatLngExpression[] = [
+      ...drawCatalogRoutes({
+        linesLayer,
+        staticLayer,
+        buses: visibleBuses,
+        selectedBusId,
+        onSelectBus: handleSelectBus,
+        t,
+      }),
+      ...drawBeaconCorridors({
+        linesLayer,
+        staticLayer,
+        beacons: visibleOrphans,
+        t,
+      }),
+    ];
 
     if (boundsPoints.length > 0) {
       try {
@@ -262,7 +183,32 @@ export const FleetMap: React.FC<FleetMapProps> = ({
         // Fallback bounds gracefully
       }
     }
-  }, [liveLocations, catalogBuses, selectedBusId, selectedCompany, showActiveOnly, onSelectBus]);
+  }, [catalogBuses, selectedBusId, selectedCompany, showActiveOnly, hiddenLines, isLineVisible, handleSelectBus, beaconCorridorKey, t]);
+
+  // ── Dynamic vehicle pass: repositions live markers only. Runs per telemetry
+  // tick but performs zero polyline/network work.
+  useEffect(() => {
+    if (!mapInstanceRef.current || !markersLayerRef.current) return;
+    const visibleBuses = filterVisibleCatalog(
+      catalogBuses,
+      selectedCompany,
+      showActiveOnly,
+      isLineVisible
+    );
+    const visibleOrphans = orphanBeacons.filter((l) =>
+      isLineVisible(l.lineId)
+    );
+
+    drawLiveVehicles({
+      markersLayer: markersLayerRef.current,
+      catalogBuses: visibleBuses,
+      beacons: visibleOrphans,
+      liveLocations,
+      selectedBusId,
+      onSelectBus: handleSelectBus,
+      t,
+    });
+  }, [liveLocations, catalogBuses, selectedBusId, selectedCompany, showActiveOnly, hiddenLines, isLineVisible, handleSelectBus, orphanBeacons, t]);
 
   const handleResetView = () => {
     if (mapInstanceRef.current) {
@@ -279,21 +225,21 @@ export const FleetMap: React.FC<FleetMapProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full min-h-[440px] rounded-2xl overflow-hidden border border-slate-800 shadow-2xl">
+    <div className="relative w-full h-full min-h-[320px] sm:min-h-[400px] lg:min-h-[480px] rounded-2xl overflow-hidden border border-slate-800 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Top Filter Bar Overlaid on Map */}
-      <div className="absolute top-3 left-3 z-[400] flex flex-wrap items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-xl p-2 text-xs shadow-xl pointer-events-auto">
-        <MapThemeSelector currentTheme={mapTheme} onThemeChange={setMapTheme} />
+      <div className="absolute top-3 start-3 max-w-[calc(100%-1.5rem)] z-[400] flex flex-wrap items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-xl p-2 text-xs shadow-xl pointer-events-auto">
+        <MapThemeSelector />
 
         <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/90 border border-slate-700 rounded-lg text-slate-300">
           <Filter className="w-3.5 h-3.5 text-brand-400" />
           <select
             value={selectedCompany}
             onChange={(e) => setSelectedCompany(e.target.value)}
-            className="bg-transparent text-white focus:outline-none cursor-pointer text-xs"
+            className="bg-transparent text-white focus:outline-none cursor-pointer text-xs max-w-[110px] sm:max-w-[160px] truncate"
           >
-            <option value="all" className="bg-slate-900">All Operators</option>
+            <option value="all" className="bg-slate-900">{t("map.allOperators")}</option>
             {companiesList.map((cid) => (
               <option key={cid} value={cid} className="bg-slate-900 uppercase">
                 {cid}
@@ -312,27 +258,43 @@ export const FleetMap: React.FC<FleetMapProps> = ({
           }`}
         >
           <Eye className="w-3.5 h-3.5" />
-          <span>{showActiveOnly ? "Active Routes" : "All Routes"}</span>
+          <span>{showActiveOnly ? t("map.activeRoutes") : t("map.allRoutes")}</span>
         </button>
+
+        <LineFilterPopover
+          options={lineOptions}
+          hiddenLines={hiddenLines}
+          onToggle={(id) =>
+            setHiddenLines((prev) => {
+              const key = id.toLowerCase();
+              const next = new Set(prev);
+              if (next.has(key)) next.delete(key);
+              else next.add(key);
+              return next;
+            })
+          }
+          onShowAll={() => setHiddenLines(new Set())}
+          onHideAll={() => setHiddenLines(new Set(lineOptions.map((o) => o.lineId.toLowerCase())))}
+        />
 
         <button
           type="button"
           onClick={handleFitAll}
           className="flex items-center gap-1 px-2.5 py-1 bg-slate-800/90 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 text-xs font-medium transition-colors"
-          title="Fit all active routes and buses to view"
+          title={t("map.fitAllTitle")}
         >
           <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
-          <span>Fit All</span>
+          <span>{t("map.fitAll")}</span>
         </button>
 
         <button
           type="button"
           onClick={handleResetView}
           className="flex items-center gap-1 px-2.5 py-1 bg-slate-800/90 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 text-xs font-medium transition-colors"
-          title="Reset to Cairo Center"
+          title={t("map.centerTitle")}
         >
           <Crosshair className="w-3.5 h-3.5 text-slate-400" />
-          <span>Center</span>
+          <span>{t("map.center")}</span>
         </button>
       </div>
 

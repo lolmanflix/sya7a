@@ -1,0 +1,45 @@
+/** Navigation sidebar, navbar chrome, and SOS beacon strings (AR). */
+export default {
+  // Sidebar
+  'nav.navigation': 'التنقل',
+  'nav.liveTelemetry': 'القياس الحي',
+  'nav.liveBadge': '{count} مباشر',
+  'nav.companies': 'الشركات',
+  'nav.fleet': 'أسطول الحافلات',
+  'nav.routes': 'خطوط النقل',
+  'nav.drivers': 'السائقون',
+  'nav.users': 'المستخدمون',
+  'nav.security': 'الأمن والسلامة',
+  'nav.pricing': 'الأسعار',
+  'nav.firebaseRtdb': 'Firebase الفوري',
+  'nav.connected': 'متصل',
+
+  // Navbar brand area
+  'nav.dispatchChip': 'إرسال',
+  'nav.opsChip': 'عمليات',
+  'nav.companyConsole': 'لوحة عمليات الشركات',
+  'nav.fleetCommandCenter': 'مركز قيادة أسطول النقل',
+  'nav.liveOnRoad': '{count} مركبة مباشرة على الطريق',
+  'nav.mockDataMode': 'وضع البيانات التجريبية',
+  'nav.adminSignIn': 'دخول المسؤول',
+  'nav.signOut': 'تسجيل الخروج',
+  'nav.toggleMenu': 'تبديل قائمة التنقل',
+  'nav.switchToArabic': 'التبديل إلى العربية',
+  'nav.switchToEnglish': 'التبديل إلى الإنجليزية',
+
+  // SOS alert bell
+  'nav.sosAlertActiveOne': 'تنبيه طوارئ نشط واحد',
+  'nav.sosAlertActiveMany': '{count} تنبيهات طوارئ نشطة',
+  'nav.sosNoneActive': 'لا توجد تنبيهات طوارئ نشطة',
+  'nav.sosMenuLabel': 'تنبيهات الطوارئ النشطة',
+  'nav.sosHeader': 'تنبيهات الطوارئ النشطة',
+  'nav.sosLiveCount': '{count} مباشر',
+  'nav.sosEmpty': 'لا توجد إشارات طوارئ نشطة. حافظوا على اليقظة.',
+  'nav.sosHeadingTo': 'متجه إلى {name}',
+  'nav.sosTriggeredAt': 'تم التشغيل في {time}',
+  'nav.sosSaving': 'جارٍ الحفظ…',
+  'nav.sosAcknowledge': 'تأكيد الاستلام',
+  'nav.sosToastTitle': 'تنبيه طوارئ — {name}',
+  'nav.sosToastDesc': 'الحافلة {line} · متجهة إلى {end}',
+  'nav.sosDismissedLocal': 'تم تجاهل تنبيه الطوارئ من {name} محليًا (المزامنة غير متاحة).',
+};

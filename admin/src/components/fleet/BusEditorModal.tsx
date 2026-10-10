@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { RoutePickerMap } from '../map/RoutePickerMap';
 import { BusRouteDefinition, BusStop, CompanyRecord } from '../../types';
+import { useTranslation } from '../../i18n/useTranslation';
 import { toast } from 'sonner';
 
 interface BusEditorModalProps {
@@ -22,6 +23,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
   companies,
   onSaveBus,
 }) => {
+  const { t } = useTranslation();
   const [companyId, setCompanyId] = useState<string>(busToEdit?.companyId || companies[0]?.id || 'cta');
   const [lineId, setLineId] = useState<string>(busToEdit?.lineId || '');
   const [startPoint, setStartPoint] = useState<string>(busToEdit?.startPoint || '');
@@ -103,7 +105,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!lineId.trim()) {
-      toast.error('Please specify or select a bus line');
+      toast.error(t('routes.specifyLineError'));
       return;
     }
 
@@ -126,10 +128,10 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
       };
 
       await onSaveBus(companyId, bus);
-      toast.success(busToEdit ? 'Route updated successfully' : 'New bus registered successfully');
+      toast.success(busToEdit ? t('routes.routeUpdated') : t('routes.busRegistered'));
       onClose();
     } catch {
-      toast.error('Failed to save bus route');
+      toast.error(t('routes.saveBusError'));
     } finally {
       setSaving(false);
     }
@@ -139,15 +141,15 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={busToEdit ? `Edit Bus Route - ${busToEdit.lineId}` : 'Register New Bus Route'}
-      subtitle="Configure mandatory stops along the route; the bus path follows actual road network."
+      title={busToEdit ? t('routes.editBusRoute', { line: busToEdit.lineId }) : t('routes.registerBusRoute')}
+      subtitle={t('routes.editorSubtitle')}
       maxWidth="2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Company & Line Selector */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Operating Transit Company</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1">{t('routes.operatingCompany')}</label>
             <select
               value={companyId}
               onChange={(e) => setCompanyId(e.target.value)}
@@ -162,7 +164,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Bus Line Name</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1">{t('routes.busLineName')}</label>
             {availableLines.length > 0 ? (
               <div className="flex gap-2">
                 <select
@@ -170,7 +172,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
                   onChange={(e) => setLineId(e.target.value)}
                   className="w-1/2 bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
                 >
-                  <option value="">Select Existing...</option>
+                  <option value="">{t('routes.selectExisting')}</option>
                   {availableLines.map((l) => (
                     <option key={l} value={l}>
                       {l}
@@ -181,7 +183,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
                   type="text"
                   value={lineId}
                   onChange={(e) => setLineId(e.target.value)}
-                  placeholder="Or enter new line"
+                  placeholder={t('routes.orEnterNewLine')}
                   className="w-1/2 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
                 />
               </div>
@@ -190,7 +192,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
                 type="text"
                 value={lineId}
                 onChange={(e) => setLineId(e.target.value)}
-                placeholder="e.g. Line 1, M554, BRT-1"
+                placeholder={t('routes.linePlaceholder')}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
               />
             )}
@@ -215,7 +217,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
         {/* Start & End Terminal Text Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div>
-            <label className="block font-medium text-blue-400 mb-1">Start Station Address (A)</label>
+            <label className="block font-medium text-blue-400 mb-1">{t('routes.startAddressLabel')}</label>
             <input
               type="text"
               value={startPoint}
@@ -225,7 +227,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
           </div>
 
           <div>
-            <label className="block font-medium text-purple-400 mb-1">Destination Station Address (B)</label>
+            <label className="block font-medium text-purple-400 mb-1">{t('routes.endAddressLabel')}</label>
             <input
               type="text"
               value={endPoint}
@@ -244,7 +246,7 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
               onChange={(e) => setIsActive(e.target.checked)}
               className="w-4 h-4 rounded text-brand-600 bg-slate-800 border-slate-700 focus:ring-brand-500"
             />
-            <span>Set as Active Bus on Road immediately</span>
+            <span>{t('routes.setActiveImmediately')}</span>
           </label>
 
           <div className="flex gap-2">
@@ -253,14 +255,14 @@ export const BusEditorModal: React.FC<BusEditorModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-xl transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-brand-600/20 transition-all disabled:opacity-50"
             >
-              {saving ? 'Saving...' : 'Save Bus Route'}
+              {saving ? t('common.saving') : t('routes.saveBusRoute')}
             </button>
           </div>
         </div>

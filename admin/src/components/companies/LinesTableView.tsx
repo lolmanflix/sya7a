@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { Route, Edit2, Trash2, Layers } from 'lucide-react';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export interface FlattenedLineItem {
   companyId: string;
@@ -33,6 +34,7 @@ export const LinesTableView: React.FC<LinesTableViewProps> = ({
   onRenameLine,
   onOpenAddLine,
 }) => {
+  const { t } = useTranslation();
   const [editingLineKey, setEditingLineKey] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
@@ -59,38 +61,40 @@ export const LinesTableView: React.FC<LinesTableViewProps> = ({
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+      <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-brand-400" />
           <h3 className="text-sm font-bold text-white">
-            All Operating Lines Catalog ({lines.length})
+            {t('companies.allLinesCatalog', { count: lines.length })}
           </h3>
         </div>
         <p className="text-[11px] text-slate-400">
-          Showing lines across all registered transport companies
+          {t('companies.linesAcrossCompanies')}
         </p>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
+        <table
+          className={`w-full text-start text-xs ${lines.length > 0 ? 'min-w-[600px]' : ''}`}
+        >
           <thead className="bg-slate-950/60 text-slate-400 font-medium uppercase text-[10px] tracking-wider border-b border-slate-800/80">
             <tr>
-              <th className="py-3 px-4">Line Name / Identifier</th>
-              <th className="py-3 px-4">Assigned Operator</th>
-              <th className="py-3 px-4">Configured Routes</th>
-              <th className="py-3 px-4 text-right">Actions</th>
+              <th className="py-3 px-4">{t('companies.colLineIdentifier')}</th>
+              <th className="py-3 px-4">{t('companies.colAssignedOperator')}</th>
+              <th className="py-3 px-4">{t('companies.colConfiguredRoutes')}</th>
+              <th className="py-3 px-4 text-end">{t('companies.colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
             {lines.length === 0 ? (
               <tr>
                 <td colSpan={4} className="py-8 text-center text-slate-500">
-                  No bus lines found.{' '}
+                  {t('companies.noLines')}{' '}
                   <button
                     onClick={onOpenAddLine}
                     className="text-brand-400 font-semibold hover:underline"
                   >
-                    Click here to register one.
+                    {t('companies.clickToRegister')}
                   </button>
                 </td>
               </tr>
@@ -120,13 +124,13 @@ export const LinesTableView: React.FC<LinesTableViewProps> = ({
                             }
                             className="px-2 py-1 bg-emerald-600 text-white rounded text-[11px] font-semibold"
                           >
-                            Save
+                            {t('common.save')}
                           </button>
                           <button
                             onClick={() => setEditingLineKey(null)}
                             className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-[11px]"
                           >
-                            Cancel
+                            {t('common.cancel')}
                           </button>
                         </div>
                       ) : (
@@ -145,18 +149,19 @@ export const LinesTableView: React.FC<LinesTableViewProps> = ({
                     </td>
                     <td className="py-3 px-4">
                       <span className="text-slate-300 font-medium">
-                        {item.busesCount} terminal route
-                        {item.busesCount !== 1 ? 's' : ''}
+                        {item.busesCount === 1
+                          ? t('companies.terminalRouteOne', { count: item.busesCount })
+                          : t('companies.terminalRoutesMany', { count: item.busesCount })}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-end">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() =>
                             handleStartRename(rowKey, item.lineName)
                           }
                           className="p-1.5 text-slate-400 hover:text-brand-400 hover:bg-slate-800 rounded transition-colors"
-                          title="Rename bus line"
+                          title={t('companies.renameLineTitle')}
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -165,7 +170,7 @@ export const LinesTableView: React.FC<LinesTableViewProps> = ({
                             onDeleteLine(item.companyId, item.lineName)
                           }
                           className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
-                          title="Delete bus line"
+                          title={t('companies.deleteLineTitle')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

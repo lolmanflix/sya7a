@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Power, Trash2, Edit3, MapPin } from 'lucide-react';
 import { BusRouteDefinition } from '../../types';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface BusTableProps {
   buses: BusRouteDefinition[];
@@ -20,6 +21,7 @@ export const BusTable: React.FC<BusTableProps> = ({
   onDeleteBus,
   selectedCompanyFilter,
 }) => {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
 
   const filtered = buses.filter((b) => {
@@ -40,37 +42,37 @@ export const BusTable: React.FC<BusTableProps> = ({
       {/* Search Header */}
       <div className="p-4 border-b border-slate-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search lines, terminals, or bus ID..."
-            className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl pl-9 pr-3.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
+            placeholder={t('fleet.searchPlaceholder')}
+            className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl ps-9 pe-3.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
           />
         </div>
         <span className="text-xs text-slate-400">
-          Showing <strong className="text-white">{filtered.length}</strong> of {buses.length} buses
+          {t('fleet.showingLabel')} <strong className="text-white">{filtered.length}</strong> {t('fleet.ofTotalBuses', { total: buses.length })}
         </span>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
+        <table className={`w-full text-start text-xs ${filtered.length > 0 ? 'min-w-[720px]' : ''}`}>
           <thead className="bg-slate-800/40 text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-800">
             <tr>
-              <th className="py-3 px-4">Line & ID</th>
-              <th className="py-3 px-4">Company</th>
-              <th className="py-3 px-4">Terminals (Start ➔ End)</th>
-              <th className="py-3 px-4">Status</th>
-              <th className="py-3 px-4 text-right">Actions</th>
+              <th className="py-3 px-4">{t('fleet.colLineId')}</th>
+              <th className="py-3 px-4">{t('fleet.colCompany')}</th>
+              <th className="py-3 px-4">{t('fleet.colTerminals')}</th>
+              <th className="py-3 px-4">{t('fleet.colStatus')}</th>
+              <th className="py-3 px-4 text-end">{t('fleet.colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-slate-500">
-                  No buses found matching current filters.
+                  {t('fleet.emptyTable')}
                 </td>
               </tr>
             ) : (
@@ -105,22 +107,22 @@ export const BusTable: React.FC<BusTableProps> = ({
                       }`}
                     >
                       <Power className={`w-3 h-3 ${bus.isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
-                      {bus.isActive ? 'Active Trip' : 'Idle / Inactive'}
+                      {bus.isActive ? t('fleet.activeTrip') : t('fleet.idleInactive')}
                     </button>
                   </td>
-                  <td className="py-3 px-4 text-right">
+                  <td className="py-3 px-4 text-end">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => onEditBus(bus)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-brand-400 hover:bg-brand-500/10 transition-colors"
-                        title="Edit Route Coordinates"
+                        title={t('fleet.editRouteTitle')}
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => onDeleteBus(bus.companyId, bus.busId)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                        title="Delete Bus"
+                        title={t('fleet.deleteBusTitle')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
