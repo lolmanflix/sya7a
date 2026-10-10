@@ -6,11 +6,13 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nContext';
-import { getTenantVocabulary, ACTIVE_TENANT } from '../../config/tenantConfig';
+import { getTenantVocabulary } from '../../config/tenantConfig';
+import { useTenantArchetype } from '../../hooks/useTenantArchetype';
 import { styles } from '../../styles/mapStyles';
 
 interface MapFloatingHeaderProps {
@@ -36,7 +38,9 @@ export const MapFloatingHeader: React.FC<MapFloatingHeaderProps> = ({
 }) => {
   const { theme, mode } = useTheme();
   const { t, isRTL } = useI18n();
-  const vocabulary = getTenantVocabulary(isRTL, ACTIVE_TENANT);
+  const archetype = useTenantArchetype();
+  const vocabulary = getTenantVocabulary(isRTL, archetype);
+  const insets = useSafeAreaInsets();
 
   return (
     <Animated.View
@@ -44,6 +48,7 @@ export const MapFloatingHeader: React.FC<MapFloatingHeaderProps> = ({
       style={[
         styles.floatingHeader,
         {
+          top: insets.top + 8,
           backgroundColor:
             mode === 'dark' ? 'rgba(18,18,18,0.92)' : 'rgba(255,255,255,0.92)',
           borderColor: theme.colors.border,

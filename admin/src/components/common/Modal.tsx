@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface ModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'lg',
 }) => {
+  const { t } = useTranslation();
+
   useEffect(() => {
     /**
      * Listens for Escape key press to dismiss modal.
@@ -59,16 +62,18 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Modal Dialog */}
       <div
-        className={`relative w-full ${maxWidths[maxWidth]} bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150`}
+        className={`relative w-full ${maxWidths[maxWidth]} bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85dvh] animate-in zoom-in-95 duration-150`}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-900/50">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0 bg-slate-900/50">
           <div>
             <h3 className="text-base font-semibold text-white">{title}</h3>
             {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
+            aria-label={t('common.close')}
+            title={t('common.close')}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -76,7 +81,7 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {/* Body Content */}
-        <div className="px-6 py-5 overflow-y-auto flex-1">{children}</div>
+        <div className="px-4 sm:px-6 py-5 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

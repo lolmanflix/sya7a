@@ -6,6 +6,7 @@ import { DriverSafetyMediaModal } from '../components/modals/DriverSafetyMediaMo
 import { Modal } from '../components/common/Modal';
 import { DriverProfile, CompanyRecord } from '../types';
 import { updateDriverCompany, updateDriverLines, saveDriverProfile, removeDriverProfile } from '../services/driversService';
+import { useTranslation } from '../i18n/useTranslation';
 import { toast } from 'sonner';
 
 interface DriversPageProps {
@@ -17,6 +18,7 @@ interface DriversPageProps {
  * Administrative directory for driver assignments, profiles, and permissions.
  */
 export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) => {
+  const { t } = useTranslation();
   const [selectedCompanyFilter, setSelectedCompanyFilter] = useState('all');
   const [driverToAssign, setDriverToAssign] = useState<DriverProfile | null>(null);
   const [mediaModalDriver, setMediaModalDriver] = useState<DriverProfile | null>(null);
@@ -44,12 +46,12 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
    * Removes driver account and assignment records from the system.
    */
   const handleDeleteDriver = async (driverUid: string, driverName: string) => {
-    if (confirm(`Are you sure you want to delete driver "${driverName}"?`)) {
+    if (confirm(t('drivers.deleteConfirm', { name: driverName }))) {
       try {
         await removeDriverProfile(driverUid);
-        toast.success(`Removed driver "${driverName}"`);
+        toast.success(t('drivers.removeSuccess', { name: driverName }));
       } catch {
-        toast.error('Failed to remove driver');
+        toast.error(t('drivers.removeError'));
       }
     }
   };
@@ -60,7 +62,7 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
   const handleCreateDriver = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDriverName.trim() || !newDriverEmail.trim()) {
-      toast.error('Driver name and email are required');
+      toast.error(t('drivers.nameEmailRequired'));
       return;
     }
 
@@ -74,13 +76,13 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
         companyId: newDriverCompany,
         lines: newDriverLines,
       });
-      toast.success(`Created profile for ${newDriverName}`);
+      toast.success(t('drivers.createdSuccess', { name: newDriverName }));
       setIsAddDriverOpen(false);
       setNewDriverName('');
       setNewDriverEmail('');
       setNewDriverLines([]);
     } catch {
-      toast.error('Failed to create driver profile');
+      toast.error(t('drivers.createError'));
     } finally {
       setSaving(false);
     }
@@ -89,24 +91,24 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-extrabold text-white tracking-tight">Driver Dispatch & Assignment</h2>
+          <h2 className="text-xl font-extrabold text-white tracking-tight">{t('drivers.title')}</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Oversee company drivers, assign bus lines, and manage dispatch authorization.
+            {t('drivers.subtitle')}
           </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex items-center gap-3 w-full lg:w-auto flex-wrap">
           {/* Company Filter */}
           <div className="flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-300">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={selectedCompanyFilter}
               onChange={(e) => setSelectedCompanyFilter(e.target.value)}
-              className="bg-transparent text-white focus:outline-none cursor-pointer"
+              className="bg-transparent text-white focus:outline-none cursor-pointer max-w-[150px] sm:max-w-[220px] truncate"
             >
-              <option value="all" className="bg-slate-900">All Operators</option>
+              <option value="all" className="bg-slate-900">{t('drivers.allOperators')}</option>
               {companies.map((c) => (
                 <option key={c.id} value={c.id} className="bg-slate-900">
                   {c.name}
@@ -117,9 +119,9 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
 
           <button
             onClick={() => setIsAddDriverOpen(true)}
-            className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-lg shadow-brand-600/20 shrink-0"
+            className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-lg shadow-brand-600/20 shrink-0 whitespace-nowrap"
           >
-            <Plus className="w-4 h-4" /> Add Driver Profile
+            <Plus className="w-4 h-4 shrink-0" /> {t('drivers.addDriverProfile')}
           </button>
         </div>
       </div>
@@ -159,36 +161,36 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
       <Modal
         isOpen={isAddDriverOpen}
         onClose={() => setIsAddDriverOpen(false)}
-        title="Register Driver Profile"
-        subtitle="Provision a driver profile into the Realtime Database dispatch system."
+        title={t('drivers.registerModalTitle')}
+        subtitle={t('drivers.registerModalSubtitle')}
       >
         <form onSubmit={handleCreateDriver} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Driver Full Name</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1">{t('drivers.fullNameLabel')}</label>
             <input
               type="text"
               value={newDriverName}
               onChange={(e) => setNewDriverName(e.target.value)}
-              placeholder="e.g. Mahmoud Mohamed"
+              placeholder={t('drivers.fullNamePlaceholder')}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Driver Email</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1">{t('drivers.emailLabel')}</label>
             <input
               type="email"
               value={newDriverEmail}
               onChange={(e) => setNewDriverEmail(e.target.value)}
-              placeholder="e.g. driver3@cta.eg"
+              placeholder={t('drivers.emailPlaceholder')}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Operating Transit Company</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1">{t('drivers.companyLabel')}</label>
             <select
               value={newDriverCompany}
               onChange={(e) => {
@@ -206,10 +208,10 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-2">Initial Line Assignment</label>
-            <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+            <label className="block text-xs font-medium text-slate-400 mb-2">{t('drivers.initialLinesLabel')}</label>
+            <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pe-1">
               {availableLines.length === 0 ? (
-                <p className="text-xs text-slate-500 italic col-span-2">No lines registered for this company.</p>
+                <p className="text-xs text-slate-500 italic col-span-2">{t('drivers.noLinesForCompany')}</p>
               ) : (
                 availableLines.map((l) => {
                   const checked = newDriverLines.includes(l);
@@ -242,7 +244,7 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
               onClick={() => setIsAddDriverOpen(false)}
               className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-xl transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -250,7 +252,7 @@ export const DriversPage: React.FC<DriversPageProps> = ({ drivers, companies }) 
               className="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-brand-600/20 transition-all disabled:opacity-50 flex items-center gap-1.5"
             >
               <UserCheck className="w-4 h-4" />
-              {saving ? 'Creating...' : 'Register Driver'}
+              {saving ? t('common.creating') : t('drivers.registerDriver')}
             </button>
           </div>
         </form>

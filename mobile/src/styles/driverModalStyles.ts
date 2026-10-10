@@ -3,7 +3,7 @@
  * @description Company and Route line selector modal styles.
  */
 
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({  companyModalOverlay: {
     flex: 1,
@@ -15,7 +15,6 @@ export const styles = StyleSheet.create({  companyModalOverlay: {
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     maxHeight: '75%',
     elevation: 20,
   },
@@ -38,9 +37,9 @@ export const styles = StyleSheet.create({  companyModalOverlay: {
     fontWeight: '700',
   },
   companyModalCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',

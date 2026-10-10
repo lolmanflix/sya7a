@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { TouchableOpacity, I18nManager } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -65,6 +66,8 @@ function AnimatedTabButton({ children, onPress, accessibilityState }: any) {
 function MainTabs() {
   const { theme } = useTheme();
   const { t, isRTL } = useI18n();
+  const insets = useSafeAreaInsets();
+  const bottomInset = insets.bottom;
 
   return (
     <Tab.Navigator
@@ -85,8 +88,8 @@ function MainTabs() {
           backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + bottomInset,
+          paddingBottom: 8 + bottomInset,
           paddingTop: 4,
         },
         tabBarLabelStyle: {
@@ -125,7 +128,7 @@ function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           <>
-            {userType === 'driver' || user.email?.toLowerCase() === 'kareemdiyaaa200@gmail.com' ? (
+            {userType === 'driver' ? (
               <Stack.Screen name="DriverHome" component={DriverHomeScreen} />
             ) : (
               <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -147,22 +150,38 @@ function AppNavigator() {
 import { SubscriptionProvider } from './src/contexts/SubscriptionContext';
 
 /**
+ * Scopes subscription state to the active account: remounting on account change
+ * re-reads AsyncStorage after switch/logout clears the tier key, so no plan state
+ * bleeds from one account to the next.
+ */
+function AccountScopedProviders({ children }: { children: React.ReactNode }) {
+  const { activeAccount } = useAuth();
+  return (
+    <SubscriptionProvider key={activeAccount?.uid ?? 'signed-out'}>
+      {children}
+    </SubscriptionProvider>
+  );
+}
+
+/**
  * Root React Native application entry point component.
+ * Provider order matters: UserTypeProvider must wrap AuthProvider so AuthContext
+ * can update the active role during silent account switches.
  */
 export default function App() {
   return (
-    <AuthProvider>
-      <LocationProvider>
-        <ThemeProvider>
-          <I18nProvider>
-            <UserTypeProvider>
-              <SubscriptionProvider>
+    <UserTypeProvider>
+      <AuthProvider>
+        <LocationProvider>
+          <ThemeProvider>
+            <I18nProvider>
+              <AccountScopedProviders>
                 <AppNavigator />
-              </SubscriptionProvider>
-            </UserTypeProvider>
-          </I18nProvider>
-        </ThemeProvider>
-      </LocationProvider>
-    </AuthProvider>
+              </AccountScopedProviders>
+            </I18nProvider>
+          </ThemeProvider>
+        </LocationProvider>
+      </AuthProvider>
+    </UserTypeProvider>
   );
 }

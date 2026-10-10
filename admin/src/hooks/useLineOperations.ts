@@ -7,11 +7,14 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { renameCompanyLine, deleteCompanyLine } from '../services/companiesService';
+import { useTranslation } from '../i18n/useTranslation';
 
 /**
  * Custom hook providing standardized line mutation workflows with user confirmations and feedback.
  */
 export function useLineOperations() {
+  const { t } = useTranslation();
+
   /**
    * Renames a bus line across companies, routes, and vehicle assignments.
    * @param companyId - The target company identifier.
@@ -26,15 +29,15 @@ export function useLineOperations() {
       }
       try {
         await renameCompanyLine(companyId, oldLine, newLine.trim());
-        toast.success(`Renamed line "${oldLine}" to "${newLine.trim()}"`);
-        
+        toast.success(t('companies.renameLineSuccess', { old: oldLine, new: newLine.trim() }));
+
       } catch (err) {
         console.error('[useLineOperations] Failed to rename line:', err);
-        toast.error('Failed to rename line');
+        toast.error(t('companies.renameLineError'));
         return;
       }
     },
-    []
+    [t]
   );
 
   /**
@@ -45,20 +48,20 @@ export function useLineOperations() {
    */
   const handleDeleteLine = useCallback(
     async (companyId: string, line: string): Promise<void> => {
-      if (!confirm(`Delete bus line "${line}" from ${companyId.toUpperCase()}?`)) {
+      if (!confirm(t('companies.deleteLineConfirmCompany', { line, company: companyId.toUpperCase() }))) {
         return;
       }
       try {
         await deleteCompanyLine(companyId, line);
-        toast.success(`Deleted bus line "${line}"`);
-        
+        toast.success(t('companies.deleteBusLineSuccess', { line }));
+
       } catch (err) {
         console.error('[useLineOperations] Failed to delete line:', err);
-        toast.error('Failed to delete bus line');
+        toast.error(t('companies.deleteBusLineError'));
         return;
       }
     },
-    []
+    [t]
   );
 
   return {

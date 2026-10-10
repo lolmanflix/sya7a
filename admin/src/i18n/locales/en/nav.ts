@@ -1,0 +1,45 @@
+/** Navigation sidebar, navbar chrome, and SOS beacon strings (EN). */
+export default {
+  // Sidebar
+  'nav.navigation': 'Navigation',
+  'nav.liveTelemetry': 'Live Telemetry',
+  'nav.liveBadge': '{count} live',
+  'nav.companies': 'Companies',
+  'nav.fleet': 'Bus Fleet',
+  'nav.routes': 'Transit Routes',
+  'nav.drivers': 'Drivers',
+  'nav.users': 'Users',
+  'nav.security': 'Security & Hygiene',
+  'nav.pricing': 'Pricing',
+  'nav.firebaseRtdb': 'Firebase RTDB',
+  'nav.connected': 'Connected',
+
+  // Navbar brand area
+  'nav.dispatchChip': 'DISPATCH',
+  'nav.opsChip': 'OPS',
+  'nav.companyConsole': 'Company Operations Console',
+  'nav.fleetCommandCenter': 'Transit Fleet Command Center',
+  'nav.liveOnRoad': '{count} Live On Road',
+  'nav.mockDataMode': 'Mock Data Mode',
+  'nav.adminSignIn': 'Admin Sign In',
+  'nav.signOut': 'Sign Out',
+  'nav.toggleMenu': 'Toggle navigation menu',
+  'nav.switchToArabic': 'Switch to Arabic',
+  'nav.switchToEnglish': 'Switch to English',
+
+  // SOS alert bell
+  'nav.sosAlertActiveOne': '{count} active SOS alert',
+  'nav.sosAlertActiveMany': '{count} active SOS alerts',
+  'nav.sosNoneActive': 'No active SOS alerts',
+  'nav.sosMenuLabel': 'Active SOS alerts',
+  'nav.sosHeader': 'Active SOS Alerts',
+  'nav.sosLiveCount': '{count} live',
+  'nav.sosEmpty': 'No active emergency beacons. Stay sharp.',
+  'nav.sosHeadingTo': 'Heading to {name}',
+  'nav.sosTriggeredAt': 'Triggered at {time}',
+  'nav.sosSaving': 'Saving…',
+  'nav.sosAcknowledge': 'Acknowledge',
+  'nav.sosToastTitle': 'SOS Alert — {name}',
+  'nav.sosToastDesc': 'Bus {line} · heading to {end}',
+  'nav.sosDismissedLocal': 'SOS from {name} dismissed locally (sync unavailable).',
+};

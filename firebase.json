@@ -1,0 +1,5 @@
+{
+  "database": {
+    "rules": "mobile/database.rules.json"
+  }
+}

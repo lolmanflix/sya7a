@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Video, Camera, Activity, Volume2, VolumeX } from 'lucide-react';
 import { DriverMediaStream } from '../../types';
 import { WebRtcCallStats } from '../../services/webrtcAdminService';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface DriverSafetyVideoViewportProps {
   streamData: DriverMediaStream | null;
@@ -27,6 +28,7 @@ export const DriverSafetyVideoViewport: React.FC<DriverSafetyVideoViewportProps>
   latitude,
   longitude,
 }) => {
+  const { t } = useTranslation();
   const [localWebcamActive, setLocalWebcamActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -74,7 +76,7 @@ export const DriverSafetyVideoViewport: React.FC<DriverSafetyVideoViewportProps>
         }
         setLocalWebcamActive(true);
       } catch (err: any) {
-        alert('Could not access browser webcam: ' + (err.message || 'Permission denied'));
+        alert(`${t('safety.webcamError')} ${err.message || 'Permission denied'}`);
       }
     }
   };
@@ -120,7 +122,7 @@ export const DriverSafetyVideoViewport: React.FC<DriverSafetyVideoViewportProps>
           {isWebRtcConnected && (
             <div className="flex items-center gap-1 bg-slate-900/90 px-2 py-1 rounded-lg border border-slate-800 text-[10px] text-emerald-400">
               {isMuted ? <VolumeX className="w-3 h-3 text-slate-500" /> : <Volume2 className="w-3 h-3 text-emerald-400 animate-pulse" />}
-              <span>{isMuted ? 'Muted' : 'Live Audio (Opus)'}</span>
+              <span>{isMuted ? t('safety.mutedState') : t('safety.liveAudioLabel')}</span>
             </div>
           )}
 
@@ -135,7 +137,7 @@ export const DriverSafetyVideoViewport: React.FC<DriverSafetyVideoViewportProps>
             }`}
           >
             <Camera className="w-3 h-3" />
-            {localWebcamActive ? 'Stop Webcam' : 'Test Webcam'}
+            {localWebcamActive ? t('safety.stopWebcam') : t('safety.testWebcam')}
           </button>
 
           <div className="bg-slate-900/90 backdrop-blur px-2.5 py-1 rounded-lg border border-slate-800 text-[10px] text-slate-400">
@@ -176,10 +178,10 @@ export const DriverSafetyVideoViewport: React.FC<DriverSafetyVideoViewportProps>
             <div>
               <p className="text-xs font-bold text-white tracking-wide flex items-center justify-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
-                P2P SafeTrip™ Inspection Handshake
+                {t('safety.handshakeTitle')}
               </p>
               <p className="text-[11px] text-slate-400 max-w-sm mt-1">
-                Negotiating direct peer-to-peer WebRTC link with the driver handset over Google STUN. Hardware-accelerated 30 FPS stream will launch automatically upon connection.
+                {t('safety.handshakeDesc')}
               </p>
             </div>
           </div>
@@ -188,8 +190,8 @@ export const DriverSafetyVideoViewport: React.FC<DriverSafetyVideoViewportProps>
 
       {/* Viewport Bottom Overlay HUD */}
       <div className="flex items-center justify-between z-20 text-[11px] font-mono text-slate-400 bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800 shadow-md">
-        <span className="font-semibold text-slate-200">DRIVER: {driverName}</span>
-        <span className="text-brand-400">LINE: {lineId || 'N/A'}</span>
+        <span className="font-semibold text-slate-200">{t('safety.driverLabel')} {driverName}</span>
+        <span className="text-brand-400">{t('safety.lineLabel')} {lineId || 'N/A'}</span>
         <span className="text-[10px] text-slate-500">
           {isWebRtcConnected
             ? `P2P LINK ACTIVE • ${webrtcStats?.resolution || '640x480'}`

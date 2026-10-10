@@ -225,7 +225,12 @@ export const ACTIVE_TENANT: TenantArchetype = 'public_transit';
  * @returns Complete branding configuration including primary colors and app names.
  */
 export function getTenantBranding(archetype: TenantArchetype = ACTIVE_TENANT): TenantBranding {
-  return TENANT_PROFILES[archetype].branding;
+  const profile = TENANT_PROFILES[archetype] ?? TENANT_PROFILES[ACTIVE_TENANT];
+  const branding = profile?.branding ?? TENANT_PROFILES[ACTIVE_TENANT].branding;
+  return {
+    ...branding,
+    primaryColor: branding.primaryColor || TENANT_PROFILES[ACTIVE_TENANT].branding.primaryColor,
+  };
 }
 
 /**
@@ -239,6 +244,6 @@ export function getTenantVocabulary(
   isRTL: boolean,
   archetype: TenantArchetype = ACTIVE_TENANT
 ): TenantVocabulary {
-  const profile = TENANT_PROFILES[archetype];
+  const profile = TENANT_PROFILES[archetype] ?? TENANT_PROFILES[ACTIVE_TENANT];
   return isRTL ? profile.ar : profile.en;
 }

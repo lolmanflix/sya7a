@@ -40,7 +40,8 @@ export function UserTypeProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Clears the active user role selection from state.
-   * @suggestion [DELETE]: Unused across the application; switching roles or logging out utilizes setUserType() or AuthContext.logout(). Can be safely deleted once confirmed.
+   * Invoked by AuthContext during account switch / logout / add-account so no
+   * role state bleeds between accounts.
    */
   const clearUserType = () => {
     setUserTypeState(null);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAdminAuth } from './contexts/AuthContext';
+import { useTranslation } from './i18n/useTranslation';
 import { Navbar } from './components/common/Navbar';
 import { Sidebar, NavTab } from './components/common/Sidebar';
 import { DashboardPage } from './pages/DashboardPage';
@@ -29,8 +30,10 @@ const isPublicDemo = new URLSearchParams(window.location.search).has('demo');
  */
 export default function App() {
   const { adminSession, loading } = useAdminAuth();
+  const { t } = useTranslation();
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [showLoginView, setShowLoginView] = useState<boolean>(false);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
   // If no authenticated adminSession, run in safe demo mode with MOCK DATA
   const isDemo = !adminSession;
@@ -106,7 +109,7 @@ export default function App() {
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-brand-500/20 border-t-brand-500 rounded-full animate-spin" />
-          <span className="text-xs text-slate-400 font-medium tracking-wide">Initializing Command Center...</span>
+          <span className="text-xs text-slate-400 font-medium tracking-wide">{t('common.initializing')}</span>
         </div>
       </div>
     );
@@ -124,12 +127,15 @@ export default function App() {
         isDemo={isDemo}
         company={activeCompany}
         onOpenLogin={() => setShowLoginView(true)}
+        onToggleSidebar={() => setSidebarOpen((open) => !open)}
       />
 
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
           currentTab={currentTab}
           onSelectTab={setCurrentTab}
+          mobileOpen={sidebarOpen}
+          onCloseMobile={() => setSidebarOpen(false)}
           counts={{
             liveBuses: visibleLocations.length,
             companies: visibleCompanies.length,

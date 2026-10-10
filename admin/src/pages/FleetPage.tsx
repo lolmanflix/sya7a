@@ -4,6 +4,7 @@ import { BusTable } from '../components/fleet/BusTable';
 import { VehicleRegistrationModal } from '../components/fleet/VehicleRegistrationModal';
 import { BusRouteDefinition, CompanyRecord } from '../types';
 import { saveBus, toggleBusActive, deleteBus } from '../services/busesService';
+import { useTranslation } from '../i18n/useTranslation';
 import { toast } from 'sonner';
 
 interface FleetPageProps {
@@ -15,6 +16,7 @@ interface FleetPageProps {
  * Fleet management dashboard showing road readiness, active vehicles, and dispatch controls.
  */
 export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
+  const { t } = useTranslation();
   const [selectedCompanyFilter, setSelectedCompanyFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'idle'>('all');
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -30,9 +32,14 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
   const handleToggle = async (companyId: string, busId: string, currentActive: boolean) => {
     try {
       await toggleBusActive(companyId, busId, !currentActive);
-      toast.success(`Vehicle ${busId} is now ${!currentActive ? 'ACTIVE on road' : 'marked IDLE'}.`);
+      toast.success(
+        t('fleet.toggleSuccess', {
+          id: busId,
+          status: !currentActive ? t('fleet.statusActiveOnRoad') : t('fleet.statusMarkedIdle'),
+        })
+      );
     } catch {
-      toast.error('Failed to update vehicle status.');
+      toast.error(t('fleet.toggleError'));
     }
   };
 
@@ -40,12 +47,12 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
    * Deletes a vehicle record from the fleet directory.
    */
   const handleDelete = async (companyId: string, busId: string) => {
-    if (confirm(`Are you sure you want to delete fleet vehicle '${busId}'?`)) {
+    if (confirm(t('fleet.deleteConfirm', { id: busId }))) {
       try {
         await deleteBus(companyId, busId);
-        toast.success(`Deleted vehicle ${busId}`);
+        toast.success(t('fleet.deleteSuccess', { id: busId }));
       } catch {
-        toast.error('Failed to delete vehicle');
+        toast.error(t('fleet.deleteError'));
       }
     }
   };
@@ -80,18 +87,18 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 flex-wrap">
         <div>
           <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
             <Bus className="w-5 h-5 text-emerald-400" />
-            Bus Fleet Operations
+            {t('fleet.title')}
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Monitor active vehicle deployments, line assignments, road status, and carrier fleets.
+            {t('fleet.subtitle')}
           </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-3 w-full lg:w-auto flex-wrap">
           {/* Status Filter */}
           <div className="flex items-center bg-slate-900 border border-slate-700/80 rounded-xl p-1 text-xs">
             <button
@@ -100,7 +107,7 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
                 statusFilter === 'all' ? 'bg-brand-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
               }`}
             >
-              All ({buses.length})
+              {t('fleet.allFilter', { count: buses.length })}
             </button>
             <button
               onClick={() => setStatusFilter('active')}
@@ -108,7 +115,7 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
                 statusFilter === 'active' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active ({activeCount})
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> {t('fleet.activeFilter', { count: activeCount })}
             </button>
             <button
               onClick={() => setStatusFilter('idle')}
@@ -116,7 +123,7 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
                 statusFilter === 'idle' ? 'bg-slate-700 text-white font-semibold' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Idle ({idleCount})
+              {t('fleet.idleFilter', { count: idleCount })}
             </button>
           </div>
 
@@ -126,9 +133,9 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
             <select
               value={selectedCompanyFilter}
               onChange={(e) => setSelectedCompanyFilter(e.target.value)}
-              className="bg-transparent text-white focus:outline-none cursor-pointer"
+              className="bg-transparent text-white focus:outline-none cursor-pointer max-w-[150px] sm:max-w-[220px] truncate"
             >
-              <option value="all" className="bg-slate-900">All Carriers</option>
+              <option value="all" className="bg-slate-900">{t('fleet.allCarriers')}</option>
               {companies.map((c) => (
                 <option key={c.id} value={c.id} className="bg-slate-900">
                   {c.name}
@@ -139,18 +146,18 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
 
           <button
             onClick={handleOpenNew}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-600/20 shrink-0"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-600/20 shrink-0 whitespace-nowrap"
           >
-            <Plus className="w-4 h-4" /> Register Vehicle
+            <Plus className="w-4 h-4 shrink-0" /> {t('fleet.registerVehicle')}
           </button>
         </div>
       </div>
 
       {/* Fleet Telematics Overview Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Total Fleet</div>
+            <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">{t('fleet.totalFleet')}</div>
             <div className="text-xl font-bold text-white mt-0.5">{buses.length}</div>
           </div>
           <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
@@ -162,7 +169,7 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
           <div>
             <div className="text-[11px] text-emerald-400 font-medium uppercase tracking-wider flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              On Road
+              {t('fleet.onRoad')}
             </div>
             <div className="text-xl font-bold text-emerald-300 mt-0.5">{activeCount}</div>
           </div>
@@ -173,7 +180,7 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
 
         <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Depot / Idle</div>
+            <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">{t('fleet.depotIdle')}</div>
             <div className="text-xl font-bold text-slate-300 mt-0.5">{idleCount}</div>
           </div>
           <div className="w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400">
@@ -183,7 +190,7 @@ export const FleetPage: React.FC<FleetPageProps> = ({ buses, companies }) => {
 
         <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Carriers</div>
+            <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">{t('fleet.carriers')}</div>
             <div className="text-xl font-bold text-purple-300 mt-0.5">{uniqueCarriersCount}</div>
           </div>
           <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">

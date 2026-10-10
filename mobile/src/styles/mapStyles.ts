@@ -4,7 +4,7 @@
  * floating glassmorphic header, and action controls.
  */
 
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
@@ -15,7 +15,6 @@ export const styles = StyleSheet.create({
   },
   floatingHeader: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 56 : 38,
     left: 16,
     right: 16,
     flexDirection: 'row',
@@ -35,9 +34,9 @@ export const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },

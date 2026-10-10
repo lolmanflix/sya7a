@@ -1,5 +1,15 @@
+/**
+ * @file ThemeContext.tsx
+ * @description Application color scheme provider. Light/dark token palettes are
+ * branded from the active white-label tenant (primary follows
+ * getTenantBranding().primaryColor) while mode-specific success/danger/text
+ * tokens keep their platform semantics.
+ */
+
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getTenantBranding } from '../config/tenantConfig';
+import { useTenantArchetype } from '../hooks/useTenantArchetype';
 
 type ThemeMode = 'light' | 'dark';
 
@@ -63,10 +73,12 @@ const DARK: Theme = {
 const STORAGE_KEY = 'app_theme_mode_v1';
 
 /**
- * Provides application color scheme and theme mode (light/dark).
+ * Provides application color scheme, mode toggle, and the tenant-branded
+ * primary color (from getTenantBranding().primaryColor) for the active archetype.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<ThemeMode>('light');
+  const archetype = useTenantArchetype();
 
   useEffect(() => {
     (async () => {
@@ -83,7 +95,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY, mode).catch(() => {});
   }, [mode]);
 
-  const theme = useMemo(() => (mode === 'dark' ? DARK : LIGHT), [mode]);
+  /**
+   * Applies the tenant brand primary over the mode palette, keeping every
+   * other token (success/danger/text/background) mode-specific.
+   */
+  const theme = useMemo(() => {
+    const base = mode === 'dark' ? DARK : LIGHT;
+    const brandPrimary = getTenantBranding(archetype).primaryColor;
+    if (!brandPrimary || brandPrimary === base.colors.primary) return base;
+    return { ...base, colors: { ...base.colors, primary: brandPrimary } };
+  }, [mode, archetype]);
 
   const value = useMemo(
     () => ({ theme, mode, setMode, toggleMode: () => setMode(prev => (prev === 'dark' ? 'light' : 'dark')) }),

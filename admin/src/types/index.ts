@@ -65,7 +65,7 @@ export interface LiveBusLocation {
 }
 
 export type MediaRequestKind = 'audio' | 'video' | 'both';
-export type MediaRequestStatus = 'pending' | 'accepted' | 'declined' | 'closed';
+export type MediaRequestStatus = 'pending' | 'accepted' | 'declined' | 'failed' | 'closed';
 
 export interface DriverMediaRequest {
   kind: MediaRequestKind;
@@ -74,6 +74,22 @@ export interface DriverMediaRequest {
   requestedBy: string;
   respondedAt?: string;
   driverUid?: string;
+  /** Handset-side capture failure description when status === 'failed'. */
+  error?: string;
+}
+
+/**
+ * Active emergency beacon mirrored from RTDB driverControls/<driverUid>/sosAlert.
+ */
+export interface SosAlertRecord {
+  id: string; // `${driverUid}:${triggeredAt}` — stable dedupe key
+  driverUid: string;
+  busLine: string;
+  driverName: string;
+  driverEmail?: string;
+  endPoint: string;
+  status: string;
+  triggeredAt: string;
 }
 
 export interface DriverMediaStream {

@@ -1,0 +1,20 @@
+/** Shared chrome: Modal, AccountSwitcher, generic actions (AR). */
+export default {
+  'common.close': 'إغلاق',
+  'common.cancel': 'إلغاء',
+  'common.save': 'حفظ',
+  'common.done': 'تم',
+  'common.creating': 'جارٍ الإنشاء...',
+  'common.adding': 'جارٍ الإضافة...',
+  'common.saving': 'جارٍ الحفظ...',
+  'common.superAdmin': 'مسؤول عام',
+  'common.superAdministrator': 'المدير العام',
+  'common.dispatcher': 'منسّق',
+  'common.switchAccount': 'تبديل الحساب',
+  'common.accountSwitcherLabel': 'مبدّل الحسابات',
+  'common.signedInAccounts': 'الحسابات المسجّلة',
+  'common.masterSuffix': 'رئيسي',
+  'common.addAccount': 'إضافة حساب آخر',
+  'common.signOutMenu': 'تسجيل الخروج',
+  'common.initializing': 'جارٍ تهيئة مركز العمليات...',
+};

@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nContext';
@@ -33,11 +34,12 @@ export const ActiveBusModal: React.FC<ActiveBusModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const { t, isRTL } = useI18n();
+  const insets = useSafeAreaInsets();
 
   if (!selectedBus) return null;
 
   return (
-    <View style={styles.bottomSheetOverlay}>
+    <View style={[styles.bottomSheetOverlay, { paddingBottom: insets.bottom }]}>
       <Card style={{ ...styles.bottomSheetCard, backgroundColor: theme.colors.card }}>
         <View style={[styles.bottomSheetHeader, isRTL && styles.rowReverse]}>
           <Text

@@ -202,11 +202,31 @@ async function runSimulation() {
   });
 
   const auth = getAuth(app);
+
+  // Credentials come exclusively from admin/.env — never hardcode them here.
+  const adminPassword = env.VITE_MASTER_ADMIN_PASSWORD;
+  const adminEmails = (env.VITE_FIREBASE_ADMIN_EMAILS || '')
+    .split(',')
+    .map((email) => email.trim())
+    .filter(Boolean);
+  if (!adminPassword || adminEmails.length === 0) {
+    throw new Error(
+      "VITE_MASTER_ADMIN_PASSWORD and/or VITE_FIREBASE_ADMIN_EMAILS missing from admin/.env — set them (see admin/.env.example) and re-run."
+    );
+  }
+
   let userCred;
-  try {
-    userCred = await signInWithEmailAndPassword(auth, "admin@sya7a.eg", "adminPassword2026!");
-  } catch (err) {
-    userCred = await signInWithEmailAndPassword(auth, "admin@wasalt.eg", "adminPassword2026!");
+  let lastAuthError;
+  for (const email of adminEmails) {
+    try {
+      userCred = await signInWithEmailAndPassword(auth, email, adminPassword);
+      break;
+    } catch (err) {
+      lastAuthError = err;
+    }
+  }
+  if (!userCred) {
+    throw lastAuthError || new Error("Firebase sign-in failed for every configured admin email.");
   }
 
   const driverUid = userCred.user.uid;

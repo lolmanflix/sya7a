@@ -7,6 +7,7 @@ import {
   PlanPriceInput,
 } from '../services/pricingService';
 import { DollarSign, Save, Lock, CheckCircle2 } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 type PriceMap = Record<string, PlanPriceInput>;
 
@@ -28,6 +29,7 @@ const buildInitialPrices = (overrides: Record<string, { priceMonthly?: number; p
  */
 export const PricingPage: React.FC = () => {
   const { adminSession } = useAdminAuth();
+  const { t } = useTranslation();
   const isSuperAdmin = adminSession?.role === 'SUPER_ADMIN';
 
   const [prices, setPrices] = useState<PriceMap>(() => buildInitialPrices({}));
@@ -70,7 +72,7 @@ export const PricingPage: React.FC = () => {
       setSavedAt(new Date().toLocaleTimeString());
     } catch (err) {
       console.error('[PricingPage] save failed:', err);
-      setError('Could not save prices. Check your connection and try again.');
+      setError(t('pricing.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -83,30 +85,30 @@ export const PricingPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <DollarSign className="w-6 h-6 text-emerald-400" />
-            Pricing Plans
+            {t('pricing.title')}
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Live prices shown on the public website — pricing section, plan selection, and billing.
+            {t('pricing.subtitle')}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {savedAt && (
             <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4" /> Saved at {savedAt}
+              <CheckCircle2 className="w-4 h-4 shrink-0" /> {t('pricing.savedAt', { time: savedAt })}
             </span>
           )}
           <button
             onClick={handleSave}
             disabled={!isSuperAdmin || isSaving || isLoading}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-lg shadow-emerald-600/20 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-lg shadow-emerald-600/20 transition-colors whitespace-nowrap"
           >
             {isSaving ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <Save className="w-4 h-4" />
             )}
-            Save Prices
+            {t('pricing.savePrices')}
           </button>
         </div>
       </div>
@@ -114,7 +116,7 @@ export const PricingPage: React.FC = () => {
       {!isSuperAdmin && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm">
           <Lock className="w-4 h-4 shrink-0" />
-          Read-only — only the master (super) admin can change platform pricing.
+          {t('pricing.readonly')}
         </div>
       )}
 
@@ -138,9 +140,9 @@ export const PricingPage: React.FC = () => {
               key={planId}
               className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-5"
             >
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-white">{plan.name}</h2>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-slate-800 text-slate-400 border border-slate-700">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <h2 className="text-lg font-bold text-white truncate">{plan.name}</h2>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-slate-800 text-slate-400 border border-slate-700 shrink-0">
                   {planId}
                 </span>
               </div>
@@ -148,7 +150,7 @@ export const PricingPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <label className="block">
                   <span className="text-xs font-semibold text-slate-400 block mb-1.5">
-                    Monthly (EGP)
+                    {t('pricing.monthly')}
                   </span>
                   <input
                     type="number"
@@ -162,7 +164,7 @@ export const PricingPage: React.FC = () => {
 
                 <label className="block">
                   <span className="text-xs font-semibold text-slate-400 block mb-1.5">
-                    Annual /mo (EGP)
+                    {t('pricing.annualPerMonth')}
                   </span>
                   <input
                     type="number"
@@ -176,7 +178,7 @@ export const PricingPage: React.FC = () => {
               </div>
 
               <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800 pt-4">
-                <span>Annual discount shown on website</span>
+                <span>{t('pricing.annualDiscount')}</span>
                 <span
                   className={
                     savings > 0
@@ -193,7 +195,7 @@ export const PricingPage: React.FC = () => {
       </div>
 
       {isLoading && (
-        <div className="text-xs text-slate-500 animate-pulse">Loading live prices…</div>
+        <div className="text-xs text-slate-500 animate-pulse">{t('pricing.loading')}</div>
       )}
     </div>
   );

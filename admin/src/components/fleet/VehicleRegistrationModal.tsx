@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { BusRouteDefinition, CompanyRecord } from '../../types';
 import { Bus, Building2, Route, Power } from 'lucide-react';
+import { useTranslation } from '../../i18n/useTranslation';
 import { toast } from 'sonner';
 
 interface VehicleRegistrationModalProps {
@@ -24,6 +25,7 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
   onSaveVehicle,
   vehicleToEdit,
 }) => {
+  const { t } = useTranslation();
   const [companyId, setCompanyId] = useState<string>(
     vehicleToEdit?.companyId || companies[0]?.id || 'cta'
   );
@@ -49,7 +51,7 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
     const cleanLineId = lineId.trim();
 
     if (!cleanLineId) {
-      toast.error('Please select or specify an assigned bus line.');
+      toast.error(t('fleet.selectLineError'));
       return;
     }
 
@@ -72,12 +74,12 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
       await onSaveVehicle(companyId, vehicleRecord);
       toast.success(
         vehicleToEdit
-          ? `Vehicle ${cleanBusId} updated successfully`
-          : `Vehicle ${cleanBusId} registered to fleet`
+          ? t('fleet.vehicleUpdated', { id: cleanBusId })
+          : t('fleet.vehicleRegistered', { id: cleanBusId })
       );
       onClose();
     } catch {
-      toast.error('Failed to register vehicle.');
+      toast.error(t('fleet.registerError'));
     } finally {
       setSaving(false);
     }
@@ -87,8 +89,8 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={vehicleToEdit ? 'Edit Fleet Vehicle' : 'Register New Fleet Vehicle'}
-      subtitle="Assign vehicle ID, operating company, route line, and initial road readiness."
+      title={vehicleToEdit ? t('fleet.editVehicleModal') : t('fleet.registerVehicleModal')}
+      subtitle={t('fleet.vehicleModalSubtitle')}
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
@@ -96,7 +98,7 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
         <div className="space-y-1.5">
           <label className="text-slate-300 font-medium flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-brand-400" />
-            Operating Carrier
+            {t('fleet.operatingCarrier')}
           </label>
           <select
             value={companyId}
@@ -121,14 +123,14 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
         <div className="space-y-1.5">
           <label className="text-slate-300 font-medium flex items-center gap-1.5">
             <Bus className="w-3.5 h-3.5 text-emerald-400" />
-            Vehicle Unit / Plate ID
+            {t('fleet.vehicleUnitLabel')}
           </label>
           <input
             type="text"
             value={busId}
             onChange={(e) => setBusId(e.target.value)}
             disabled={!!vehicleToEdit}
-            placeholder="e.g. BUS-102, CTA-44, or leave empty to auto-generate"
+            placeholder={t('fleet.vehicleUnitPlaceholder')}
             className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 disabled:opacity-60"
           />
         </div>
@@ -137,7 +139,7 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
         <div className="space-y-1.5">
           <label className="text-slate-300 font-medium flex items-center gap-1.5">
             <Route className="w-3.5 h-3.5 text-blue-400" />
-            Assigned Bus Line
+            {t('fleet.assignedLine')}
           </label>
           {availableLines.length > 0 ? (
             <select
@@ -145,10 +147,10 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
               onChange={(e) => setLineId(e.target.value)}
               className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500"
             >
-              <option value="" disabled>-- Select Carrier Line --</option>
+              <option value="" disabled>{t('fleet.selectCarrierLine')}</option>
               {availableLines.map((line) => (
                 <option key={line} value={line} className="bg-slate-900">
-                  Line {line}
+                  {t('fleet.lineOption', { line })}
                 </option>
               ))}
             </select>
@@ -157,7 +159,7 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
               type="text"
               value={lineId}
               onChange={(e) => setLineId(e.target.value)}
-              placeholder="e.g. Line 105, M554"
+              placeholder={t('fleet.linePlaceholder')}
               className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
             />
           )}
@@ -168,7 +170,7 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
           <label className="text-slate-300 font-medium flex items-center justify-between cursor-pointer">
             <span className="flex items-center gap-2">
               <Power className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
-              Operational Readiness
+              {t('fleet.operationalReadiness')}
             </span>
             <button
               type="button"
@@ -179,11 +181,11 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
                   : 'bg-slate-800 text-slate-400 border border-slate-700'
               }`}
             >
-              {isActive ? '● Active on Road' : '○ Idle in Depot'}
+              {isActive ? t('fleet.activeOnRoadPill') : t('fleet.idleInDepotPill')}
             </button>
           </label>
           <p className="text-[11px] text-slate-500 mt-1">
-            Active vehicles appear on the dispatcher live map and are assignable for driver broadcasts.
+            {t('fleet.activeVehiclesHint')}
           </p>
         </div>
 
@@ -194,14 +196,14 @@ export const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> =
             onClick={onClose}
             className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
             disabled={saving}
             className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-brand-600/20 disabled:opacity-50"
           >
-            {saving ? 'Saving...' : vehicleToEdit ? 'Update Vehicle' : 'Register Vehicle'}
+            {saving ? t('common.saving') : vehicleToEdit ? t('fleet.updateVehicle') : t('fleet.registerVehicle')}
           </button>
         </div>
       </form>

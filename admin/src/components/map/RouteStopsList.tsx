@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { BusStop } from '../../types';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface RouteStopsListProps {
   stops: BusStop[];
@@ -16,13 +17,14 @@ export const RouteStopsList: React.FC<RouteStopsListProps> = ({
   onUpdateName,
   onRemoveStop,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
       <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1">
-        <span>Route Stops Sequence ({stops.length}):</span>
-        <span className="text-slate-500 font-normal">Click map to append intermediate stops</span>
+        <span>{t('map.routeStopsSequence', { count: stops.length })}</span>
+        <span className="text-slate-500 font-normal">{t('map.clickToAppend')}</span>
       </div>
-      <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+      <div className="space-y-1.5 max-h-36 overflow-y-auto pe-1">
         {stops.map((stop, idx) => {
           const isFirst = idx === 0;
           const isLast = idx === stops.length - 1;
@@ -53,7 +55,7 @@ export const RouteStopsList: React.FC<RouteStopsListProps> = ({
                   type="button"
                   onClick={() => onRemoveStop(idx)}
                   className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
-                  title="Remove stop"
+                  title={t('map.removeStop')}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

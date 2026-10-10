@@ -1,4 +1,5 @@
-import { attachMapBaseTheme } from './mapLayerManager';
+import { attachMapBaseStyle } from './mapLayerManager';
+import { MapThemeSelector } from './MapThemeSelector';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import { Route, CheckCircle2 } from 'lucide-react';
@@ -9,6 +10,7 @@ import { EgyptianLandmark } from '../../constants/landmarks';
 import { RouteStopsList } from './RouteStopsList';
 import { EgyptianLandmarksPicker } from './EgyptianLandmarksPicker';
 import { RouteMapToolbar } from './RouteMapToolbar';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface RoutePickerMapProps {
   initialStops?: BusStop[];
@@ -36,6 +38,7 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
   onPointsSelected,
   onStopsChange,
 }) => {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
@@ -90,8 +93,8 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
       zoom: 13,
     });
 
-    // 100% Offline vector base map (River Nile, coastlines, and Egyptian road corridors)
-    const cleanupVectorBaseMap = attachMapBaseTheme(map, 'dark');
+    // OpenFreeMap vector base layer (MapLibre GL; light/dark via corner toggle)
+    const cleanupVectorBaseMap = attachMapBaseStyle(map);
 
     routeGlowRef.current = L.polyline([], {
       color: '#3B82F6',
@@ -127,7 +130,11 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     return () => {
       clearTimeout(timer);
       cleanupVectorBaseMap();
-      map.remove();
+      try {
+        map.remove();
+      } catch (err) {
+        console.warn('[RoutePickerMap] Map teardown warning:', err);
+      }
       mapRef.current = null;
     };
   }, []);
@@ -166,7 +173,7 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
       });
 
       const m = L.marker([stop.lat, stop.lng], { icon });
-      m.bindPopup(`<div class="text-xs text-slate-900 font-medium"><strong>Stop ${idx + 1}:</strong><br>${stop.name}</div>`);
+      m.bindPopup(`<div class="text-xs text-slate-900 font-medium"><strong>${t('map.stopPopup', { n: idx + 1 })}</strong><br>${stop.name}</div>`);
       markersLayer.addLayer(m);
     });
 
@@ -206,7 +213,7 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [stops]);
+  }, [stops, t]);
 
   /**
    * Asynchronously resolves the nearest named landmark via Overpass/Nominatim and updates stop name.
@@ -348,15 +355,18 @@ export const RoutePickerMap: React.FC<RoutePickerMapProps> = ({
       />
 
       {/* Interactive Map Box */}
-      <div className="h-60 rounded-xl overflow-hidden border border-slate-700/80 shadow-inner relative">
+      <div className="h-60 sm:h-72 rounded-xl overflow-hidden border border-slate-700/80 shadow-inner relative">
         <div ref={containerRef} className="w-full h-full" />
+        <div className="absolute bottom-2 right-2 z-[400] shadow-lg">
+          <MapThemeSelector />
+        </div>
         <div className="absolute top-2 right-2 z-[400] px-2 py-0.5 rounded-md bg-slate-900/90 backdrop-blur-sm border border-slate-700 text-[10px] font-medium flex items-center gap-1 shadow-lg">
           <Route className="w-3 h-3 text-blue-400" />
           {isCalculatingRoute ? (
-            <span className="text-amber-300 animate-pulse">Calculating road route...</span>
+            <span className="text-amber-300 animate-pulse">{t('map.calculatingRoute')}</span>
           ) : (
             <span className="text-emerald-400 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Multi-stop Road Route
+              <CheckCircle2 className="w-3 h-3" /> {t('map.multiStopRoute')}
             </span>
           )}
         </div>

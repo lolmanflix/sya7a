@@ -53,7 +53,15 @@ export const DriverRouteTimeline: React.FC<DriverRouteTimelineProps> = ({
       {/* ── CARD HEADER ── */}
       <View style={styles.configCardHead}>
         <View style={styles.configTitleRow}>
-          <View style={[styles.configIcon, { backgroundColor: branding.accentColor || "#EFF6FF" }]}>
+          <View
+            style={[
+              styles.configIcon,
+              {
+                backgroundColor: branding.accentColor || "#EFF6FF",
+                borderColor: `${branding.primaryColor || "#2563EB"}4D`,
+              },
+            ]}
+          >
             <Ionicons name="git-branch" size={16} color={branding.primaryColor || "#2563EB"} />
           </View>
           <View>
@@ -86,7 +94,11 @@ export const DriverRouteTimeline: React.FC<DriverRouteTimelineProps> = ({
                   isDark && { backgroundColor: "#1E293B", borderColor: "#334155" },
                   isSel && [
                     styles.busChipSel,
-                    { backgroundColor: branding.primaryColor, borderColor: branding.primaryColor },
+                    {
+                      backgroundColor: branding.primaryColor,
+                      borderColor: branding.primaryColor,
+                      shadowColor: branding.primaryColor,
+                    },
                   ],
                 ]}
                 onPress={() => onSelectLine(line)}
@@ -125,6 +137,10 @@ export const DriverRouteTimeline: React.FC<DriverRouteTimelineProps> = ({
         <View
           style={[
             styles.selLineBanner,
+            !isDark && {
+              backgroundColor: branding.accentColor || "#EFF6FF",
+              borderColor: `${branding.primaryColor || "#2563EB"}4D`,
+            },
             isDark && { backgroundColor: "#1E293B", borderColor: "#334155" },
           ]}
         >
@@ -145,13 +161,21 @@ export const DriverRouteTimeline: React.FC<DriverRouteTimelineProps> = ({
             <View
               style={[
                 styles.stopsCountBadge,
-                { backgroundColor: isDark ? "#374151" : "#DBEAFE" },
+                {
+                  backgroundColor: isDark
+                    ? "#374151"
+                    : branding.accentColor || "#DBEAFE",
+                },
               ]}
             >
               <Text
                 style={[
                   styles.stopsCountText,
-                  { color: isDark ? "#93C5FD" : "#1D4ED8" },
+                  {
+                    color: isDark
+                      ? "#93C5FD"
+                      : branding.primaryColor || "#1D4ED8",
+                  },
                 ]}
               >
                 {stops.length} {vocabulary.stopLabel}
@@ -177,7 +201,8 @@ export const DriverRouteTimeline: React.FC<DriverRouteTimelineProps> = ({
             </View>
             <View style={styles.itineraryInfo}>
               <Text style={[styles.itineraryRole, { color: "#10B981" }]}>
-                {vocabulary.startPointLabel} (Point A)
+                {vocabulary.startPointLabel}
+                {isRTL ? " (أ)" : " (Point A)"}
               </Text>
               <Text
                 style={[
@@ -229,7 +254,8 @@ export const DriverRouteTimeline: React.FC<DriverRouteTimelineProps> = ({
             </View>
             <View style={styles.itineraryInfo}>
               <Text style={[styles.itineraryRole, { color: "#EF4444" }]}>
-                {vocabulary.terminalLabel} (Point B)
+                {vocabulary.terminalLabel}
+                {isRTL ? " (ب)" : " (Point B)"}
               </Text>
               <Text
                 style={[

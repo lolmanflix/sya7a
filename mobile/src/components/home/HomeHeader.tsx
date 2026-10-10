@@ -9,7 +9,8 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nContext';
-import { getTenantBranding, getTenantVocabulary, ACTIVE_TENANT } from '../../config/tenantConfig';
+import { getTenantBranding, getTenantVocabulary } from '../../config/tenantConfig';
+import { useTenantArchetype } from '../../hooks/useTenantArchetype';
 import { styles } from '../../styles/homeStyles';
 
 interface HomeHeaderProps {
@@ -29,8 +30,9 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 }) => {
   const { theme } = useTheme();
   const { isRTL } = useI18n();
-  const branding = getTenantBranding(ACTIVE_TENANT);
-  const vocabulary = getTenantVocabulary(isRTL, ACTIVE_TENANT);
+  const archetype = useTenantArchetype();
+  const branding = getTenantBranding(archetype);
+  const vocabulary = getTenantVocabulary(isRTL, archetype);
 
   return (
     <View

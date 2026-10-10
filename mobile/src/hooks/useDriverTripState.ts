@@ -64,6 +64,10 @@ export function useDriverTripState({
   const [driverLocation, setDriverLocation] = useState<DriverLocationPoint | null>(null);
 
   const locationSubRef = useRef<Location.LocationSubscription | null>(null);
+  /** RTDB path captured when the trip starts so stop() never depends on live props. */
+  const tripPathRef = useRef<string | null>(null);
+  /** Trip generation counter — bumped on start/stop to invalidate stale GPS writers. */
+  const tripGenRef = useRef(0);
 
   // Initial Point A capture on screen mount
   useEffect(() => {
@@ -162,6 +166,9 @@ export function useDriverTripState({
       }
 
       const safeLineKey = sanitizePathKey(selectedBusLine!);
+      const driverPath = `busLocations/${safeLineKey}/${activeUser.uid}`;
+      tripPathRef.current = driverPath;
+      const tripGen = ++tripGenRef.current;
       const startPointA = driverLocation?.name || (isRTL ? "موقع السائق الحالي" : "Driver's Current Location");
       const routeEnd = activeRoute?.endPoint || selectedBusLine!;
       const routeEndLat = activeRoute?.endLat ?? null;
@@ -196,6 +203,8 @@ export function useDriverTripState({
           distanceInterval: 1,
         },
         async (position) => {
+          // Stale-writer guard: ignore ticks that belong to a stopped/restarted trip.
+          if (tripGenRef.current !== tripGen) return;
           try {
             const now = Date.now();
             const dt = (now - prevTime) / 1000;
@@ -213,10 +222,7 @@ export function useDriverTripState({
             smoothVel = smoothVel * 0.4 + instVel * 0.6;
             setCurrentSpeed(Math.round(smoothVel));
 
-            const currentUid = auth.currentUser?.uid || user?.uid;
-            if (!currentUid || !selectedBusLine) return;
-
-            await set(ref(database, `busLocations/${safeLineKey}/${currentUid}`), {
+            await set(ref(database, driverPath), {
               latitude: position.coords.latitude,
               longitude: position.coords.longitude,
               lastUpdated: new Date().toISOString(),
@@ -267,15 +273,27 @@ export function useDriverTripState({
           text: isRTL ? "إنهاء الرحلة" : "End Trip",
           style: "destructive",
           onPress: async () => {
+            // Invalidate any in-flight telemetry writes from the current trip.
+            tripGenRef.current += 1;
+            const activePath = tripPathRef.current;
             if (locationSubRef.current) {
               locationSubRef.current.remove();
               locationSubRef.current = null;
             }
-            if (user && selectedBusLine) {
-              const safeLineKey = sanitizePathKey(selectedBusLine);
-            await remove(ref(database, `busLocations/${safeLineKey}/${user.uid}`)).catch((remErr) => {
-              console.warn("[DriverGPS] RTDB cleanup warning on trip end:", remErr?.message || remErr);
-            });
+            if (activePath) {
+              await remove(ref(database, activePath)).catch((remErr) => {
+                console.warn("[DriverGPS] RTDB cleanup warning on trip end:", remErr?.message || remErr);
+              });
+              // Defensive second pass: deletes any node resurrected by a write that
+              // raced the removal. Skipped automatically if a new trip has started.
+              const stopGen = tripGenRef.current;
+              setTimeout(() => {
+                if (tripGenRef.current === stopGen && tripPathRef.current === activePath) {
+                  remove(ref(database, activePath)).catch((remErr) => {
+                    console.warn("[DriverGPS] RTDB delayed cleanup warning:", remErr?.message || remErr);
+                  });
+                }
+              }, 2500);
             }
             setSharing(false);
             setCurrentSpeed(0);

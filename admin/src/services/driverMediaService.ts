@@ -1,4 +1,4 @@
-import { ref, set, onValue, off, remove } from 'firebase/database';
+import { ref, set, update, onValue, remove } from 'firebase/database';
 import { database } from '../config/firebase';
 import { DriverMediaRequest, DriverMediaStream, MediaRequestKind } from '../types';
 
@@ -50,6 +50,7 @@ export function subscribeToDriverMediaRequest(
         requestedBy: data.requestedBy || 'admin',
         respondedAt: data.respondedAt,
         driverUid,
+        error: data.error,
       });
     },
     (err) => {
@@ -58,7 +59,7 @@ export function subscribeToDriverMediaRequest(
     }
   );
 
-  return () => off(requestRef, 'value', unsubscribe);
+  return () => unsubscribe();
 }
 
 /**
@@ -86,7 +87,7 @@ export function subscribeToDriverMediaStream(
     }
   );
 
-  return () => off(streamRef, 'value', unsubscribe);
+  return () => unsubscribe();
 }
 
 /**
@@ -104,13 +105,14 @@ export async function closeDriverMediaRequest(driverUid: string): Promise<void> 
  * Diagnostic/Simulation Helper:
  * Simulates the mobile driver tapping 'Accept' or 'Decline' in the SafeTrip prompt.
  * Enables live stream interface verification in offline testing environments.
+ * Uses update() so kind/requestedAt/requestedBy are preserved (set() would wipe them).
  */
 export async function simulateDriverResponse(driverUid: string, approved: boolean): Promise<void> {
   if (!driverUid) return;
   const requestRef = ref(database, `driverControls/${driverUid}/mediaRequest`);
-  const payload: Partial<DriverMediaRequest> = {
+  const payload = {
     status: approved ? 'accepted' : 'declined',
     respondedAt: new Date().toISOString(),
   };
-  await set(requestRef, payload);
+  await update(requestRef, payload);
 }

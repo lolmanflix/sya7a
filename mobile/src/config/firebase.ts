@@ -4,16 +4,41 @@ import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/aut
 import { getDatabase } from 'firebase/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Firebase configuration
+/**
+ * Firebase configuration — injected exclusively via EXPO_PUBLIC_* env vars from
+ * `mobile/.env` (gitignored; template: `mobile/.env.example`). Metro inlines these
+ * at bundle time. Hardcoding credentials here is prohibited (dev_rules #3).
+ */
+const ENV = process.env as Record<string, string | undefined>;
+
+const REQUIRED_ENV_KEYS = [
+  'EXPO_PUBLIC_FIREBASE_API_KEY',
+  'EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN',
+  'EXPO_PUBLIC_FIREBASE_DATABASE_URL',
+  'EXPO_PUBLIC_FIREBASE_PROJECT_ID',
+  'EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET',
+  'EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
+  'EXPO_PUBLIC_FIREBASE_APP_ID',
+] as const;
+
+/** Fail fast with an actionable message instead of booting a broken Firebase app. */
+const missingKeys = REQUIRED_ENV_KEYS.filter((key) => !ENV[key]);
+if (missingKeys.length > 0) {
+  throw new Error(
+    `Firebase configuration missing: ${missingKeys.join(', ')}. ` +
+      'Create mobile/.env from mobile/.env.example, fill in the values, then restart Metro with `npx expo start -c`.'
+  );
+}
+
 const firebaseConfig = {
-  apiKey: "AIzaSyChUygjS8ysqYzCk6VjoGMa1YdR5C4L77s",
-  authDomain: "tracking-72393.firebaseapp.com",
-  databaseURL: "https://tracking-72393-default-rtdb.firebaseio.com",
-  projectId: "tracking-72393",
-  storageBucket: "tracking-72393.firebasestorage.app",
-  messagingSenderId: "701536417094",
-  appId: "1:701536417094:web:743f96fac5e92dd46da147",
-  measurementId: "G-EJQNZRSQLS"
+  apiKey: ENV.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: ENV.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL: ENV.EXPO_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId: ENV.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: ENV.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: ENV.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: ENV.EXPO_PUBLIC_FIREBASE_APP_ID,
+  measurementId: ENV.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase

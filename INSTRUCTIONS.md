@@ -68,10 +68,10 @@ The login portal features a hardened **Two-Factor Authentication (2FA)** gate po
 | Field Name | What to Enter | Description |
 | :--- | :--- | :--- |
 | **Login Gateway Tab** | Select **Master Admin (2FA)** | Must use the shield tab on the left of the login card. |
-| **Master Admin Username** | `masteradmin` | Primary administrative username (case-insensitive). |
-| **Master Admin Password** | `adminPassword2026!` | Central administration passphrase. |
+| **Master Admin Username** | Your `VITE_MASTER_ADMIN_USERNAME` | From `admin/.env` (no default is bundled; case-insensitive). |
+| **Master Admin Password** | Your `VITE_MASTER_ADMIN_PASSWORD` | From `admin/.env` (no default is bundled). |
 | **6-Digit Authenticator OTP** | `XXXXXX` (e.g. `849201`) | Dynamic 6-digit code from your phone's Authenticator app. |
-| **Stay logged in on this device** | `[✓]` (Checked) or `[ ]` | **Checked:** Persists session in `localStorage` across restarts.<br>**Unchecked:** Stores session in `sessionStorage` (purged upon closing tab). |
+| **Session persistence** | — | Sessions persist until you **sign out manually**. Use the Navbar account chip to switch instantly between added accounts or choose **Add another account**. |
 
 ---
 
@@ -84,7 +84,7 @@ You can use **Google Authenticator**, **Microsoft Authenticator**, **Authy**, or
 3. Choose **Enter a setup key** (or **Manual entry**).
 4. Fill in the three fields:
    - **Account Name:** `Wasalt Master Admin`
-   - **Your Key / Secret:** `WASALTADMINSEC2026`
+   - **Your Key / Secret:** the value of `VITE_MASTER_ADMIN_TOTP_SECRET` in `admin/.env` (the seed is intentionally never displayed in the UI — docs/env only)
    - **Key Type:** `Time-based` (or `TOTP`, 30 seconds interval)
 5. Tap **Add** / **Save**.
 6. Your app will now display a 6-digit passcode that refreshes every 30 seconds.

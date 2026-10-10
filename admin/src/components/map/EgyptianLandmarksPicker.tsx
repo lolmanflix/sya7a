@@ -1,6 +1,7 @@
 import React from 'react';
 import { Landmark } from 'lucide-react';
 import { EgyptianLandmark, OFFLINE_EGYPTIAN_LANDMARKS } from '../../constants/landmarks';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface EgyptianLandmarksPickerProps {
   onSelectLandmark: (landmark: EgyptianLandmark) => void;
@@ -12,13 +13,14 @@ interface EgyptianLandmarksPickerProps {
 export const EgyptianLandmarksPicker: React.FC<EgyptianLandmarksPickerProps> = ({
   onSelectLandmark,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1">
       <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
         <Landmark className="w-3.5 h-3.5 text-brand-400" />
-        Click to Add Egyptian Transit Station Preset:
+        {t('map.landmarksPickerLabel')}
       </span>
-      <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pr-1">
+      <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pe-1">
         {OFFLINE_EGYPTIAN_LANDMARKS.map((lm) => (
           <button
             key={lm.name}

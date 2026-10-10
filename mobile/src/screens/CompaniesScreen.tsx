@@ -109,8 +109,8 @@ export default function CompaniesScreen() {
           {item.nameAr && (
             <Text style={[styles.cardSubtitle, { color: theme.colors.textSecondary }]}>{item.nameAr}</Text>
           )}
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>
+          <View style={[styles.badge, { backgroundColor: `${theme.colors.primary}15` }]}>
+            <Text style={[styles.badgeText, { color: theme.colors.primary }]}>
               {item.busLines.length} {item.busLines.length === 1 ? 'line' : 'lines'}
             </Text>
           </View>
@@ -265,13 +265,11 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#007AFF15',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   badgeText: {
-    color: '#007AFF',
     fontSize: 12,
     fontWeight: '600',
   },

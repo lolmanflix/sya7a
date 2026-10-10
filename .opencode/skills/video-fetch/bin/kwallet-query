@@ -1,0 +1,29 @@
+#!/bin/sh
+# ============================================================================
+# kwallet-query bridge — video-fetch skill
+# ============================================================================
+# Problem: this session runs inside the VS Code Flatpak sandbox, which does
+# not mount the host's /usr, so yt-dlp cannot see the host's
+# /usr/bin/kwallet-query. Brave encrypts its cookie key inside KWallet, and
+# yt-dlp needs that helper to decrypt them.
+#
+# Resolution: run the host binary directly when it is visible; otherwise
+# forward the exact argv/exit-code/stdout through flatpak-spawn to the host,
+# where KWallet runs and the GUI unlock prompt appears normally.
+#
+# Contract honoured (yt-dlp/cookies.py):
+#   kwallet-query --read-password "<browser> Safe Storage" \
+#                 --folder "<browser> Keys" <networkWallet>   -> stdout: key
+# ============================================================================
+set -u
+
+if [ -x /usr/bin/kwallet-query ]; then
+    exec /usr/bin/kwallet-query "$@"
+fi
+
+if command -v flatpak-spawn >/dev/null 2>&1; then
+    exec flatpak-spawn --host /usr/bin/kwallet-query "$@"
+fi
+
+echo "kwallet-query unavailable: host binary not visible and no flatpak-spawn bridge" >&2
+exit 127

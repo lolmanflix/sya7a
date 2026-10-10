@@ -4,7 +4,7 @@
  * Supports light/dark mode and white-label tenant accents.
  */
 
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   container: {
@@ -29,6 +29,12 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
+    overflow: "hidden",
+  },
+  logoImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
   },
   title: {
     fontSize: 26,
@@ -55,7 +61,7 @@ export const styles = StyleSheet.create({
   },
   roleTab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 14,
     alignItems: "center",
     borderRadius: 10,
   },
@@ -73,7 +79,6 @@ export const styles = StyleSheet.create({
     color: "#8E8E93",
   },
   roleTabTextActive: {
-    color: "#2563EB",
     fontWeight: "700",
   },
   form: {
@@ -89,7 +94,6 @@ export const styles = StyleSheet.create({
     marginTop: -8,
   },
   forgotPasswordText: {
-    color: "#2563EB",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -102,7 +106,6 @@ export const styles = StyleSheet.create({
     fontSize: 15,
   },
   toggleTextSecondary: {
-    color: "#2563EB",
     fontWeight: "700",
   },
   divider: {
@@ -174,7 +177,6 @@ export const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: Platform.OS === "ios" ? 40 : 24,
     maxHeight: "75%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
@@ -210,9 +212,9 @@ export const styles = StyleSheet.create({
     color: "#1C1C1E",
   },
   companyModalCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#F2F2F7",
     alignItems: "center",
     justifyContent: "center",
@@ -232,10 +234,6 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E5EA",
   },
-  companyOptionRowSelected: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#2563EB",
-  },
   companyOptionLeft: {
     flexDirection: "row",
     alignItems: "center",
@@ -250,9 +248,6 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  companyOptionBulletSelected: {
-    backgroundColor: "#2563EB",
-  },
   companyOptionText: {
     fontSize: 15,
     fontWeight: "600",
@@ -260,7 +255,6 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   companyOptionTextSelected: {
-    color: "#2563EB",
     fontWeight: "700",
   },
   modalOverlay: {

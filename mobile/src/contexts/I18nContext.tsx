@@ -132,6 +132,13 @@ const MESSAGES: Record<Language, Record<string, string>> = {
     logoutMenu: 'Logout',
     logoutConfirm: 'Are you sure you want to logout?',
     planSubscribedSuccess: 'Plan updated',
+    // Multi-account keys
+    accountsSection: 'Accounts',
+    addAccount: 'Add account',
+    addAccountConfirm:
+      'Sign in with a new account? Your current account stays saved so you can switch back anytime.',
+    signedInAccounts: 'Signed-in accounts',
+    switchAccountFailed: 'Could not switch account',
   },
   ar: {
     appTitle: 'تتبع الحافلات',
@@ -250,6 +257,13 @@ const MESSAGES: Record<Language, Record<string, string>> = {
     logoutMenu: 'تسجيل الخروج',
     logoutConfirm: 'هل أنت متأكد من تسجيل الخروج؟',
     planSubscribedSuccess: 'تم تفعيل الاشتراك بنجاح',
+    // Multi-account keys
+    accountsSection: 'الحسابات',
+    addAccount: 'إضافة حساب',
+    addAccountConfirm:
+      'تسجيل الدخول بحساب جديد؟ سيظل حسابك الحالي محفوظاً ويمكنك الرجوع إليه في أي وقت.',
+    signedInAccounts: 'حسابات تم تسجيل دخولها',
+    switchAccountFailed: 'تعذّر تبديل الحساب',
   },
 };
 

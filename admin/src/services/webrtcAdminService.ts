@@ -4,7 +4,7 @@
  * delivering 30 FPS hardware-accelerated video and live Opus audio.
  */
 
-import { ref, set, onValue, off, remove } from 'firebase/database';
+import { ref, set, onValue, remove } from 'firebase/database';
 import { database } from '../config/firebase';
 
 export interface WebRtcCallStats {
@@ -87,14 +87,16 @@ export function subscribeToWebRtcStream(
     }
   };
 
-  // 4. Listen for Driver WebRTC Offer
-  let offerHandled = false;
+  // 4. Listen for Driver WebRTC Offer (re-negotiates when a fresh offer replaces a stale one)
+  let handledOfferCreatedAt = 0;
   const unsubOffer = onValue(offerRef, async (snapshot) => {
     const offer = snapshot.val();
-    if (!offer || !offer.sdp || offerHandled || !pc || isCleanedUp) return;
+    if (!offer || !offer.sdp || !pc || isCleanedUp) return;
+    const offerCreatedAt = offer.createdAt || 0;
+    if (offerCreatedAt && offerCreatedAt === handledOfferCreatedAt) return;
 
     try {
-      offerHandled = true;
+      handledOfferCreatedAt = offerCreatedAt || Date.now();
       onStatsUpdate({ status: 'negotiating', fps: 0, bitrateKbps: 0 });
 
       await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: offer.sdp }));
@@ -191,10 +193,9 @@ export function subscribeToWebRtcStream(
       statsTimer = null;
     }
 
-    off(offerRef, 'value', unsubOffer);
-    off(driverCandidatesRef, 'value', unsubDriverCandidates);
+    unsubOffer();
+    unsubDriverCandidates();
     processedDriverCandidates.clear();
-
     if (pc) {
       pc.close();
       pc = null;

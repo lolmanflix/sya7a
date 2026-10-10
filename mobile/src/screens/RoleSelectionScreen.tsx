@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useUserType } from '../contexts/UserTypeContext';
@@ -73,43 +74,58 @@ export default function RoleSelectionScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}> 
-      <Animated.View entering={FadeInUp.duration(600).springify()} style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Ionicons name="bus" size={48} color={theme.colors.primary} />
+    <SafeAreaView
+      edges={['top', 'bottom']}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View entering={FadeInUp.duration(600).springify()} style={styles.header}>
+          <View style={[styles.logoContainer, { backgroundColor: `${theme.colors.primary}15` }]}>
+            <Image
+              source={require("../../assets/logo.png")}
+              style={styles.logoImage}
+              resizeMode="cover"
+            />
+          </View>
+          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{t('appTitle', 'BUS TRACKER')}</Text>
+          <Text style={[styles.subtitle, { color: theme.colors.textSecondary || '#8E8E93' }]}>
+            Choose your role to continue
+          </Text>
+        </Animated.View>
+
+        <View style={styles.cardsContainer}>
+          <RoleCard 
+            title="I'm a Passenger" 
+            iconName="person" 
+            onPress={() => choose('passenger')} 
+            delay={200}
+            theme={theme}
+          />
+          <RoleCard 
+            title="I'm a Driver" 
+            iconName="car" 
+            onPress={() => choose('driver')} 
+            delay={350}
+            theme={theme}
+          />
         </View>
-        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{t('appTitle', 'BUS TRACKER')}</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary || '#8E8E93' }]}>
-          Choose your role to continue
-        </Text>
-      </Animated.View>
-
-      <View style={styles.cardsContainer}>
-        <RoleCard 
-          title="I'm a Passenger" 
-          iconName="person" 
-          onPress={() => choose('passenger')} 
-          delay={200}
-          theme={theme}
-        />
-        <RoleCard 
-          title="I'm a Driver" 
-          iconName="car" 
-          onPress={() => choose('driver')} 
-          delay={350}
-          theme={theme}
-        />
-
-      </View>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 24,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
   header: {
     alignItems: 'center',
@@ -119,10 +135,15 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#007AFF15', // fallback
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
   },
   title: {
     fontSize: 28,

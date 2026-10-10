@@ -1,203 +1,333 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
-import { ref, get } from 'firebase/database';
-import { auth, database } from '../config/firebase';
-import { AdminSession, AdminRole } from '../types';
+import { auth } from '../config/firebase';
+import { AdminSession } from '../types';
 import { verifyTOTP } from '../utils/totp';
+import {
+  masterUsername,
+  masterPassword,
+  masterTotpSecret,
+  masterFirebaseEmails,
+  getMasterConfigError,
+} from '../config/masterAdmin';
+import { resolveRoleFromRTDB, establishFirebaseIdentity } from '../utils/authResolvers';
+import {
+  AccountRecord,
+  AccountInput,
+  loadAccounts,
+  getActiveId,
+  setActiveId,
+  upsertAccount,
+  removeAccount as removeAccountFromStore,
+  migrateLegacySession,
+  pickMostRecent,
+  toAdminSession,
+} from '../utils/accountStore';
 
 interface AuthContextType {
   user: User | null;
   adminSession: AdminSession | null;
   loading: boolean;
-  loginWithFirebase: (email: string, pass: string, rememberMe: boolean) => Promise<void>;
-  loginMasterAdmin: (username: string, pass: string, otpToken: string, rememberMe: boolean) => Promise<void>;
+  accounts: AccountRecord[];
+  activeAccountId: string | null;
+  addingAccount: boolean;
+  loginWithFirebase: (email: string, pass: string) => Promise<void>;
+  loginMasterAdmin: (username: string, pass: string, otpToken: string) => Promise<void>;
   logout: () => Promise<void>;
+  switchAccount: (id: string) => Promise<void>;
+  removeAccount: (id: string) => Promise<void>;
+  beginAddAccount: () => void;
+  cancelAddAccount: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const MASTER_USERNAME = import.meta.env.VITE_MASTER_ADMIN_USERNAME || 'masteradmin';
-const MASTER_PASSWORD = import.meta.env.VITE_MASTER_ADMIN_PASSWORD || 'adminPassword2026!';
-const MASTER_TOTP_SECRET = import.meta.env.VITE_MASTER_ADMIN_TOTP_SECRET || 'WASALTADMINSEC2026';
 const IS_PUBLIC_DEMO = new URLSearchParams(window.location.search).has('demo');
 
 /**
- * Resolves an admin's role and company from RTDB /admins/{uid}/ profile.
- * Falls back to email-based heuristics only for legacy or master admin accounts.
- */
-async function resolveRoleFromRTDB(
-  uid: string,
-  email: string
-): Promise<{ role: AdminRole; companyId?: string }> {
-  try {
-    const adminSnap = await get(ref(database, `admins/${uid}`));
-    if (adminSnap.exists()) {
-      const adminData = adminSnap.val();
-      const companyIds: string[] = adminData.companyIds || [];
-
-      if (companyIds.length > 0) {
-        // Check if this admin owns any company — make them COMPANY_ADMIN
-        const firstCompanyId = companyIds[0];
-        const compSnap = await get(ref(database, `companies/${firstCompanyId}`));
-        if (compSnap.exists()) {
-          const comp = compSnap.val();
-          // Owner gets COMPANY_ADMIN; master email gets SUPER_ADMIN
-          const isSuperAdmin =
-            email.includes('kareem') ||
-            email.startsWith('admin@wasalt') ||
-            email.startsWith('admin@sya7a') ||
-            email.includes('superadmin') ||
-            email.includes('boss');
-          return {
-            role: isSuperAdmin ? 'SUPER_ADMIN' : 'COMPANY_ADMIN',
-            companyId: firstCompanyId,
-          };
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[AuthContext] RTDB role resolution failed, using email fallback:', err);
-  }
-
-  // Fallback for master admin or legacy email patterns
-  const clean = email.toLowerCase().trim();
-  if (
-    clean.includes('boss') ||
-    clean.includes('superadmin') ||
-    clean.startsWith('admin@wasalt') ||
-    clean.startsWith('admin@sya7a') ||
-    clean.includes('kareem')
-  ) {
-    return { role: 'SUPER_ADMIN' };
-  }
-
-  return { role: 'SUPER_ADMIN' };
-}
-
-/**
- * Provides authentication state and user session context to child components.
+ * Provides authentication state, multi-account registry, and session context.
+ * Accounts persist in localStorage until manually removed via logout.
  */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accounts, setAccounts] = useState<AccountRecord[]>([]);
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+  const [addingAccount, setAddingAccount] = useState(false);
+  const activeIdRef = useRef<string | null>(null);
+  const switchingRef = useRef(false);
+  /** True while a programmatic login (master or dispatcher) is completing —
+   * suppresses the onAuthStateChanged self-adoption path so the service
+   * identity is never registered as a phantom dispatcher account. */
+  const suppressAdoptRef = useRef(false);
 
-  // Helper to persist session
-  const persistSession = (session: AdminSession, rememberMe: boolean) => {
-    const key = 'wasalt_admin_session';
-    if (rememberMe) {
-      localStorage.setItem(key, JSON.stringify(session));
-      sessionStorage.removeItem(key);
-    } else {
-      sessionStorage.setItem(key, JSON.stringify(session));
-      localStorage.removeItem(key);
+  const syncAccounts = () => setAccounts(loadAccounts());
+
+  /**
+   * Commits an account as the active session (registry id + AdminSession).
+   * For master accounts with no Firebase identity yet, re-establishes the
+   * service identity in the background (never blocks).
+   */
+  const commitActive = (record: AccountRecord | null) => {
+    activeIdRef.current = record?.id ?? null;
+    setActiveAccountId(record?.id ?? null);
+    // Persist so the registry restores after a reload (until manual sign-out).
+    setActiveId(record?.id ?? null);
+    if (!record) {
+      setAdminSession(null);
+      return;
+    }
+    setAdminSession(toAdminSession(record));
+    if (record.kind === 'master' && !auth.currentUser && masterPassword && masterFirebaseEmails.length > 0) {
+      void establishFirebaseIdentity(masterPassword);
     }
   };
 
+  /** Upserts (bumping lastUsedAt), syncs state, and activates the record. */
+  const activateRecord = (input: AccountInput) => {
+    const record = upsertAccount(input);
+    syncAccounts();
+    commitActive(record);
+    return record;
+  };
+
   useEffect(() => {
+    // Public demo mode (?demo): render with mock data and no real session.
     if (IS_PUBLIC_DEMO) {
       setAdminSession({ email: 'demo@wasalt.io', role: 'SUPER_ADMIN' });
       setLoading(false);
       return;
     }
 
-    // Restore persisted session on page load
-    const saved =
-      localStorage.getItem('wasalt_admin_session') ||
-      sessionStorage.getItem('wasalt_admin_session');
-    if (saved) {
-      try {
-        setAdminSession(JSON.parse(saved));
-      } catch {
-        /* ignore */
-      }
+    // 1. Migrate any pre-multi-account legacy session into the registry.
+    // 2. Restore the persisted active account (indefinite localStorage session).
+    try {
+      migrateLegacySession();
+      const stored = loadAccounts();
+      const activeId = getActiveId();
+      setAccounts(stored);
+      const active = stored.find((a) => a.id === activeId) ?? null;
+      commitActive(active);
+    } catch (err) {
+      console.warn('[Auth] Failed to restore account registry:', err);
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       setUser(fbUser);
-      if (fbUser && fbUser.email) {
-        const { role, companyId } = await resolveRoleFromRTDB(fbUser.uid, fbUser.email);
-        const session: AdminSession = { email: fbUser.email, role, companyId };
-        setAdminSession(session);
-        // Refresh persisted session with RTDB-resolved role
-        const rememberMe = !!localStorage.getItem('wasalt_admin_session');
-        persistSession(session, rememberMe);
-      } else if (!saved) {
-        setAdminSession(null);
+      // Adopt a surviving Firebase session only when no registry account is
+      // active and no programmatic login is in flight (never adopt the
+      // service identity as a dispatcher account during master login).
+      if (fbUser && fbUser.email && activeIdRef.current === null && !suppressAdoptRef.current) {
+        void resolveRoleFromRTDB(fbUser.uid, fbUser.email).then(({ role, companyId }) => {
+          if (activeIdRef.current !== null) return; // a login won the race
+          activateRecord({
+            id: `company:${fbUser.email!.toLowerCase()}`,
+            email: fbUser.email!,
+            role,
+            companyId,
+            kind: 'company',
+            label: fbUser.email!,
+          });
+        });
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
    * Master Admin Login requiring Username, Password, and Authenticator App OTP.
+   * Always persists the account to the registry (no remember-me distinction).
    */
   const loginMasterAdmin = async (
     username: string,
     pass: string,
-    otpToken: string,
-    rememberMe: boolean
+    otpToken: string
   ): Promise<void> => {
     const cleanUser = username.trim().toLowerCase();
-    if (cleanUser !== MASTER_USERNAME.toLowerCase()) {
+
+    // Fail loudly on missing configuration instead of falling back to a
+    // bundled default credential (see config/masterAdmin.ts).
+    const cfgUser = masterUsername;
+    const cfgPass = masterPassword;
+    const cfgSecret = masterTotpSecret;
+    if (!cfgUser || !cfgPass || !cfgSecret || masterFirebaseEmails.length === 0) {
+      throw new Error(getMasterConfigError() || 'Admin configuration incomplete.');
+    }
+
+    if (cleanUser !== cfgUser.toLowerCase()) {
       throw new Error('Invalid master admin username.');
     }
-    if (pass !== MASTER_PASSWORD) {
+
+    if (pass !== cfgPass) {
       throw new Error('Invalid master admin password.');
     }
-    const isValidOTP = await verifyTOTP(otpToken, MASTER_TOTP_SECRET);
+
+    const isValidOTP = await verifyTOTP(otpToken, cfgSecret);
     if (!isValidOTP) {
       throw new Error('Invalid or expired 6-digit Authenticator OTP code. Check your authenticator app time.');
     }
 
-    // Authenticate with Firebase Auth to satisfy RTDB security rules
+    // Authenticate with the configured Firebase service identity to satisfy RTDB security rules (auth != null)
+    suppressAdoptRef.current = true;
     try {
-      await signInWithEmailAndPassword(auth, 'admin@wasalt.eg', MASTER_PASSWORD).catch(() =>
-        signInWithEmailAndPassword(auth, 'admin@sya7a.eg', MASTER_PASSWORD)
-      );
-    } catch (authErr) {
-      console.warn('[AuthContext] Firebase Auth master sign-in notice:', authErr);
+      await establishFirebaseIdentity(cfgPass);
+      activateRecord({
+        id: `master:${cleanUser}`,
+        email: `${cleanUser}@wasalt.eg (Master Admin)`,
+        role: 'SUPER_ADMIN',
+        kind: 'master',
+        label: cleanUser,
+      });
+      setAddingAccount(false);
+    } finally {
+      suppressAdoptRef.current = false;
     }
-
-    const session: AdminSession = {
-      email: `${cleanUser}@wasalt.eg (Master Admin)`,
-      role: 'SUPER_ADMIN',
-    };
-    setAdminSession(session);
-    persistSession(session, rememberMe);
   };
 
   /**
    * Company Dispatcher login via Firebase Auth.
-   * Role and companyId are resolved from RTDB profile, not email.
+   * Role/companyId are resolved from the RTDB admin profile when present,
+   * falling back to email heuristics. Always persisted to the registry.
    */
-  const loginWithFirebase = async (email: string, pass: string, rememberMe: boolean): Promise<void> => {
-    const cred = await signInWithEmailAndPassword(auth, email, pass);
-    if (cred.user && cred.user.email) {
-      const { role, companyId } = await resolveRoleFromRTDB(cred.user.uid, cred.user.email);
-      const session: AdminSession = { email: cred.user.email, role, companyId };
-      setAdminSession(session);
-      persistSession(session, rememberMe);
+  const loginWithFirebase = async (email: string, pass: string): Promise<void> => {
+    suppressAdoptRef.current = true;
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      if (cred.user && cred.user.email) {
+        const { role, companyId } = await resolveRoleFromRTDB(cred.user.uid, cred.user.email);
+        activateRecord({
+          id: `company:${cred.user.email.toLowerCase()}`,
+          email: cred.user.email,
+          role,
+          companyId,
+          kind: 'company',
+          label: cred.user.email,
+        });
+        setAddingAccount(false);
+      }
+    } finally {
+      suppressAdoptRef.current = false;
     }
   };
 
   /**
-   * Signs out the currently authenticated user.
+   * Instantly switches to another already-added account (silent, no
+   * password/TOTP re-entry). Unknown ids warn without crashing.
    */
-  const logout = async () => {
-    localStorage.removeItem('wasalt_admin_session');
-    sessionStorage.removeItem('wasalt_admin_session');
-    localStorage.removeItem('sya7a_admin_session');
-    sessionStorage.removeItem('sya7a_admin_session');
-    setAdminSession(null);
-    await signOut(auth);
+  const switchAccount = async (id: string): Promise<void> => {
+    if (switchingRef.current) return;
+    const record = loadAccounts().find((a) => a.id === id);
+    if (!record) {
+      console.warn(`[Auth] switchAccount: unknown account id "${id}"`);
+      return;
+    }
+    if (id === activeIdRef.current) return;
+    switchingRef.current = true;
+    try {
+      activateRecord({
+        id: record.id,
+        email: record.email,
+        role: record.role,
+        companyId: record.companyId,
+        kind: record.kind,
+        label: record.label,
+      });
+    } catch (err) {
+      console.warn('[Auth] switchAccount failed:', err);
+    } finally {
+      switchingRef.current = false;
+    }
   };
+
+  /**
+   * Removes a single account from the registry. Removing the active account
+   * activates the most-recent remaining one, or falls back to the login screen.
+   */
+  const removeAccount = async (id: string): Promise<void> => {
+    removeAccountFromStore(id);
+    syncAccounts();
+    if (id === activeIdRef.current) {
+      const next = pickMostRecent(loadAccounts());
+      if (next) {
+        activateRecord({
+          id: next.id,
+          email: next.email,
+          role: next.role,
+          companyId: next.companyId,
+          kind: next.kind,
+          label: next.label,
+        });
+      } else {
+        commitActive(null);
+        try {
+          await signOut(auth);
+        } catch (err) {
+          console.warn('[Auth] Firebase signOut failed:', err);
+        }
+      }
+    }
+  };
+
+  /**
+   * Manual sign-out: removes ONLY the current account from the registry,
+   * clears the Firebase identity, then activates the most-recent remaining
+   * account (other added accounts stay signed in).
+   */
+  const logout = async (): Promise<void> => {
+    const currentId = activeIdRef.current;
+    if (currentId) {
+      removeAccountFromStore(currentId);
+      syncAccounts();
+    }
+    activeIdRef.current = null;
+    setActiveAccountId(null);
+    setAdminSession(null);
+    const next = pickMostRecent(loadAccounts());
+    if (next) {
+      // Remaining accounts keep RTDB access: preserve the existing Firebase
+      // identity (rules require auth != null) — only drop it when the
+      // registry is empty.
+      activateRecord({
+        id: next.id,
+        email: next.email,
+        role: next.role,
+        companyId: next.companyId,
+        kind: next.kind,
+        label: next.label,
+      });
+    } else {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.warn('[Auth] Firebase signOut failed:', err);
+      }
+    }
+  };
+
+  const beginAddAccount = () => setAddingAccount(true);
+  const cancelAddAccount = () => setAddingAccount(false);
 
   return (
     <AuthContext.Provider
-      value={{ user, adminSession, loading, loginWithFirebase, loginMasterAdmin, logout }}
+      value={{
+        user,
+        adminSession,
+        loading,
+        accounts,
+        activeAccountId,
+        addingAccount,
+        loginWithFirebase,
+        loginMasterAdmin,
+        logout,
+        switchAccount,
+        removeAccount,
+        beginAddAccount,
+        cancelAddAccount,
+      }}
     >
       {children}
     </AuthContext.Provider>

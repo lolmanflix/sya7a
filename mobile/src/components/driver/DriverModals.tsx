@@ -5,10 +5,11 @@
 
 import React from "react";
 import { Modal, View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "../../styles/driverModalStyles";
 import { CompanyOption } from "../../hooks/useDriverProfile";
-import { TenantVocabulary, TenantBranding } from "../../config/tenantConfig";
+import { TenantBranding } from "../../config/tenantConfig";
 
 export interface CompanyPickerModalProps {
   visible: boolean;
@@ -16,7 +17,6 @@ export interface CompanyPickerModalProps {
   currentCompanyId: string | null;
   isRTL: boolean;
   isDark: boolean;
-  vocabulary: TenantVocabulary;
   branding: TenantBranding;
   onClose: () => void;
   onSelectCompany: (companyId: string) => void;
@@ -33,11 +33,12 @@ export const CompanyPickerModal: React.FC<CompanyPickerModalProps> = ({
   currentCompanyId,
   isRTL,
   isDark,
-  vocabulary,
   branding,
   onClose,
   onSelectCompany,
 }) => {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal
       visible={visible}
@@ -54,6 +55,7 @@ export const CompanyPickerModal: React.FC<CompanyPickerModalProps> = ({
           activeOpacity={1}
           style={[
             styles.companyModalContent,
+            { paddingBottom: insets.bottom + 24 },
             isDark && { backgroundColor: "#1E293B", borderColor: "#334155" },
           ]}
         >
@@ -92,7 +94,9 @@ export const CompanyPickerModal: React.FC<CompanyPickerModalProps> = ({
                     styles.companyOptionRow,
                     isDark && { backgroundColor: "#0F172A" },
                     isSelected && {
-                      backgroundColor: isDark ? "rgba(37,99,235,0.2)" : "#EFF6FF",
+                      backgroundColor: isDark
+                        ? "rgba(37,99,235,0.2)"
+                        : branding.accentColor || "#EFF6FF",
                       borderColor: branding.primaryColor,
                     },
                   ]}

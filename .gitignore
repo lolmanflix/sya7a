@@ -58,3 +58,14 @@ Thumbs.db
 # Mobile build artifacts
 *.apk
 *.aab
+
+# Agent scratch space (persists across restarts, not committed)
+.opencode/scratch/
+.playwright-mcp/
+
+# Large build artifacts (Electron macOS release bundle, packaged APK) — never commit
+admin/release/
+base.apk
+
+# Env template files — may contain real values; never commit (was leaked before)
+.env.example

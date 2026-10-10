@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface DriverSafetyAudioMonitorProps {
   isMuted: boolean;
@@ -15,6 +16,7 @@ export const DriverSafetyAudioMonitor: React.FC<DriverSafetyAudioMonitorProps> =
   remoteStream,
   onToggleMute,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -23,12 +25,12 @@ export const DriverSafetyAudioMonitor: React.FC<DriverSafetyAudioMonitorProps> =
         </div>
         <div>
           <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-            Live Audio Monitor
+            {t('safety.liveAudioMonitor')}
             <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
               {isMuted ? 'MUTED' : remoteStream ? 'P2P OPUS LIVE' : '-18 dB RMS'}
             </span>
           </h4>
-          <p className="text-[11px] text-slate-400">Cabin interior microphone telemetry stream</p>
+          <p className="text-[11px] text-slate-400">{t('safety.audioStreamDesc')}</p>
         </div>
       </div>
 
@@ -46,7 +48,7 @@ export const DriverSafetyAudioMonitor: React.FC<DriverSafetyAudioMonitorProps> =
           type="button"
           onClick={onToggleMute}
           className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-          title={isMuted ? 'Unmute' : 'Mute'}
+          title={isMuted ? t('safety.unmute') : t('safety.mute')}
         >
           {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
         </button>

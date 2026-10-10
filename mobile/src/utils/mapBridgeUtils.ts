@@ -8,6 +8,28 @@ import React from 'react';
 import { WebView } from 'react-native-webview';
 import { BusLocation } from '../components/map/BusDetailsSheet';
 import { computeLocalRoadRoute, RouteWaypoint } from './localRoutingEngine';
+import type { MapThemeMode } from '../config/mapConfig';
+
+/**
+ * Switches the OpenFreeMap basemap style inside the map WebView without a reload.
+ * Delegates to the page-level bridge function `window.__setMapStyle(mode)`.
+ *
+ * @param webViewRef - Reference to the active WebView component.
+ * @param mode - Target map theme mode ('light' | 'dark').
+ */
+export function injectMapStyle(
+  webViewRef: React.RefObject<WebView | null>,
+  mode: MapThemeMode
+): void {
+  webViewRef.current?.injectJavaScript(`
+    (function() {
+      if (typeof window.__setMapStyle === 'function') {
+        window.__setMapStyle(${JSON.stringify(mode)});
+      }
+    })();
+    true;
+  `);
+}
 
 /**
  * Injects updated active vehicle locations into the Leaflet map runtime.

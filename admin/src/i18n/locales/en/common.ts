@@ -1,0 +1,20 @@
+/** Shared chrome: Modal, AccountSwitcher, generic actions (EN). */
+export default {
+  'common.close': 'Close',
+  'common.cancel': 'Cancel',
+  'common.save': 'Save',
+  'common.done': 'Done',
+  'common.creating': 'Creating...',
+  'common.adding': 'Adding...',
+  'common.saving': 'Saving...',
+  'common.superAdmin': 'Super Admin',
+  'common.superAdministrator': 'Super Administrator',
+  'common.dispatcher': 'Dispatcher',
+  'common.switchAccount': 'Switch Account',
+  'common.accountSwitcherLabel': 'Account switcher',
+  'common.signedInAccounts': 'Signed-in accounts',
+  'common.masterSuffix': 'Master',
+  'common.addAccount': 'Add another account',
+  'common.signOutMenu': 'Sign out',
+  'common.initializing': 'Initializing Command Center...',
+};
