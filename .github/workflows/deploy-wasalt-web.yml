@@ -50,11 +50,23 @@ jobs:
         env:
           SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TRACKING_72393 }}
         run: |
-          if [ -z "$SA_JSON" ]; then
-            echo "::error::FIREBASE_SERVICE_ACCOUNT_TRACKING_72393 secret is not set — see the setup note at the top of this workflow."
-            exit 1
-          fi
-          echo "$SA_JSON" | base64 --decode > "$RUNNER_TEMP/gcp-sa.json"
+          python3 - <<'PYEOF'
+          import os, base64, json, pathlib, sys
+          s = (os.environ.get("SA_JSON") or "").strip()
+          if not s:
+              sys.exit("::error::FIREBASE_SERVICE_ACCOUNT_TRACKING_72393 secret is not set — see the setup note at the top of this workflow.")
+          out = pathlib.Path(os.environ["RUNNER_TEMP"]) / "gcp-sa.json"
+          try:
+              if s.startswith("{"):
+                  data = s  # raw JSON pasted directly into the secret
+              else:
+                  data = base64.b64decode("".join(s.split())).decode()  # base64 (whitespace tolerated)
+              json.loads(data)  # fail fast if it isn't valid JSON
+              out.write_text(data)
+              print("service account key decoded and validated")
+          except Exception as e:
+              sys.exit(f"::error::FIREBASE_SERVICE_ACCOUNT_TRACKING_72393 is neither raw JSON nor valid base64: {e}")
+          PYEOF
 
       - name: Deploy Hosting + Functions
         working-directory: wasalt
