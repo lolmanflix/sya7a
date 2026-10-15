@@ -1,16 +1,50 @@
 {
   "name": "@wasalt/desktop",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
+  "description": "Wasalt Enterprise Operations Platform — desktop client",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:mac": "electron-builder --mac",
-    "build:win": "electron-builder --win",
-    "build:linux": "electron-builder --linux"
+    "build:mac": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "build:win": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win",
+    "build:linux": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --linux"
   },
-  "dependencies": {},
   "devDependencies": {
-    "electron": "^33.2.0"
+    "electron": "33.4.11",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "eg.wasalt.desktop",
+    "productName": "Wasalt",
+    "electronVersion": "33.4.11",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      {
+        "from": "../web/dist",
+        "to": "web/dist",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.business",
+      "identity": null,
+      "darkModeSupport": true
+    },
+    "dmg": {
+      "title": "Wasalt",
+      "backgroundColor": "#0F172A"
+    }
   }
 }

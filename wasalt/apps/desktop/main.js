@@ -21,7 +21,8 @@ function createWindow() {
   });
 
   const devUrl = 'http://localhost:5174';
-  const prodPath = path.join(__dirname, '../web/dist/index.html');
+  // Packaged builds ship the marketing/dashboard bundle at web/dist inside the app.
+  const prodPath = path.join(__dirname, 'web/dist/index.html');
 
   if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
     mainWindow.loadURL(devUrl).catch(() => {

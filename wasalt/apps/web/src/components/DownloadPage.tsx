@@ -3,6 +3,12 @@ import { useLanguageTheme } from '../context/LanguageThemeContext';
 import { Button } from './common/Button';
 import { CheckCircle2, Download, Monitor, Laptop, Terminal, ExternalLink } from 'lucide-react';
 
+/** Official macOS builds — attached to the GitHub release v1.2.0. */
+const MACOS_DOWNLOAD_ARM64 =
+  'https://github.com/lolmanflix/sya7a/releases/download/v1.2.0/Wasalt-1.2.0-arm64.zip';
+const MACOS_DOWNLOAD_X64 =
+  'https://github.com/lolmanflix/sya7a/releases/download/v1.2.0/Wasalt-1.2.0-x64.zip';
+
 interface DownloadPageProps {
   companyName?: string;
   onGoToDashboard: () => void;
@@ -60,16 +66,24 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ companyName = 'Your 
             </div>
             <div className="text-center space-y-1">
               <h3 className="font-bold text-lg text-white">macOS Client</h3>
-              <p className="text-xs text-slate-400">v1.2.0 • Universal Binary</p>
+              <p className="text-xs text-slate-400">v1.2.0 • Apple Silicon & Intel</p>
             </div>
-            <Button
-              variant="primary"
-              className="w-full justify-center bg-blue-600 hover:bg-blue-500"
-              icon={<Download className="w-4 h-4" />}
-              onClick={() => alert('Starting macOS download (.dmg)...')}
-            >
-              macOS (.dmg)
-            </Button>
+            <div className="w-full space-y-1.5">
+              <Button
+                variant="primary"
+                className="w-full justify-center bg-blue-600 hover:bg-blue-500"
+                icon={<Download className="w-4 h-4" />}
+                onClick={() => window.open(MACOS_DOWNLOAD_ARM64, '_blank')}
+              >
+                macOS (.zip) — Apple Silicon
+              </Button>
+              <button
+                onClick={() => window.open(MACOS_DOWNLOAD_X64, '_blank')}
+                className="w-full text-[11px] text-slate-400 hover:text-white py-1 transition-colors"
+              >
+                Intel Mac? Download x64 build
+              </button>
+            </div>
           </div>
 
           {/* Windows */}
@@ -85,9 +99,9 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ companyName = 'Your 
               variant="primary"
               className="w-full justify-center bg-indigo-600 hover:bg-indigo-500"
               icon={<Download className="w-4 h-4" />}
-              onClick={() => alert('Starting Windows download (.exe)...')}
+              onClick={() => alert('Windows build is coming soon — use the web app in the meantime.')}
             >
-              Windows (.exe)
+              Windows (.exe) — coming soon
             </Button>
           </div>
 
@@ -104,9 +118,9 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ companyName = 'Your 
               variant="outline"
               className="w-full justify-center border-slate-700 hover:bg-slate-800 text-white"
               icon={<Download className="w-4 h-4" />}
-              onClick={() => alert('Starting Linux download (.AppImage)...')}
+              onClick={() => alert('Linux build is coming soon — use the web app in the meantime.')}
             >
-              Linux (.AppImage)
+              Linux (.AppImage) — coming soon
             </Button>
           </div>
         </div>
