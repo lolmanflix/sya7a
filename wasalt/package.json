@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "npm --prefix apps/web run api",
     "build:web": "npm --prefix apps/web run build",
     "dev:desktop": "npm --prefix apps/desktop start"
   },

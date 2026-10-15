@@ -21,6 +21,9 @@ import { DownloadPage } from './components/DownloadPage';
 import { LoginForm } from './components/auth/LoginForm';
 import { ForgotPasswordModal } from './components/auth/ForgotPasswordModal';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
+import { PaymentCheckout } from './components/pages/PaymentCheckout';
+import { PaymentResult } from './components/pages/PaymentResult';
+import { readRedirectParams, PendingCheckout } from './services/kashierService';
 import { Toaster } from 'sonner';
 
 const AppContent: React.FC = () => {
@@ -38,6 +41,17 @@ const AppContent: React.FC = () => {
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [initialPlanId, setInitialPlanId] = useState('pro');
   const [initialBillingCycle, setInitialBillingCycle] = useState<'monthly' | 'annual'>('annual');
+  // Kashier return payload (?paymentStatus=…&signature=…) — read once on mount.
+  const [paymentParams, setPaymentParams] = useState<Record<string, string> | null>(() =>
+    readRedirectParams()
+  );
+  // Checkout opened right after onboarding creates the company.
+  const [checkoutRequest, setCheckoutRequest] = useState<{
+    planId: string;
+    billingCycle: 'monthly' | 'annual';
+    companyId: string;
+    companyName: string;
+  } | null>(null);
 
   const handleStartOnboarding = (
     planId: string = 'pro',
@@ -49,10 +63,33 @@ const AppContent: React.FC = () => {
     setIsOnboardingOpen(true);
   };
 
-  const handleOnboardingComplete = (companyName: string) => {
+  const handleOnboardingComplete = (
+    companyName: string,
+    meta: { companyId: string; planId: string; billingCycle: 'monthly' | 'annual' }
+  ) => {
     setCreatedCompanyName(companyName);
     setIsOnboardingOpen(false);
-    setViewMode('download');
+    // Go straight to the Kashier checkout instead of skipping payment.
+    setCheckoutRequest({
+      planId: meta.planId,
+      billingCycle: meta.billingCycle,
+      companyId: meta.companyId,
+      companyName,
+    });
+  };
+
+  // After the browser returns from Kashier, route to download or dashboard.
+  const handlePaymentDone = (destination: 'download' | 'dashboard', pending: PendingCheckout | null) => {
+    setPaymentParams(null);
+    if (pending?.companyName) setCreatedCompanyName(pending.companyName);
+    if (destination === 'dashboard' && isAuthenticated) {
+      setViewMode('dashboard');
+    } else if (destination === 'dashboard') {
+      setViewMode('marketing');
+    } else {
+      setViewMode('download');
+    }
+    window.scrollTo(0, 0);
   };
 
   const handleLoginSuccess = () => {
@@ -207,6 +244,26 @@ const AppContent: React.FC = () => {
           onComplete={handleOnboardingComplete}
           onCancel={() => setIsOnboardingOpen(false)}
         />
+      )}
+
+      {/* Kashier checkout (opened right after onboarding) */}
+      {checkoutRequest && !paymentParams && (
+        <PaymentCheckout
+          planId={checkoutRequest.planId}
+          billingCycle={checkoutRequest.billingCycle}
+          companyId={checkoutRequest.companyId}
+          companyName={checkoutRequest.companyName}
+          context="onboarding"
+          onExit={() => {
+            setCheckoutRequest(null);
+            setViewMode('download');
+          }}
+        />
+      )}
+
+      {/* Result of the redirect back from Kashier's hosted page */}
+      {paymentParams && (
+        <PaymentResult params={paymentParams} onDone={handlePaymentDone} />
       )}
 
       {/* Login Modal */}

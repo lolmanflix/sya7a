@@ -7,6 +7,7 @@ import * as subscriptionService from '../../services/subscriptionService';
 import * as membershipService from '../../services/membershipService';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
+import { createCheckout, savePendingCheckout } from '../../services/kashierService';
 import { Badge } from '../common/Badge';
 import {
   CheckCircle2,
@@ -95,6 +96,36 @@ export const BillingView: React.FC = () => {
       const fresh = await subscriptionService.fetchSubscription(activeCompany.id);
       if (fresh) setSub(fresh);
       setUpgradeSuccess(true);
+
+      // Charge via Kashier's hosted checkout; the signed redirect back activates the plan.
+      try {
+        const target = plans.find((p) => p.id === selectedPlanId);
+        const session = await createCheckout({
+          planId: selectedPlanId,
+          billingCycle: upgradeCycle,
+          companyId: activeCompany.id,
+          companyName: activeCompany.name,
+          amountEgp: target
+            ? upgradeCycle === 'annual'
+              ? target.priceAnnual * 12
+              : target.priceMonthly
+            : undefined,
+        });
+        savePendingCheckout({
+          context: 'billing',
+          order: session.order,
+          planId: selectedPlanId,
+          billingCycle: upgradeCycle,
+          companyId: activeCompany.id,
+          companyName: activeCompany.name,
+        });
+        window.location.assign(session.sessionUrl);
+        return; // browser leaves for Kashier's secure page
+      } catch (err) {
+        // Gateway unreachable — keep the existing manual-confirmation flow.
+        console.error('[Billing] Kashier checkout failed, falling back:', err);
+      }
+
       setTimeout(() => {
         setUpgradeSuccess(false);
         setUpgradeModalOpen(false);

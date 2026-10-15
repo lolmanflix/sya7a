@@ -10,7 +10,7 @@
     },
 
     "companies": {
-      ".read": "auth != null",
+      ".read": true,
       "$companyId": {
         ".write": "auth != null && (auth.token.email === 'essamhamza@gmail.com' || auth.token.email === 'kareemdiyaaa2007@gmail.com' || auth.token.email === 'kareemdiyaaa200@gmail.com' || auth.token.email === 'admin@wasalt.eg' || auth.token.email === 'admin@sya7a.eg' || (!data.exists() && newData.child('ownerId').val() === auth.uid) || (data.exists() && data.child('ownerId').val() === auth.uid))"
       }

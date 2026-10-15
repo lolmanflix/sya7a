@@ -1,187 +1,240 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { PRICING_PLANS } from '@wasalt/config';
+import { useLanguageTheme } from '../../context/LanguageThemeContext';
 import { usePriceOverrides, applyPriceOverrides } from '../../services/pricingService';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
+import { X, ShieldCheck, Lock, ArrowRight, ExternalLink, AlertCircle } from 'lucide-react';
 import {
-  Check,
-  CreditCard,
-  Lock,
-  ArrowLeft,
-  ShieldCheck,
-  X,
-} from 'lucide-react';
+  createCheckout,
+  BillingCycle,
+  PaymentContext,
+  savePendingCheckout,
+} from '../../services/kashierService';
 
 interface PaymentCheckoutProps {
   planId: string;
-  companyName: string;
-  onPaymentComplete: () => void;
-  onCancel: () => void;
+  billingCycle?: BillingCycle;
+  companyId: string;
+  companyName?: string;
+  /** 'onboarding' after signup, 'billing' for an in-dashboard upgrade. */
+  context?: PaymentContext;
+  /** User chose "pay later" / closed the modal — continue without paying. */
+  onExit: () => void;
 }
 
-/**
- * Mock payment checkout modal. Simulates a payment flow after onboarding.
- */
+/** Formatted amount for the given plan + cycle (annual = priceAnnual × 12). */
+function formatAmount(priceMonthly: number, priceAnnual: number, cycle: BillingCycle) {
+  return cycle === 'annual' ? priceAnnual * 12 : priceMonthly;
+}
+
 export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
   planId,
+  billingCycle: initialCycle = 'monthly',
+  companyId,
   companyName,
-  onPaymentComplete,
-  onCancel,
+  context = 'onboarding',
+  onExit,
 }) => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isAnnual, setIsAnnual] = useState(true);
+  const { language } = useLanguageTheme();
+  const currencySymbol = language === 'ar' ? 'ج.م' : 'EGP';
 
-  const plans = applyPriceOverrides(PRICING_PLANS, usePriceOverrides());
-  const plan = plans.find((p) => p.id === planId) || plans[1];
-  const price = isAnnual ? plan.priceAnnual : plan.priceMonthly;
+  const [cycle, setCycle] = useState<BillingCycle>(initialCycle);
+  const [isPaying, setIsPaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handlePayment = async () => {
-    setIsProcessing(true);
-    // Simulate payment processing delay
-    await new Promise((resolve) => setTimeout(resolve, 2200));
-    setIsProcessing(false);
-    onPaymentComplete();
+  // Live admin-set prices from the admin dashboard (server re-validates the charge).
+  const overrides = usePriceOverrides();
+  const plan = useMemo(
+    () => applyPriceOverrides(PRICING_PLANS, overrides).find((p) => p.id === planId),
+    [overrides, planId]
+  );
+
+  const amount = plan ? formatAmount(plan.priceMonthly, plan.priceAnnual, cycle) : 0;
+
+  const startPayment = async () => {
+    if (!plan || isPaying) return;
+    setError(null);
+    setIsPaying(true);
+    try {
+      const session = await createCheckout({
+        planId: plan.id,
+        billingCycle: cycle,
+        companyId,
+        companyName,
+        amountEgp: amount,
+      });
+      // Remember enough context to activate the plan when the browser returns.
+      savePendingCheckout({
+        context,
+        order: session.order,
+        planId: plan.id,
+        billingCycle: cycle,
+        companyId,
+        companyName,
+      });
+      window.location.assign(session.sessionUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start checkout');
+      setIsPaying(false);
+    }
   };
 
+  if (!plan) {
+    return null;
+  }
+
+  const features =
+    language === 'ar'
+      ? plan.features.slice(0, 4).map((f) => f.text)
+      : plan.features.slice(0, 4).map((f) => f.text);
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-scaleUp">
-        {/* Header */}
-        <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-              <CreditCard className="w-4 h-4" />
-            </div>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={isPaying ? undefined : onExit} />
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="px-5 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-sm font-bold tracking-tight">Complete Your Subscription</h2>
-              <p className="text-[11px] text-slate-400">
-                Activate {plan.name} for {companyName}
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
+                  {language === 'ar' ? 'إتمام الاشتراك' : 'Complete your subscription'}
+                </h3>
+                <Badge variant="neutral">{cycle === 'annual' ? (language === 'ar' ? 'سنوي' : 'Annual') : language === 'ar' ? 'شهري' : 'Monthly'}</Badge>
+              </div>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                {language === 'ar' ? 'خطة' : 'Plan'}{' '}
+                <span className="font-semibold text-slate-700 dark:text-slate-300">{plan.name}</span>
+                {companyName ? ` · ${companyName}` : ''}
               </p>
             </div>
+            <button
+              onClick={onExit}
+              disabled={isPaying}
+              aria-label="Close"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onCancel}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        <div className="p-6 space-y-5">
-          {/* Plan summary */}
-          <div className="bg-slate-50 rounded-xl border border-slate-200/80 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">{plan.name} Plan</h3>
-                <p className="text-xs text-slate-500">{plan.tagline}</p>
-              </div>
-              {plan.badge && (
-                <Badge variant="primary" size="sm">
-                  {plan.badge}
-                </Badge>
-              )}
-            </div>
-
-            {/* Billing toggle */}
-            <div className="flex items-center gap-2 mb-3">
+          {/* Billing cycle toggle */}
+          <div className="mt-4 flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 w-fit text-xs font-semibold">
+            {(['monthly', 'annual'] as BillingCycle[]).map((c) => (
               <button
-                onClick={() => setIsAnnual(false)}
-                className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
-                  !isAnnual ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500'
+                key={c}
+                onClick={() => setCycle(c)}
+                disabled={isPaying}
+                className={`px-3.5 py-1.5 rounded-md transition-colors ${
+                  cycle === c
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                 }`}
               >
-                Monthly
+                {c === 'monthly'
+                  ? language === 'ar'
+                    ? 'شهري'
+                    : 'Monthly'
+                  : language === 'ar'
+                    ? 'سنوي'
+                    : 'Annual'}
               </button>
-              <button
-                onClick={() => setIsAnnual(true)}
-                className={`px-3 py-1 text-xs font-semibold rounded-full transition-all flex items-center gap-1 ${
-                  isAnnual ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'
-                }`}
-              >
-                Annual
-                <span className="text-[9px] px-1 py-0.5 rounded bg-blue-500 text-white">-20%</span>
-              </button>
-            </div>
-
-            <div className="flex items-baseline gap-1 pt-2 border-t border-slate-200/80">
-              <span className="text-3xl font-extrabold text-slate-900">${price}</span>
-              <span className="text-sm text-slate-500">/month</span>
-            </div>
-          </div>
-
-          {/* Mock card form */}
-          <div className="space-y-3">
-            <label className="block">
-              <span className="text-xs font-semibold text-slate-700 mb-1 block">Card Number</span>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="4242 4242 4242 4242"
-                  className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all pr-10"
-                />
-                <CreditCard className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              </div>
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-xs font-semibold text-slate-700 mb-1 block">Expiry</span>
-                <input
-                  type="text"
-                  placeholder="MM / YY"
-                  className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                />
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold text-slate-700 mb-1 block">CVC</span>
-                <input
-                  type="text"
-                  placeholder="123"
-                  className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Key features reminder */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {plan.features.slice(0, 4).map((feat, idx) => (
-              <div key={idx} className="flex items-center gap-1.5 text-slate-600">
-                <Check className="w-3 h-3 text-emerald-500 shrink-0" />
-                <span className="truncate">{feat.text}</span>
-              </div>
             ))}
           </div>
+        </div>
 
-          {/* Pay button */}
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-slate-400 font-bold">
+              {language === 'ar' ? 'الإجمالي' : 'Total'}
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
+                  {amount.toLocaleString()}
+                </span>
+                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{currencySymbol}</span>
+                <span className="text-[11px] text-slate-500">
+                  {cycle === 'annual'
+                    ? language === 'ar'
+                      ? '/سنة'
+                      : '/year'
+                    : language === 'ar'
+                      ? '/شهرياً'
+                      : '/month'}
+                </span>
+              </div>
+              {cycle === 'annual' && (
+                <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+                  {language === 'ar'
+                    ? `وفّر ${(plan.priceMonthly * 12 - amount).toLocaleString()} ${currencySymbol} سنوياً`
+                    : `Save ${(plan.priceMonthly * 12 - amount).toLocaleString()} ${currencySymbol}/year`}
+                </div>
+              )}
+            </div>
+            <div className="text-right text-[11px] text-slate-500 leading-tight max-w-[45%]">
+              {language === 'ar'
+                ? 'تجديد تلقائي — يمكنك الإلغاء في أي وقت'
+                : 'Auto-renews · cancel anytime'}
+            </div>
+          </div>
+
+          <ul className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 rounded-lg p-3">
+            {features.map((feat, idx) => (
+              <li key={idx} className="flex items-start gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                <span className="leading-tight">{feat}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-lg p-2.5">
+            <Lock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <span>
+              {language === 'ar'
+                ? 'سيتم تحويلك إلى صفحة دفع Kashier الآمنة لإدخال بيانات البطاقة أو المحفظة الإلكترونية.'
+                : "You'll be redirected to Kashier's secure hosted page to pay by card or mobile wallet. We never see your card details."}
+            </span>
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 text-xs text-red-600 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg p-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="px-5 pb-5 space-y-2">
           <Button
             variant="primary"
             size="lg"
-            onClick={handlePayment}
-            isLoading={isProcessing}
-            icon={<Lock className="w-4 h-4" />}
-            className="w-full justify-center shadow-lg shadow-blue-600/20"
+            className="w-full justify-center bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 focus:ring-emerald-500"
+            onClick={startPayment}
+            isLoading={isPaying}
+            icon={isPaying ? undefined : <ArrowRight className="w-4 h-4" />}
           >
-            {isProcessing ? 'Processing Payment...' : `Pay $${price}/month — Activate ${plan.name}`}
+            {isPaying
+              ? language === 'ar'
+                ? 'جارٍ التحويل…'
+                : 'Redirecting…'
+              : `${language === 'ar' ? 'ادفع الآن عبر' : 'Pay now with'} Kashier — ${amount.toLocaleString()} ${currencySymbol}`}
           </Button>
-
-          {/* Security note */}
-          <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400">
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3" /> SSL Secured
-            </span>
-            <span className="flex items-center gap-1">
-              <Lock className="w-3 h-3" /> PCI Compliant
-            </span>
-            <span>Cancel anytime</span>
-          </div>
-
-          {/* Back */}
           <button
-            onClick={onCancel}
-            className="w-full text-center text-xs text-slate-500 hover:text-slate-700 transition-colors flex items-center justify-center gap-1"
+            onClick={onExit}
+            disabled={isPaying}
+            className="w-full text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 py-1.5 transition-colors disabled:opacity-40"
           >
-            <ArrowLeft className="w-3 h-3" /> Back to pricing plans
+            {language === 'ar' ? 'لاحقاً — أكمل بالتجربة المجانية' : 'Maybe later — continue with free trial'}
           </button>
+          <div className="flex items-center justify-center gap-3 text-[10px] text-slate-400 pt-1">
+            <span className="inline-flex items-center gap-1">
+              <Lock className="w-3 h-3" /> 3-D Secure
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <ExternalLink className="w-3 h-3" /> test.kashier.io
+            </span>
+          </div>
         </div>
       </div>
     </div>

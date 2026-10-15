@@ -1,0 +1,5 @@
+node_modules/
+*.log
+# Root .gitignore ignores *.env everywhere — re-include the function env because
+# firebase-tools reads it at deploy time from a clean CI checkout.
+!.env

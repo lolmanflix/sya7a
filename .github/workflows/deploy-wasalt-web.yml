@@ -1,0 +1,63 @@
+name: Deploy Wasalt site + checkout API to Firebase
+
+# Pushing to the repo automatically builds the marketing site and deploys it
+# (plus the Kashier checkout Cloud Function) to Firebase Hosting project
+# tracking-72393 → https://tracking-72393.web.app
+#
+# ONE-TIME SETUP (repo Settings → Secrets and variables → Actions → New secret):
+#   FIREBASE_SERVICE_ACCOUNT_TRACKING_72393 =
+#     base64 of a Firebase service-account JSON key with Hosting Admin + Function Admin:
+#     Firebase console → Project settings (tracking-72393) → Service accounts →
+#     "Generate new private key", then:  base64 -i <downloaded>.json   (macOS)
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'wasalt/**'
+      - '.github/workflows/deploy-wasalt-web.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-wasalt-web-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: wasalt/package-lock.json
+
+      - name: Install workspace dependencies
+        working-directory: wasalt
+        run: npm ci
+
+      - name: Install checkout function dependencies
+        working-directory: wasalt/functions
+        run: npm ci
+
+      - name: Build marketing site
+        working-directory: wasalt
+        run: npm run build:web
+
+      - name: Decode Firebase service account
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TRACKING_72393 }}
+        run: |
+          if [ -z "$SA_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_TRACKING_72393 secret is not set — see the setup note at the top of this workflow."
+            exit 1
+          fi
+          echo "$SA_JSON" | base64 --decode > "$RUNNER_TEMP/gcp-sa.json"
+
+      - name: Deploy Hosting + Functions
+        working-directory: wasalt
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-sa.json
+        run: npx --yes firebase-tools deploy --non-interactive --project tracking-72393 --only hosting,functions

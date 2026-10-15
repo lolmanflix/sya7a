@@ -65,3 +65,6 @@ base.apk
 
 # Env template files — may contain real values; never commit (was leaked before)
 .env.example
+
+# Kashier payment ledger (local audit trail, not source)
+wasalt/apps/web/server/payments-ledger.json

@@ -16,5 +16,12 @@ export default defineConfig({
   },
   server: {
     port: 5174,
+    proxy: {
+      // Checkout backend (server/index.mjs — holds Kashier secret keys)
+      '/api': {
+        target: 'http://localhost:8787',
+        changeOrigin: true,
+      },
+    },
   },
 });

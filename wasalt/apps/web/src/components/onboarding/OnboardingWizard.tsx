@@ -12,7 +12,7 @@ import { recordPlanSelection } from '../../services/subscriptionService';
 import { Sparkles, Check, X } from 'lucide-react';
 
 interface OnboardingWizardProps {
-  onComplete: (companyName: string) => void;
+  onComplete: (companyName: string, meta: { companyId: string; planId: string; billingCycle: 'monthly' | 'annual' }) => void;
   onCancel: () => void;
   initialPlanId?: string;
   billingCycle?: 'monthly' | 'annual';
@@ -125,7 +125,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       } catch (subErr) {
         console.error('[Onboarding] Failed to record plan selection:', subErr);
       }
-      onComplete(companyData.name);
+      onComplete(companyData.name, {
+        companyId: createdCompany.id,
+        planId: selectedPlanId,
+        billingCycle,
+      });
     } finally {
       setIsLoading(false);
     }

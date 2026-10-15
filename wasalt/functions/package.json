@@ -1,0 +1,17 @@
+{
+  "name": "wasalt-functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Wasalt server-side functions — Kashier checkout API for Firebase Hosting rewrites",
+  "type": "module",
+  "main": "index.mjs",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "deploy": "cd .. && npx firebase-tools deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-functions": "^6.0.0"
+  }
+}
