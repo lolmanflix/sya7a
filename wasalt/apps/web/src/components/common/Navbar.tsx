@@ -11,12 +11,15 @@ interface NavbarProps {
   /** Opens the sign-in modal; receives 'dashboard' when already authenticated. */
   onSignIn?: (target?: 'login' | 'dashboard') => void;
   isAuthenticated?: boolean;
+  /** SPA navigation home — keeps the URL router in sync instead of reloading. */
+  onGoHome?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onStartOnboarding,
   onSignIn,
   isAuthenticated,
+  onGoHome,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -63,7 +66,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center justify-between gap-3">
           {/* Logo & Product Name */}
           <div className="flex items-center gap-3 shrink-0">
-            <a href="#" className="flex items-center gap-2.5 group">
+            <a
+              href="/"
+              className="flex items-center gap-2.5 group"
+              onClick={(e) => {
+                // SPA route when a handler is wired; href="/" keeps it a real link otherwise.
+                if (onGoHome) {
+                  e.preventDefault();
+                  onGoHome();
+                }
+              }}
+            >
               <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-white border border-slate-200 dark:border-slate-700 shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
                 <img
                   src="/wasalt-logo.png"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageThemeProvider } from './context/LanguageThemeContext';
@@ -16,6 +16,7 @@ import { AudienceSections, DriverEcosystem, EcosystemSection } from './component
 import { FaqSection } from './components/marketing/FaqSection';
 import { CtaBanner } from './components/marketing/CtaBanner';
 import { LegalPage } from './components/pages/LegalPage';
+import { NotFoundPage } from './components/pages/NotFoundPage';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 import { DownloadPage } from './components/DownloadPage';
 import { LoginForm } from './components/auth/LoginForm';
@@ -26,16 +27,56 @@ import { PaymentResult } from './components/pages/PaymentResult';
 import { readRedirectParams, PendingCheckout } from './services/kashierService';
 import { Toaster } from 'sonner';
 
-const AppContent: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+/** Every page the site serves, keyed by its exact URL path. */
+type ViewMode = 'marketing' | 'dashboard' | 'download' | 'privacy' | 'terms' | 'notfound';
 
-  const [viewMode, setViewMode] = useState<
-    'marketing' | 'dashboard' | 'download' | 'privacy' | 'terms'
-  >('marketing');
+const ROUTES: Record<string, ViewMode> = {
+  '/': 'marketing',
+  '/download': 'download',
+  '/privacy': 'privacy',
+  '/terms': 'terms',
+  '/dashboard': 'dashboard',
+};
+
+/**
+ * Validates a URL pathname against the route table.
+ * Malformed percent-encoding or any unknown path fails validation → 'notfound'.
+ * Trailing slashes are tolerated ("/download/" === "/download").
+ */
+function parseRoute(rawPathname: string): ViewMode {
+  let path: string;
+  try {
+    path = decodeURIComponent(rawPathname);
+  } catch {
+    return 'notfound'; // invalid % sequence in the URL
+  }
+  path = path.replace(/\/+$/, '') || '/';
+  return ROUTES[path] ?? 'notfound';
+}
+
+/** sessionStorage key — keeps the workspace name alive across refreshes. */
+const COMPANY_NAME_KEY = 'wasalt:companyName';
+
+function readRememberedCompanyName(): string {
+  try {
+    return sessionStorage.getItem(COMPANY_NAME_KEY) || 'Your Workspace';
+  } catch {
+    return 'Your Workspace';
+  }
+}
+
+const AppContent: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // URL-driven view state: parsed from the pathname on load so a refresh
+  // (or a deep link) always restores the page the visitor was on.
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    typeof window !== 'undefined' ? parseRoute(window.location.pathname) : 'marketing'
+  );
   const [currentHash, setCurrentHash] = useState<string>(
     typeof window !== 'undefined' ? window.location.hash : ''
   );
-  const [createdCompanyName, setCreatedCompanyName] = useState<string>('Your Workspace');
+  const [createdCompanyName, setCreatedCompanyName] = useState<string>(readRememberedCompanyName);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
@@ -53,6 +94,33 @@ const AppContent: React.FC = () => {
     companyName: string;
   } | null>(null);
 
+  /** Remembers the workspace name for the session so refreshes don't reset it. */
+  const rememberCompanyName = useCallback((name: string) => {
+    setCreatedCompanyName(name);
+    try {
+      sessionStorage.setItem(COMPANY_NAME_KEY, name);
+    } catch {
+      /* noop — private mode etc. */
+    }
+  }, []);
+
+  /**
+   * SPA navigation — keeps the URL (and therefore refresh / back / forward)
+   * in sync with the rendered page.
+   */
+  const navigate = useCallback((to: string, opts: { replace?: boolean } = {}) => {
+    const url = new URL(to, window.location.origin);
+    const nextUrl = url.pathname + url.search + url.hash;
+    if (opts.replace) {
+      window.history.replaceState(null, '', nextUrl);
+    } else {
+      window.history.pushState(null, '', nextUrl);
+    }
+    setCurrentHash(url.hash);
+    setViewMode(parseRoute(url.pathname));
+    window.scrollTo(0, 0);
+  }, []);
+
   const handleStartOnboarding = (
     planId: string = 'pro',
     billingCycle: 'monthly' | 'annual' = 'annual'
@@ -67,7 +135,7 @@ const AppContent: React.FC = () => {
     companyName: string,
     meta: { companyId: string; planId: string; billingCycle: 'monthly' | 'annual' }
   ) => {
-    setCreatedCompanyName(companyName);
+    rememberCompanyName(companyName);
     setIsOnboardingOpen(false);
     // Go straight to the Kashier checkout instead of skipping payment.
     setCheckoutRequest({
@@ -81,73 +149,103 @@ const AppContent: React.FC = () => {
   // After the browser returns from Kashier, route to download or dashboard.
   const handlePaymentDone = (destination: 'download' | 'dashboard', pending: PendingCheckout | null) => {
     setPaymentParams(null);
-    if (pending?.companyName) setCreatedCompanyName(pending.companyName);
+    if (pending?.companyName) rememberCompanyName(pending.companyName);
     if (destination === 'dashboard' && isAuthenticated) {
-      setViewMode('dashboard');
+      navigate('/dashboard');
     } else if (destination === 'dashboard') {
-      setViewMode('marketing');
+      navigate('/');
     } else {
-      setViewMode('download');
+      navigate('/download');
     }
-    window.scrollTo(0, 0);
   };
 
   const handleLoginSuccess = () => {
     setIsLoginOpen(false);
-    setViewMode('dashboard');
+    navigate('/dashboard');
   };
 
   // Navbar sign-in entry: authenticated users jump straight to the dashboard.
   const handleSignIn = (target?: 'login' | 'dashboard') => {
     if (target === 'dashboard' && isAuthenticated) {
-      setViewMode('dashboard');
+      navigate('/dashboard');
       return;
     }
     setIsLoginOpen(true);
   };
 
-  // After sign-out, return to the marketing site instead of a stale shell.
+  // After sign-out (or a direct hit on /dashboard while signed out),
+  // return to the marketing site instead of a stale shell.
   useEffect(() => {
-    if (!isAuthenticated && viewMode === 'dashboard') {
-      setViewMode('marketing');
+    if (!isLoading && !isAuthenticated && viewMode === 'dashboard') {
+      navigate('/', { replace: true });
     }
-  }, [isAuthenticated, viewMode]);
+  }, [isLoading, isAuthenticated, viewMode, navigate]);
 
-  // Track URL hash so #privacy / #terms can drive the legal pages.
+  // Browser back/forward: re-validate the pathname and follow it.
+  useEffect(() => {
+    const onPopState = () => {
+      setCurrentHash(window.location.hash);
+      setViewMode(parseRoute(window.location.pathname));
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  // Track URL hash so anchors (#pricing…) and legal links (#privacy / #terms)
+  // keep driving the right page.
   useEffect(() => {
     const onHashChange = () => setCurrentHash(window.location.hash);
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  // Legal-page routing: #privacy / #terms open the doc, any other hash
-  // returns to the marketing page and scrolls to that section.
+  // Hash routing: #privacy / #terms open the legal doc (promoted to a real
+  // /privacy · /terms route), any other anchor scrolls the marketing page —
+  // returning there first if the visitor is on a legal/404 page.
   useEffect(() => {
+    if (!currentHash) return;
+
     if (currentHash === '#privacy' || currentHash === '#terms') {
-      setViewMode(currentHash === '#privacy' ? 'privacy' : 'terms');
-      window.scrollTo(0, 0);
+      const target = currentHash.slice(1);
+      if (viewMode !== target) {
+        // Footer link landed here from another page → make it a real route.
+        window.history.replaceState(null, '', `/${target}`);
+        setViewMode(target as ViewMode);
+        window.scrollTo(0, 0);
+      }
       return;
     }
-    setViewMode((prev) => {
-      if (prev !== 'privacy' && prev !== 'terms') return prev;
-      const targetId = currentHash.replace('#', '');
-      if (targetId) {
-        // Let the marketing sections mount before scrolling to the anchor.
-        window.setTimeout(() => {
-          document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
-        }, 80);
-      }
-      return 'marketing';
-    });
-  }, [currentHash]);
+
+    const targetId = currentHash.slice(1);
+
+    // Section anchors only exist on the marketing page.
+    if (viewMode !== 'marketing') {
+      navigate(`/${currentHash}`, { replace: true }); // e.g. "/#pricing"
+      return;
+    }
+
+    if (targetId) {
+      // Let the marketing sections mount before scrolling to the anchor.
+      const timer = window.setTimeout(() => {
+        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
+      }, 80);
+      return () => window.clearTimeout(timer);
+    }
+  }, [currentHash, viewMode, navigate]);
 
   // Closing a legal page returns home without leaving a stale hash behind.
   const handleLegalBack = () => {
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    setCurrentHash('');
-    setViewMode('marketing');
-    window.scrollTo(0, 0);
+    navigate('/');
   };
+
+  const renderNavbar = () => (
+    <Navbar
+      onStartOnboarding={() => handleStartOnboarding('pro')}
+      onSignIn={handleSignIn}
+      isAuthenticated={isAuthenticated}
+      onGoHome={() => navigate('/')}
+    />
+  );
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
@@ -156,15 +254,11 @@ const AppContent: React.FC = () => {
       {viewMode === 'download' ? (
         <DownloadPage
           companyName={createdCompanyName}
-          onGoToDashboard={() => setViewMode('dashboard')}
+          onGoToDashboard={() => navigate('/dashboard')}
         />
       ) : viewMode === 'privacy' || viewMode === 'terms' ? (
         <>
-          <Navbar
-            onStartOnboarding={() => handleStartOnboarding('pro')}
-            onSignIn={handleSignIn}
-            isAuthenticated={isAuthenticated}
-          />
+          {renderNavbar()}
 
           <main className="flex-1">
             <LegalPage doc={viewMode} onBack={handleLegalBack} />
@@ -174,16 +268,26 @@ const AppContent: React.FC = () => {
         </>
       ) : viewMode === 'dashboard' ? (
         <DashboardLayout
-          onExitToWebsite={() => setViewMode('marketing')}
+          onExitToWebsite={() => navigate('/')}
           onCreateNewWorkspace={() => setIsOnboardingOpen(true)}
         />
+      ) : viewMode === 'notfound' ? (
+        <>
+          {renderNavbar()}
+
+          <main className="flex-1">
+            <NotFoundPage
+              currentPath={window.location.pathname}
+              onGoHome={() => navigate('/')}
+              onGoDownload={() => navigate('/download')}
+            />
+          </main>
+
+          <Footer />
+        </>
       ) : (
         <>
-          <Navbar
-            onStartOnboarding={() => handleStartOnboarding('pro')}
-            onSignIn={handleSignIn}
-            isAuthenticated={isAuthenticated}
-          />
+          {renderNavbar()}
 
           <main className="flex-1">
             <HeroSection
@@ -256,7 +360,7 @@ const AppContent: React.FC = () => {
           context="onboarding"
           onExit={() => {
             setCheckoutRequest(null);
-            setViewMode('download');
+            navigate('/download');
           }}
         />
       )}
@@ -306,4 +410,3 @@ export const App: React.FC = () => {
 };
 
 export default App;
-
